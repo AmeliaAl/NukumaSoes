@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Pembayarans\Schemas;
 
 use App\Models\PenjualanNonKonsinyasi;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -27,9 +28,7 @@ class PembayaranForm
                 ->default(now())
                 ->required(),
 
-            /* ===============================
-             * INVOICE (BELUM LUNAS)
-             * =============================== */
+            // No Invoice — hanya tampilkan yang belum lunas
             Select::make('penjualan_id')
                 ->label('No Invoice')
                 ->searchable()
@@ -51,21 +50,20 @@ class PembayaranForm
                     $penjualan = PenjualanNonKonsinyasi::find($state);
 
                     if ($penjualan) {
-                        $set('pelanggan_id', $penjualan->pelanggan_id);
                         $totalBayar = $penjualan->pembayaran()->sum('jumlah_bayar');
-                        $set(
-                            'sisa_piutang',
-                            $penjualan->total - $totalBayar
-                        );
+                        $sisa       = max(($penjualan->total ?? 0) - $totalBayar, 0);
+
+                        $set('pelanggan_id', $penjualan->pelanggan_id);
+                        $set('total_transaksi', $penjualan->total);
+                        $set('jumlah_bayar', $sisa);
                     } else {
                         $set('pelanggan_id', null);
-                        $set('sisa_piutang', 0);
+                        $set('total_transaksi', 0);
+                        $set('jumlah_bayar', 0);
                     }
                 }),
 
-            /* ===============================
-             * PELANGGAN (AUTO)
-             * =============================== */
+            // Pelanggan (auto dari invoice)
             Select::make('pelanggan_id')
                 ->label('Pelanggan')
                 ->relationship('pelanggan', 'namaPelanggan')
@@ -73,15 +71,15 @@ class PembayaranForm
                 ->dehydrated()
                 ->required(),
 
-            /* ===============================
-             * SISA PIUTANG (READ ONLY)
-             * =============================== */
-            TextInput::make('sisa_piutang')
-                ->label('Sisa Piutang')
+            // Total transaksi (read only, ganti sisa piutang)
+            TextInput::make('total_transaksi')
+                ->label('Total')
                 ->numeric()
                 ->disabled()
-                ->dehydrated(false),
+                ->dehydrated(false)
+                ->prefix('Rp'),
 
+            // Jumlah bayar — otomatis terisi = total, tapi bisa diedit
             TextInput::make('jumlah_bayar')
                 ->label('Jumlah Bayar')
                 ->numeric()
@@ -89,23 +87,36 @@ class PembayaranForm
                 ->minValue(1)
                 ->rules([
                     fn (callable $get) => function (string $attribute, $value, $fail) use ($get) {
-                        $sisa = $get('sisa_piutang');
+                        $penjualan = PenjualanNonKonsinyasi::find($get('penjualan_id'));
+                        if (! $penjualan) return;
+
+                        $totalBayar = $penjualan->pembayaran()->sum('jumlah_bayar');
+                        $sisa       = max(($penjualan->total ?? 0) - $totalBayar, 0);
 
                         if ($value > $sisa) {
-                            $fail('Jumlah bayar tidak boleh melebihi sisa piutang.');
+                            $fail('Jumlah bayar tidak boleh melebihi total (Rp ' . number_format($sisa, 0, ',', '.') . ').');
                         }
                     },
-                ])
-                ->helperText('Tidak boleh lebih besar dari sisa piutang'),
+                ]),
 
             Select::make('metode_pembayaran')
                 ->label('Metode Pembayaran')
                 ->options([
-                    'tunai' => 'Tunai',
+                    'tunai'    => 'Tunai',
                     'transfer' => 'Transfer',
-                    'qris' => 'QRIS',
+                    'qris'     => 'QRIS',
                 ])
                 ->required(),
+
+            FileUpload::make('bukti_bayar')
+                ->label('Bukti Bayar')
+                ->image()
+                ->directory('bukti-bayar')
+                ->maxSize(2048)
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                ->placeholder('Posting bukti pembayaran atau <span class="filepond--label-action">Jelajahi</span>')
+                ->helperText('Format: JPG, PNG, WEBP. Maks 2MB.')
+                ->nullable(),
 
             Textarea::make('keterangan')
                 ->label('Keterangan')

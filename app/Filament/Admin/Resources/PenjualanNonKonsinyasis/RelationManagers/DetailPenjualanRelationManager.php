@@ -178,7 +178,17 @@ class DetailPenjualanNonKonsinyasiRelationManager extends RelationManager
                 $detail->penjualan->hitungTotal();
                 $detail->penjualan->refresh();
 
+                // Auto-create Sales Order jika belum ada
+                if (!$detail->penjualan->salesOrder) {
+                    try {
+                        \App\Models\SalesOrder::createFromPenjualanNonKonsinyasi($detail->penjualan);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Failed to create Sales Order: {$e->getMessage()}");
+                    }
+                }
+
                 $this->dispatch('refreshPenjualanNonKonsinyasiSummary');
+                $this->dispatch('refreshHeaderActions');
             }),
         ])
         ->actions([

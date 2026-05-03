@@ -21,6 +21,7 @@ class PembayaranResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
     protected static UnitEnum|string|null $navigationGroup = 'Penjualan Non Konsinyasi';
+    protected static ?int $navigationSort = 2;
     protected static ?string $recordTitleAttribute = 'kode_pembayaran';
 
     public static function form(Schema $schema): Schema

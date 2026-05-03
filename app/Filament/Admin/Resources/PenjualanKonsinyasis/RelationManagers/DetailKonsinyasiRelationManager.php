@@ -125,6 +125,15 @@ class DetailKonsinyasiRelationManager extends RelationManager
                         $this->ownerRecord->hitungTotalKonsinyasi();
                         $this->ownerRecord->refresh();
 
+                        // Auto-create Sales Order jika belum ada
+                        if (!$this->ownerRecord->salesOrder) {
+                            try {
+                                \App\Models\SalesOrder::createFromPenjualanKonsinyasi($this->ownerRecord);
+                            } catch (\Exception $e) {
+                                \Illuminate\Support\Facades\Log::error("Failed to create Sales Order: {$e->getMessage()}");
+                            }
+                        }
+
                         $this->dispatch('refreshPenjualanKonsinyasiSummary');
                     }),
             ]);

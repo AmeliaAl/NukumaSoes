@@ -32,6 +32,7 @@ class PenjualanNonKonsinyasiForm
                 ->label('Tanggal')
                 ->default(now())
                 ->required()
+                ->live()
                 ->disabled(fn ($record) => $record?->isLocked()),
 
             Select::make('pelanggan_id')
@@ -55,8 +56,15 @@ class PenjualanNonKonsinyasiForm
             DatePicker::make('jatuh_tempo')
                 ->label('Jatuh Tempo')
                 ->visible(fn (Get $get) => $get('jenis_pembayaran') === 'kredit')
+                ->required(fn (Get $get) => $get('jenis_pembayaran') === 'kredit')
+                ->minDate(fn (Get $get) => $get('tanggal') ?? now()->toDateString())
+                ->afterOrEqual(fn (Get $get) => $get('tanggal') ?? now()->toDateString())
+                ->validationMessages([
+                    'after_or_equal' => 'Tanggal jatuh tempo tidak boleh lebih awal dari tanggal transaksi.',
+                    'min_date'       => 'Tanggal jatuh tempo tidak boleh lebih awal dari tanggal transaksi.',
+                ])
                 ->nullable(),
-                
+
             Radio::make('jenis_penjualan')
                 ->label('Jenis Penjualan')
                 ->options([

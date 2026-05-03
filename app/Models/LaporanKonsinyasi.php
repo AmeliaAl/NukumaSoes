@@ -51,7 +51,6 @@ class LaporanKonsinyasi extends Model
 
     public function refreshTotalLaporan(): void
     {
-        // jangan sentuh laporan lama yang belum punya detail
         if (! $this->detailLaporan()->exists()) {
             return;
         }
@@ -64,13 +63,18 @@ class LaporanKonsinyasi extends Model
 
         if ($this->tagihan) {
             $totalTerbayar = (int) $this->tagihan->total_terbayar;
-            $sisaTagihan = max($total - $totalTerbayar, 0);
+            $sisaTagihan   = max($total - $totalTerbayar, 0);
 
             $this->tagihan->updateQuietly([
                 'total_tagihan' => $total,
                 'sisa_tagihan'  => $sisaTagihan,
                 'status'        => $sisaTagihan <= 0 ? 'LUNAS' : 'BELUM LUNAS',
             ]);
+        }
+
+        // Pass nominal langsung agar tidak bergantung pada state model
+        if ($total > 0) {
+            \App\Services\JurnalPerpetualService::laporanKonsinyasiDenganNominal($this, $total);
         }
 
         $this->penjualanKonsinyasi?->refreshTotalLaporan();
@@ -99,6 +103,13 @@ class LaporanKonsinyasi extends Model
         static::deleted(function ($laporan) {
             $laporan->tagihan()?->delete();
             $laporan->penjualanKonsinyasi?->refreshStatus();
+
+            $referensi = 'Jurnal Laporan Konsinyasi ' . $laporan->no_laporan;
+            $jurnal    = \App\Models\JurnalUmum::where('keterangan', $referensi)->first();
+            if ($jurnal) {
+                $jurnal->details()->delete();
+                $jurnal->delete();
+            }
         });
     }
 }

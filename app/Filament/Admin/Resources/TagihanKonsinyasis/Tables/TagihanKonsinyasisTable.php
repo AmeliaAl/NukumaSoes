@@ -54,7 +54,8 @@ class TagihanKonsinyasisTable
             ViewAction::make(),
             EditAction::make()
                 ->visible(fn ($record) => $record->status !== 'LUNAS'),
-        ]);
+        ])
+        ->defaultSort('id', 'desc');
     }
 
 }

@@ -23,6 +23,8 @@ class TagihanKonsinyasiResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
     protected static UnitEnum|string|null $navigationGroup = 'Penjualan Konsinyasi';
+    protected static ?int $navigationSort = 3;
+    protected static ?string $navigationLabel = 'Pembayaran Tagihan';
     protected static ?string $recordTitleAttribute = 'no_tagihan';
 
     public static function form(Schema $schema): Schema

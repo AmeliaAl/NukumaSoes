@@ -22,6 +22,7 @@ class PenjualanNonKonsinyasiResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
     protected static UnitEnum|string|null $navigationGroup = 'Penjualan Non Konsinyasi';
+    protected static ?int $navigationSort = 1;
     protected static ?string $recordTitleAttribute = 'no_invoice';
 
     public static function form(Schema $schema): Schema

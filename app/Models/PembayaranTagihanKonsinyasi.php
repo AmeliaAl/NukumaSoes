@@ -17,24 +17,39 @@ class PembayaranTagihanKonsinyasi extends Model
     protected static function booted()
 {
     static::created(function ($pembayaran) {
-        $pembayaran->tagihan
+        $pembayaran->tagihanKonsinyasi
             ?->laporanKonsinyasi
             ?->penjualanKonsinyasi
             ?->refreshStatus();
+
+        // Buat jurnal: Bank (D) / Piutang (K)
+        \App\Services\JurnalPerpetualService::pembayaranTagihanKonsinyasi($pembayaran);
     });
 
     static::updated(function ($pembayaran) {
-        $pembayaran->tagihan
+        $pembayaran->tagihanKonsinyasi
             ?->laporanKonsinyasi
             ?->penjualanKonsinyasi
             ?->refreshStatus();
+
+        // Update jurnal jika jumlah berubah
+        \App\Services\JurnalPerpetualService::pembayaranTagihanKonsinyasi($pembayaran);
     });
 
     static::deleted(function ($pembayaran) {
-        $pembayaran->tagihan
+        $pembayaran->tagihanKonsinyasi
             ?->laporanKonsinyasi
             ?->penjualanKonsinyasi
             ?->refreshStatus();
+
+        // Hapus jurnal terkait
+        $noTagihan = $pembayaran->tagihanKonsinyasi?->no_tagihan ?? $pembayaran->tagihan_konsinyasi_id;
+        $referensi = 'Jurnal Pembayaran Konsinyasi ' . $noTagihan . '-' . $pembayaran->id;
+        $jurnal = \App\Models\JurnalUmum::where('keterangan', $referensi)->first();
+        if ($jurnal) {
+            $jurnal->details()->delete();
+            $jurnal->delete();
+        }
     });
 }
 

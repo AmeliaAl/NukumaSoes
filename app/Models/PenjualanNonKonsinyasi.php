@@ -22,6 +22,11 @@ class PenjualanNonKonsinyasi extends Model
         return $this->hasMany(Pembayaran::class, 'penjualan_id');
     }
 
+    public function salesOrder()
+    {
+        return $this->hasOne(\App\Models\SalesOrder::class, 'penjualan_non_konsinyasi_id');
+    }
+
     public function detailPenjualan()
     {
         return $this->hasMany(DetailPenjualanNonKonsinyasi::class, 'penjualan_id');

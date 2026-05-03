@@ -25,6 +25,7 @@ class PenjualanKonsinyasiResource extends Resource
     protected static ?string $navigationLabel = 'Kelola Konsinyasi';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
     protected static UnitEnum|string|null $navigationGroup = 'Penjualan Konsinyasi';
+    protected static ?int $navigationSort = 1;
     protected static ?string $recordTitleAttribute = 'no_konsinyasi';
     protected static ?string $pluralModelLabel = 'Kelola Penjualan Konsinyasi';
 

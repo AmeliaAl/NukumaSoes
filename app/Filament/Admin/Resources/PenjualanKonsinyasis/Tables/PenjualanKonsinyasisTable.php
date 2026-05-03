@@ -50,6 +50,7 @@ class PenjualanKonsinyasisTable
             EditAction::make(),
             DeleteAction::make()
                 ->visible(fn ($record) => $record->status !== 'SELESAI'),
-        ]);
+        ])
+        ->defaultSort('id', 'desc');
     }
 }

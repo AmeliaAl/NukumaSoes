@@ -24,10 +24,11 @@ class LaporanKonsinyasiResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
     protected static UnitEnum|string|null $navigationGroup = 'Penjualan Konsinyasi';
+    protected static ?int $navigationSort = 2;
     protected static ?string $recordTitleAttribute = 'no_laporan';
     protected static ?string $navigationLabel = 'Laporan Penjualan Konsinyasi';
     protected static ?string $modelLabel = 'Laporan Penjualan Konsinyasi';
-    protected static ?string $pluralModelLabel = 'Laporan Penjualan Konsinyasi dari mitra';
+    protected static ?string $pluralModelLabel = 'Rekap Laporan Penjualan Konsinyasi dari mitra';
     public static function form(Schema $schema): Schema
     {
         return LaporanKonsinyasiForm::configure($schema);

@@ -79,6 +79,7 @@ class PembayaransTable
             ->recordActions([
                 EditAction::make(),
             ])
+            ->defaultSort('id', 'desc')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

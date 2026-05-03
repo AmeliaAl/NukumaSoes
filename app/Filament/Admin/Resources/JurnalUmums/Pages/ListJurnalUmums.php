@@ -13,7 +13,7 @@ class ListJurnalUmums extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            // Button "Buat" dihapus — jurnal dibuat otomatis oleh sistem
         ];
     }
 }

@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class PenjualanKonsinyasi extends Model
 {
@@ -23,6 +22,11 @@ class PenjualanKonsinyasi extends Model
     public function detailKonsinyasi()
     {
         return $this->hasMany(DetailKonsinyasi::class);
+    }
+
+    public function salesOrder()
+    {
+        return $this->hasOne(\App\Models\SalesOrder::class, 'penjualan_konsinyasi_id');
     }
 
     public function laporanKonsinyasi()
@@ -141,13 +145,5 @@ class PenjualanKonsinyasi extends Model
         $this->refreshStatus();
     }
 
-    protected static function booted(): void
-    {
-        static::created(function ($penjualan) {
-            Log::info('EVENT CREATED PENJUALAN KONSINYASI', [
-                'id' => $penjualan->id,
-                'no_konsinyasi' => $penjualan->no_konsinyasi,
-            ]);
-        });
-    }
+
 }
