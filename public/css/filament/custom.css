@@ -1,0 +1,48 @@
+:root {
+    --ungu-main: #563fd4;
+    --ungu-soft: #F7F4FF;
+    --ungu-hover: #EFE9FF;
+    --kuning-soft: #fae385;
+    --text-dark: #3b2c86;
+}
+
+.fi-body,
+.fi-main,
+.fi-main-ctn {
+    background-color: #E4DFFF !important;
+}
+
+.fi-sidebar {
+    background: var(--ungu-soft) !important;
+    border-right: 1px solid #E8E2FF !important;
+}
+
+.fi-sidebar-item-label,
+.fi-sidebar-group-label {
+    color: var(--text-dark) !important;
+}
+
+.fi-sidebar-item-icon {
+    color: var(--ungu-main) !important;
+}
+
+.fi-sidebar-item-active > a {
+    background: var(--kuning-soft) !important;
+    color: var(--ungu-main) !important;
+    border-radius: 12px !important;
+}
+
+.fi-sidebar-item > a:hover {
+    background: var(--ungu-hover) !important;
+    border-radius: 12px !important;
+}
+
+.fi-topbar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #eee !important;
+}
+
+.fi-section,
+.fi-card {
+    border-radius: 18px !important;
+}
