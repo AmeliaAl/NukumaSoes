@@ -9,7 +9,6 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Support\Colors\Color;
 
-
 class KategoriAsetsTable
 {
     public static function configure(Table $table): Table

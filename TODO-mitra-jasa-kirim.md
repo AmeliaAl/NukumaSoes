@@ -1,0 +1,7 @@
+- [x] 1. Create migration add_jasa_kirim_to_mitras_table (edited)
+- [x] 2. Edit Mitra model $fillable
+- [x] 3. Edit MitraController validation
+- [x] 4. Edit mitra/index.blade.php table
+- [x] 5. Edit mitra/create.blade.php form
+- [x] 6. Edit mitra/edit.blade.php form
+- [x] 7. Run php artisan migrate
