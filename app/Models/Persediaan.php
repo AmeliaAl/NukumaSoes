@@ -17,6 +17,7 @@ class Persediaan extends Model
         'id_kategori',
         'id_vendor',
         'nama_barang',
+        'satuan',
         'qty',
         'harga_satuan',
         'total',
@@ -55,12 +56,18 @@ class Persediaan extends Model
                 ],
                 [
                     'kode_barang' => 'AL-' . strtoupper(Str::random(6)),
+                    'satuan' => $persediaan->satuan ?? 'Unit',
                     'stok_tersedia' => 0,
                     'harga_satuan_rata' => 0,
                     'nilai_total' => 0,
                     'tanggal_update_terakhir' => now(),
                 ]
             );
+
+            // Update satuan jika berbeda
+            if ($aset->satuan !== $persediaan->satuan && !empty($persediaan->satuan)) {
+                $aset->satuan = $persediaan->satuan;
+            }
 
             // 🔥 LOGIC YANG BENAR
             $stokBaru = $aset->stok_tersedia + $persediaan->qty;

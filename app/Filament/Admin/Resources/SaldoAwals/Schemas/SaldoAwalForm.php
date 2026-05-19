@@ -31,12 +31,14 @@ class SaldoAwalForm
                     ->required(),
                 TextInput::make('tahun')
                     ->label('Tahun')
+                    ->placeholder('yyyy')
                     ->numeric()
                     ->extraInputAttributes([
                         'oninput' => 'this.value = this.value.replace(/[^0-9]/g, "")',
+                        'maxlength' => 4,
                     ])
-                    ->minValue(2000)
-                    ->maxValue(2100)
+                    ->minValue(now()->year - 10)
+                    ->maxValue(now()->year)
                     ->required(),
                 Select::make('akun_id')
                     ->relationship('akun', 'nama_akun')

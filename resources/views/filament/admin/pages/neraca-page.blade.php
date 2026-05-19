@@ -10,24 +10,24 @@
     }
     
     .neraca-header {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        border-radius: 12px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        border-radius: 12px 12px 0 0;
         padding: 24px;
         text-align: center;
         color: white;
         box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
-        margin-bottom: 24px;
+        margin-bottom: 0;
     }
     
     .neraca-table {
         border: 2px solid #d1d5db;
-        border-radius: 12px;
+        border-radius: 0 0 12px 12px;
         overflow: hidden;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
     .table-header {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         color: white;
         font-weight: bold;
         padding: 16px;
@@ -38,11 +38,11 @@
     }
     
     .section-header {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
         color: white;
         font-weight: 600;
         padding: 12px 20px;
-        border-bottom: 2px solid #1d4ed8;
+        border-bottom: 2px solid #4f46e5;
     }
     
     .account-row {
@@ -58,21 +58,21 @@
     }
     
     .subtotal-row {
-        background-color: #dbeafe;
+        background-color: #c7d2fe;
         padding: 12px 20px;
         font-weight: bold;
-        border-bottom: 2px solid #93c5fd;
+        border-bottom: 2px solid #818cf8;
         display: flex;
         justify-content: space-between;
     }
     
     .total-row {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         color: white;
         padding: 16px 20px;
         font-weight: bold;
         font-size: 18px;
-        border-top: 4px solid #1e40af;
+        border-top: 4px solid #4f46e5;
         display: flex;
         justify-content: space-between;
         margin-top: 8px;
@@ -108,8 +108,85 @@
     
     .period-input:focus {
         outline: none;
-        border-color: #3b82f6;
+        border-color: #4338ca;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Print Styles */
+    @media print {
+        /* Hide Filament UI elements */
+        aside,
+        nav,
+        header,
+        .fi-sidebar,
+        .fi-topbar,
+        .fi-header,
+        .fi-breadcrumbs,
+        [data-sidebar],
+        [role="navigation"],
+        .neraca-card,
+        .balance-indicator,
+        button {
+            display: none !important;
+        }
+        
+        /* Show only main content */
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        main,
+        .fi-main,
+        [role="main"] {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .neraca-container {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 20px !important;
+        }
+        
+        .neraca-header {
+            background: #6366f1 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            box-shadow: none;
+            page-break-after: avoid;
+        }
+        
+        .neraca-table {
+            box-shadow: none;
+            border: 1px solid #000;
+            page-break-inside: avoid;
+        }
+        
+        .table-header,
+        .section-header {
+            background: #6366f1 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .subtotal-row {
+            background: #c7d2fe !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .total-row {
+            background: #6366f1 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .two-column-layout > div {
+            page-break-inside: avoid;
+        }
     }
 </style>
 
@@ -129,7 +206,7 @@
             onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 6px rgba(79, 70, 229, 0.4)';"
             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
         >
-            {{ $showDebug ? '🔍 Sembunyikan Debug' : '🔍 Tampilkan Debug' }}
+            {{ $showDebug ? '🔍 Sembunyikan Detail' : '🔍 Tampilkan Detail' }}
         </button>
     </div>
 </div>
@@ -242,7 +319,7 @@
                         <td style="padding: 8px; text-align: right; color: #dc2626;">{{ number_format($item['kredit'], 0, ',', '.') }}</td>
                         <td style="padding: 8px; text-align: right; font-weight: 600;">{{ number_format($item['saldo'], 0, ',', '.') }}</td>
                         <td style="padding: 8px; text-align: center;">
-                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; {{ $item['kategori'] == 'Aset Lancar' ? 'background: #dbeafe; color: #1e40af;' : ($item['kategori'] == 'Aset Tetap' ? 'background: #fef3c7; color: #92400e;' : 'background: #fee2e2; color: #dc2626;') }}">
+                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; {{ $item['kategori'] == 'Aset Lancar' ? 'background: #c7d2fe; color: #4f46e5;' : ($item['kategori'] == 'Aset Tetap' ? 'background: #fef3c7; color: #92400e;' : 'background: #fee2e2; color: #dc2626;') }}">
                                 {{ $item['kategori'] }}
                             </span>
                         </td>
@@ -294,135 +371,122 @@
 </div>
 
 <div class="neraca-table">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 2px solid #d1d5db;">
-        <div class="table-header" style="border-right: 2px solid white;">AKTIVA</div>
-        <div class="table-header">PASIVA</div>
-    </div>
+    <table style="width: 100%; border-collapse: collapse; border: 2px solid #9ca3af;">
+        <thead>
+            <tr>
+                <th colspan="2" class="table-header" style="border-right: 1px solid #9ca3af; border-bottom: 1px solid #9ca3af;">AKTIVA</th>
+                <th colspan="2" class="table-header" style="border-bottom: 1px solid #9ca3af;">PASIVA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="2" class="section-header" style="border-right: 1px solid #9ca3af; border-bottom: 1px solid #d1d5db;">ASET LANCAR</td>
+                <td colspan="2" class="section-header" style="border-bottom: 1px solid #d1d5db;">KEWAJIBAN </td>
+            </tr>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; min-height: 500px;">
-        
-        <!-- KOLOM KIRI: AKTIVA -->
-        <div style="border-right: 2px solid #d1d5db; background-color: #f9fafb;">
-            <!-- Aktiva Lancar -->
-            <div class="section-header">Aktiva Lancar</div>
+            @php
+                $maxRows = max(count($aktivaLancar), count($liabilitas));
+            @endphp
 
-            @forelse($aktivaLancar as $akun)
-                <div class="account-row">
-                    <span style="color: #374151;">
-                        {{ $akun->nama_akun }}
-                        @if(isset($akun->is_abnormal) && $akun->is_abnormal)
-                            <span style="color: #ef4444; font-size: 11px; margin-left: 4px;" title="Saldo tidak normal - cek jurnal">⚠️</span>
-                        @endif
-                    </span>
-                    <span style="font-weight: 600; color: {{ isset($akun->is_abnormal) && $akun->is_abnormal ? '#ef4444' : '#111827' }};">
-                        Rp{{ number_format($akun->saldo, 0, ',', '.') }}
-                    </span>
-                </div>
-            @empty
-                <div style="padding: 12px 20px; color: #9ca3af; font-style: italic; border-bottom: 1px solid #e5e7eb;">
-                    Tidak ada data
-                </div>
-            @endforelse
+            @for($i = 0; $i < $maxRows; $i++)
+                <tr>
+                    @if(isset($aktivaLancar[$i]))
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; color: #374151; width: 35%;">
+                            {{ $aktivaLancar[$i]->nama_akun }}
+                            @if(isset($aktivaLancar[$i]->is_abnormal) && $aktivaLancar[$i]->is_abnormal)
+                                <span style="color: #ef4444; font-size: 11px;" title="Saldo tidak normal">⚠️</span>
+                            @endif
+                        </td>
+                        <td style="padding: 8px 12px; border-right: 1px solid #9ca3af; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 500; color: #111827; width: 15%;">
+                            Rp {{ number_format($aktivaLancar[$i]->saldo, 0, ',', '.') }}
+                        </td>
+                    @else
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; width: 35%;">&nbsp;</td>
+                        <td style="padding: 8px 12px; border-right: 1px solid #9ca3af; border-bottom: 1px solid #e5e7eb; width: 15%;">&nbsp;</td>
+                    @endif
 
-            <div class="subtotal-row">
-                <span style="text-transform: uppercase;">Total</span>
-                <span>Rp{{ number_format($totalAktivaLancar, 0, ',', '.') }}</span>
-            </div>
+                    @if(isset($liabilitas[$i]))
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; color: #374151; width: 35%;">
+                            {{ $liabilitas[$i]->nama_akun }}
+                            @if(isset($liabilitas[$i]->is_abnormal) && $liabilitas[$i]->is_abnormal)
+                                <span style="color: #ef4444; font-size: 11px;" title="Saldo tidak normal">⚠️</span>
+                            @endif
+                        </td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 500; color: #111827; width: 15%;">
+                            Rp {{ number_format($liabilitas[$i]->saldo, 0, ',', '.') }}
+                        </td>
+                    @else
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; width: 35%;">&nbsp;</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; width: 15%;">&nbsp;</td>
+                    @endif
+                </tr>
+            @endfor
 
-            <!-- Aktiva Tetap -->
-            <div class="section-header" style="margin-top: 8px;">Aktiva Tetap</div>
+            <tr>
+                <td style="padding: 10px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #9ca3af; font-weight: 600; background: #e0e7ff; color: #374151;">TOTAL ASET LANCAR</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #9ca3af; border-bottom: 1px solid #9ca3af; text-align: right; font-weight: 700; background: #e0e7ff; color: #111827;">Rp {{ number_format($totalAktivaLancar, 0, ',', '.') }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #9ca3af; font-weight: 600; background: #e0e7ff; color: #374151;">TOTAL KEWAJIBAN</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #9ca3af; text-align: right; font-weight: 700; background: #e0e7ff; color: #111827;">Rp {{ number_format($totalLiabilitas, 0, ',', '.') }}</td>
+            </tr>
 
-            @forelse($aktivaTetap as $akun)
-                <div class="account-row">
-                    <span style="color: #374151;">
-                        {{ $akun->nama_akun }}
-                        @if(isset($akun->is_abnormal) && $akun->is_abnormal)
-                            <span style="color: #ef4444; font-size: 11px; margin-left: 4px;" title="Saldo tidak normal - cek jurnal">⚠️</span>
-                        @endif
-                    </span>
-                    <span style="font-weight: 600; color: {{ isset($akun->is_abnormal) && $akun->is_abnormal ? '#ef4444' : '#111827' }};">
-                        Rp{{ number_format($akun->saldo, 0, ',', '.') }}
-                    </span>
-                </div>
-            @empty
-                <div style="padding: 12px 20px; color: #9ca3af; font-style: italic; border-bottom: 1px solid #e5e7eb;">
-                    Tidak ada data
-                </div>
-            @endforelse
+            <tr>
+                <td colspan="2" class="section-header" style="border-right: 1px solid #9ca3af; border-bottom: 1px solid #d1d5db;">ASET TETAP</td>
+                <td colspan="2" class="section-header" style="border-bottom: 1px solid #d1d5db;">EKUITAS</td>
+            </tr>
 
-            <div class="subtotal-row">
-                <span style="text-transform: uppercase;">Total</span>
-                <span>Rp{{ number_format($totalAktivaTetap, 0, ',', '.') }}</span>
-            </div>
+            @php
+                $maxRows2 = max(count($aktivaTetap), count($ekuitas));
+            @endphp
 
-            <!-- TOTAL AKTIVA -->
-            <div class="total-row">
-                <span style="text-transform: uppercase; letter-spacing: 0.5px;">Total Aktiva</span>
-                <span>Rp{{ number_format($totalAktiva, 0, ',', '.') }}</span>
-            </div>
-        </div>
+            @for($i = 0; $i < $maxRows2; $i++)
+                <tr>
+                    @if(isset($aktivaTetap[$i]))
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; color: #374151;">
+                            {{ $aktivaTetap[$i]->nama_akun }}
+                            @if(isset($aktivaTetap[$i]->is_abnormal) && $aktivaTetap[$i]->is_abnormal)
+                                <span style="color: #ef4444; font-size: 11px;" title="Saldo tidak normal">⚠️</span>
+                            @endif
+                        </td>
+                        <td style="padding: 8px 12px; border-right: 1px solid #9ca3af; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 500; color: #111827;">
+                            Rp {{ number_format($aktivaTetap[$i]->saldo, 0, ',', '.') }}
+                        </td>
+                    @else
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">&nbsp;</td>
+                        <td style="padding: 8px 12px; border-right: 1px solid #9ca3af; border-bottom: 1px solid #e5e7eb;">&nbsp;</td>
+                    @endif
 
-        <!-- KOLOM KANAN: PASIVA -->
-        <div style="background-color: #f9fafb;">
-            <!-- Kewajiban -->
-            <div class="section-header">Kewajiban</div>
+                    @if(isset($ekuitas[$i]))
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; color: #374151;">
+                            {{ $ekuitas[$i]->nama_akun }}
+                            @if(isset($ekuitas[$i]->is_abnormal) && $ekuitas[$i]->is_abnormal)
+                                <span style="color: #ef4444; font-size: 11px;" title="Saldo tidak normal">⚠️</span>
+                            @endif
+                        </td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 500; color: #111827;">
+                            Rp {{ number_format($ekuitas[$i]->saldo, 0, ',', '.') }}
+                        </td>
+                    @else
+                        <td style="padding: 8px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">&nbsp;</td>
+                        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">&nbsp;</td>
+                    @endif
+                </tr>
+            @endfor
 
-            @forelse($liabilitas as $akun)
-                <div class="account-row">
-                    <span style="color: #374151;">
-                        {{ $akun->nama_akun }}
-                        @if(isset($akun->is_abnormal) && $akun->is_abnormal)
-                            <span style="color: #ef4444; font-size: 11px; margin-left: 4px;" title="Saldo tidak normal - cek jurnal">⚠️</span>
-                        @endif
-                    </span>
-                    <span style="font-weight: 600; color: {{ isset($akun->is_abnormal) && $akun->is_abnormal ? '#ef4444' : '#111827' }};">
-                        Rp{{ number_format($akun->saldo, 0, ',', '.') }}
-                    </span>
-                </div>
-            @empty
-                <div style="padding: 12px 20px; color: #9ca3af; font-style: italic; border-bottom: 1px solid #e5e7eb;">
-                    Tidak ada data
-                </div>
-            @endforelse
+            <tr>
+                <td style="padding: 10px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #9ca3af; font-weight: 600; background: #e0e7ff; color: #374151;">TOTAL ASET TETAP</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #9ca3af; border-bottom: 1px solid #9ca3af; text-align: right; font-weight: 700; background: #e0e7ff; color: #111827;">Rp {{ number_format($totalAktivaTetap, 0, ',', '.') }}</td>
+                <td style="padding: 10px 12px; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #9ca3af; font-weight: 600; background: #e0e7ff; color: #374151;">TOTAL EKUITAS</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #9ca3af; text-align: right; font-weight: 700; background: #e0e7ff; color: #111827;">Rp {{ number_format($totalEkuitas, 0, ',', '.') }}</td>
+            </tr>
 
-            <div class="subtotal-row">
-                <span style="text-transform: uppercase;">Total</span>
-                <span>Rp{{ number_format($totalLiabilitas, 0, ',', '.') }}</span>
-            </div>
-
-            <!-- Ekuitas -->
-            <div class="section-header" style="margin-top: 8px;">Ekuitas</div>
-
-            @forelse($ekuitas as $akun)
-                <div class="account-row">
-                    <span style="color: #374151;">
-                        {{ $akun->nama_akun }}
-                        @if(isset($akun->is_abnormal) && $akun->is_abnormal)
-                            <span style="color: #ef4444; font-size: 11px; margin-left: 4px;" title="Saldo tidak normal - cek jurnal">⚠️</span>
-                        @endif
-                    </span>
-                    <span style="font-weight: 600; color: {{ isset($akun->is_abnormal) && $akun->is_abnormal ? '#ef4444' : '#111827' }};">
-                        Rp{{ number_format($akun->saldo, 0, ',', '.') }}
-                    </span>
-                </div>
-            @empty
-                <div style="padding: 12px 20px; color: #9ca3af; font-style: italic; border-bottom: 1px solid #e5e7eb;">
-                    Tidak ada data
-                </div>
-            @endforelse
-
-            <div class="subtotal-row">
-                <span style="text-transform: uppercase;">Total</span>
-                <span>Rp{{ number_format($totalEkuitas, 0, ',', '.') }}</span>
-            </div>
-
-            <!-- TOTAL PASIVA -->
-            <div class="total-row">
-                <span style="text-transform: uppercase; letter-spacing: 0.5px;">Total Pasiva</span>
-                <span>Rp{{ number_format($totalPasiva, 0, ',', '.') }}</span>
-            </div>
-        </div>
-    </div>
+            <tr>
+                <td style="padding: 14px 12px; border-right: 1px solid #e5e7eb; font-weight: 700; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; font-size: 16px;">TOTAL AKTIVA</td>
+                <td style="padding: 14px 12px; border-right: 1px solid #9ca3af; text-align: right; font-weight: 700; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; font-size: 16px;">Rp {{ number_format($totalAktiva, 0, ',', '.') }}</td>
+                <td style="padding: 14px 12px; border-right: 1px solid #e5e7eb; font-weight: 700; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; font-size: 16px;">TOTAL PASIVA</td>
+                <td style="padding: 14px 12px; text-align: right; font-weight: 700; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; font-size: 16px;">Rp {{ number_format($totalPasiva, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 
 <div class="balance-indicator {{ $totalAktiva == $totalPasiva ? 'balanced' : 'unbalanced' }}">

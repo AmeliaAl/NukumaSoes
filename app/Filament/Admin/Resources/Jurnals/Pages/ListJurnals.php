@@ -10,13 +10,13 @@ class ListJurnals extends ListRecords
 {
     protected static string $resource = JurnalResource::class;
 
-
-     protected function getHeaderWidgets(): array
+    protected function getHeaderWidgets(): array
     {
         return [
             JurnalTableOverview::class,
         ];
     }
 
-    
+    // Sembunyikan tabel resource karena sudah pakai widget
+    protected  string $view = 'filament.admin.resources.jurnals.pages.list-jurnals';
 }

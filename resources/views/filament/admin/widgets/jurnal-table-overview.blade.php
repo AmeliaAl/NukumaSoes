@@ -11,7 +11,7 @@
     }
     
     .jurnal-header {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         border-radius: 12px;
         padding: 24px;
         text-align: center;
@@ -40,12 +40,12 @@
     
     .filter-input:focus {
         outline: none;
-        border-color: #3b82f6;
+        border-color: #4338ca;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     
     .filter-btn {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
         color: white;
         padding: 10px 24px;
         border-radius: 8px;
@@ -58,7 +58,7 @@
     }
     
     .filter-btn:hover {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         box-shadow: 0 4px 6px rgba(37, 99, 235, 0.4);
         transform: translateY(-1px);
     }
@@ -78,7 +78,7 @@
 }
     
     .jurnal-table thead {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         color: white;
     }
     
@@ -125,10 +125,10 @@
     }
     
     .jurnal-table tfoot {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
         color: white;
         font-weight: bold;
-        border-top: 3px solid #1e40af;
+        border-top: 3px solid #4f46e5;
     }
     
     .jurnal-table tfoot td {

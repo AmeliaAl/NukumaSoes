@@ -49,7 +49,7 @@ class AsetLancarResource extends Resource
         return [
             'index' => ListAsetLancars::route('/'),
             'create' => CreateAsetLancar::route('/create'),
-            'edit' => EditAsetLancar::route('/{record}/edit'),
+          //  'edit' => EditAsetLancar::route('/{record}/edit'),
         ];
     }
 }
