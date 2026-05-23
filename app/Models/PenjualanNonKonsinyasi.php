@@ -91,7 +91,10 @@ class PenjualanNonKonsinyasi extends Model
 
     public function hitungTotal(): void
     {
-        $total    = (int) $this->detailPenjualan()->sum('subtotal');
+        $subtotal = (int) $this->detailPenjualan()->sum('subtotal');
+        $diskon   = (int) ($this->diskon ?? 0);
+        $total    = max($subtotal - $diskon, 0);
+
         $totalHpp = (float) $this->detailPenjualan()->sum('subtotal_hpp');
 
         $this->updateQuietly([

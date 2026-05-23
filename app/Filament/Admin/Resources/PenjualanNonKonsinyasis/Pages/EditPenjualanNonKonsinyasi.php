@@ -61,6 +61,25 @@ class EditPenjualanNonKonsinyasi extends EditRecord
         $this->record->refresh();
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $subtotal = (int) $this->record->detailPenjualan()->sum('subtotal');
+        $diskon = (int) ($data['diskon'] ?? 0);
+
+        if ($diskon < 0) {
+            $diskon = 0;
+        }
+
+        if ($diskon > $subtotal) {
+            $diskon = $subtotal;
+        }
+
+        $data['diskon'] = $diskon;
+
+        return $data;
+    }
+
+
     public function getSubtotalProperty(): int
     {
         return (int) $this->record->detailPenjualan()->sum('subtotal');

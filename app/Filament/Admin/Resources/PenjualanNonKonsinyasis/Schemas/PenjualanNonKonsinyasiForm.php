@@ -111,12 +111,25 @@ class PenjualanNonKonsinyasiForm
                         ->extraInputAttributes([
                             'oninput' => "this.value = this.value.replace(/[^0-9]/g, '')",
                         ])
-                        ->helperText('Diskon Barang + Diskon Faktur.')
+                        ->helperText('Masukkan diskon tambahan (jika ada).')
                         ->default(0)
                         ->live(debounce: 500),
 
+                    Placeholder::make('total_diskon')
+                        ->label('Total Diskon (Faktur + Barang)')
+                        ->content(function (Get $get, $livewire) {
+                            $diskonFaktur = (int) ($get('diskon') ?? 0);
+                            $diskonDetail = 0;
+                            if (method_exists($livewire, 'getRecord') && $livewire->getRecord()) {
+                                $diskonDetail = (int) $livewire->getRecord()->detailPenjualan()->sum('diskon');
+                            }
+                            $totalDiskon = $diskonFaktur + $diskonDetail;
+                            
+                            return 'Rp ' . number_format($totalDiskon, 0, ',', '.');
+                        }),
+
                     Placeholder::make('total_preview')
-                        ->label('Total')
+                        ->label('Total (Setelah Diskon)')
                         ->content(function (Get $get, $livewire) {
                             $subtotal = method_exists($livewire, 'getSubtotalProperty')
                                 ? $livewire->getSubtotalProperty()
@@ -133,7 +146,7 @@ class PenjualanNonKonsinyasiForm
                         }),
 
                 ])
-                ->columns(3)
+                ->columns(4)
                 ->columnSpanFull(),
         ]);
     }
