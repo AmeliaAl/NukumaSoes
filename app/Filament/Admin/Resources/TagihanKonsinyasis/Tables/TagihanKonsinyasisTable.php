@@ -53,6 +53,8 @@ class TagihanKonsinyasisTable
         ->actions([
             ViewAction::make(),
             EditAction::make()
+                ->label('Pembayaran')
+                ->icon('heroicon-o-banknotes')
                 ->visible(fn ($record) => $record->status !== 'LUNAS'),
         ])
         ->defaultSort('id', 'desc');

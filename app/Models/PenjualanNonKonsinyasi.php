@@ -91,13 +91,16 @@ class PenjualanNonKonsinyasi extends Model
 
     public function hitungTotal(): void
     {
-        $total = (int) $this->detailPenjualan()->sum('subtotal');
+        $total    = (int) $this->detailPenjualan()->sum('subtotal');
+        $totalHpp = (float) $this->detailPenjualan()->sum('subtotal_hpp');
 
         $this->updateQuietly([
-            'total' => $total,
+            'total'     => $total,
+            'total_hpp' => $totalHpp,
         ]);
 
-        if ($total > 0) {
+        // Satu panggilan — jurnal penjualan + HPP dalam satu nomor jurnal
+        if ($total > 0 || $totalHpp > 0) {
             \App\Services\JurnalPerpetualService::penjualanNonKonsinyasi($this);
         }
     }

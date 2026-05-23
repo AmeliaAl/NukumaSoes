@@ -23,7 +23,9 @@ class LaporanKonsinyasisTable
 
                 TextColumn::make('penjualanKonsinyasi.no_konsinyasi')
                     ->label('No Konsinyasi')
-                    ->searchable(),
+                    ->searchable()
+                    ->url(fn ($record) => $record->penjualan_konsinyasi_id ? \App\Filament\Admin\Resources\PenjualanKonsinyasis\PenjualanKonsinyasiResource::getUrl('view', ['record' => $record->penjualan_konsinyasi_id]) : null)
+                    ->color('primary'),
 
                 TextColumn::make('tanggal_laporan')
                     ->label('Tanggal Laporan')

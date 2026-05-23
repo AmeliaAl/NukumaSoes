@@ -25,10 +25,9 @@ class BukuBesar extends Page
 
     public ?string $dari = null;
     public ?string $sampai = null;
-
-    // State sementara untuk input — belum dipakai query sampai tombol Filter diklik
     public ?string $inputDari = null;
     public ?string $inputSampai = null;
+    public ?int $filterAkunId = null; // null = semua akun
 
     public function applyFilter(): void
     {
@@ -42,6 +41,15 @@ class BukuBesar extends Page
         $this->sampai      = null;
         $this->inputDari   = null;
         $this->inputSampai = null;
+        $this->filterAkunId = null;
+    }
+
+    public function getAkunOptions(): array
+    {
+        return Coa::orderBy('kode_akun')
+            ->get()
+            ->mapWithKeys(fn ($c) => [$c->id => $c->nama_akun])
+            ->toArray();
     }
 
     public function filterForm(Schema $schema): Schema
@@ -65,6 +73,7 @@ class BukuBesar extends Page
             ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id')
             ->when($this->dari, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '>=', $this->dari))
             ->when($this->sampai, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '<=', $this->sampai))
+            ->when($this->filterAkunId, fn ($q) => $q->where('jurnal_detail.akun_id', $this->filterAkunId))
             ->distinct()
             ->pluck('jurnal_detail.akun_id');
 

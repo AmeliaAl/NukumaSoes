@@ -27,6 +27,11 @@ class TagihanKonsinyasiResource extends Resource
     protected static ?string $navigationLabel = 'Pembayaran Tagihan';
     protected static ?string $recordTitleAttribute = 'no_tagihan';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return TagihanKonsinyasiForm::configure($schema);

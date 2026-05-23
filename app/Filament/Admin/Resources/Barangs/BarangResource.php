@@ -30,6 +30,11 @@ class BarangResource extends Resource
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $pluralModelLabel = 'Daftar Barang';
     
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return BarangForm::configure($schema);
@@ -43,7 +48,7 @@ class BarangResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with('hargaBarang'); 
+            ->with('hargaBarang', 'kategori');
     }
 
     public static function getPages(): array

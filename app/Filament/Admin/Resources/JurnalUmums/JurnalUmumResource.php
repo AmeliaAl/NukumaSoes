@@ -34,7 +34,7 @@ class JurnalUmumResource extends Resource
     public static function getRelations(): array
     {
         return [
-            JurnalDetailRelationManager::class,
+            // JurnalDetailRelationManager::class, // detail jurnal ditampilkan langsung di view template
         ];
     }
 

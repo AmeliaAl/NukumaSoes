@@ -24,6 +24,11 @@ class PembayaranResource extends Resource
     protected static ?int $navigationSort = 2;
     protected static ?string $recordTitleAttribute = 'kode_pembayaran';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return PembayaranForm::configure($schema);

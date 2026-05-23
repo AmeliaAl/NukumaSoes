@@ -9,6 +9,7 @@ use App\Models\LaporanKonsinyasi;
 use App\Models\PembayaranTagihanKonsinyasi;
 use App\Models\PenjualanNonKonsinyasi;
 use App\Models\Pembayaran;
+use Illuminate\Support\Facades\Log;
 
 class JurnalPerpetualService
 {
@@ -17,76 +18,147 @@ class JurnalPerpetualService
     // ─────────────────────────────────────────────
 
     /**
-     * Jurnal saat penjualan non-konsinyasi dibuat.
-     * Tunai/Transfer : Bank (D)     / Penjualan (K)
-     * Marketplace    : Toko Online (D) / Penjualan (K)
-     * Kredit         : Piutang (D)  / Penjualan (K)
+     * Jurnal perpetual penjualan non-konsinyasi — satu nomor jurnal.
+     *
+     * Struktur jurnal_detail dalam satu jurnal_umum:
+     *
+     * Tunai (tanpa diskon):
+     *   D  Kas/Bank/Toko Online     = total
+     *   K  Penjualan                = total
+     *   D  Harga Pokok Penjualan    = total_hpp
+     *   K  Persediaan Barang Jadi   = total_hpp
+     *
+     * Kredit (dengan diskon):
+     *   D  Piutang Usaha            = total (setelah diskon)
+     *   D  Potongan Penjualan       = diskon
+     *   K  Penjualan                = total + diskon (sebelum diskon)
+     *   D  Harga Pokok Penjualan    = total_hpp
+     *   K  Persediaan Barang Jadi   = total_hpp
+     *
+     * Total debit = total kredit selalu terpenuhi.
      */
     public static function penjualanNonKonsinyasi(PenjualanNonKonsinyasi $penjualan): void
     {
-        $nominal = (int) ($penjualan->total ?? 0);
+        $penjualan->refresh();
 
-        if ($nominal <= 0) {
+        // Hitung total_bruto = SUM(qty × harga) dari detail — sebelum diskon apapun
+        $totalBruto = (int) $penjualan->detailPenjualan()
+            ->selectRaw('SUM(qty * harga) as bruto')
+            ->value('bruto');
+
+        // Hitung total diskon detail = SUM(detail.diskon)
+        $diskonDetail = (int) $penjualan->detailPenjualan()->sum('diskon');
+
+        // Diskon header/faktur
+        $diskonHeader = (int) ($penjualan->diskon ?? 0);
+
+        // Total potongan penjualan = diskon detail + diskon header
+        $totalPotongan = $diskonDetail + $diskonHeader;
+
+        // Kas/Piutang yang diterima = total_bruto - total_potongan
+        $kasPiutang = max($totalBruto - $totalPotongan, 0);
+
+        $totalHpp = (float) ($penjualan->total_hpp ?? 0);
+
+        if ($totalBruto <= 0) {
             return;
         }
 
         $referensi = 'Jurnal Penjualan Non Konsinyasi ' . $penjualan->no_invoice;
 
-        $jurnalLama = JurnalUmum::where('keterangan', $referensi)->first();
-
-        if ($jurnalLama) {
-            $jurnalLama->details()->delete();
-            $jurnalLama->delete();
+        // Hapus jurnal lama (penjualan + HPP) jika ada
+        foreach (['Jurnal Penjualan Non Konsinyasi ', 'Jurnal HPP Non Konsinyasi '] as $prefix) {
+            $lama = JurnalUmum::where('keterangan', $prefix . $penjualan->no_invoice)->first();
+            if ($lama) {
+                $lama->details()->delete();
+                $lama->delete();
+            }
         }
 
-        $akunDebit     = self::getAkunDebitPenjualan($penjualan);
-        $akunPenjualan = Coa::where('kode_akun', '401')->firstOrFail();
+        $akunDebit      = self::getAkunDebitPenjualan($penjualan);
+        $akunPenjualan  = Coa::where('kode_akun', '401')->firstOrFail();
+        $akunHpp        = Coa::where('kode_akun', '500')->firstOrFail();
+        $akunPersediaan = Coa::where('kode_akun', '143')->firstOrFail();
 
         $jurnal = JurnalUmum::create([
             'tanggal'    => $penjualan->tanggal,
             'keterangan' => $referensi,
         ]);
 
+        // ── Jurnal Penjualan ─────────────────────────────────────────────
+
+        // 1. D: Kas / Piutang / Toko Online = total_bruto - total_potongan
         JurnalDetail::create([
             'jurnal_umum_id' => $jurnal->id,
             'akun_id'        => $akunDebit->id,
-            'debit'          => $nominal,
+            'debit'          => $kasPiutang,
             'kredit'         => 0,
         ]);
 
+        // 2. D: Potongan Penjualan = diskon detail + diskon header (hanya jika ada)
+        if ($totalPotongan > 0) {
+            $akunPotongan = Coa::where('kode_akun', '403')->firstOrFail();
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunPotongan->id,
+                'debit'          => $totalPotongan,
+                'kredit'         => 0,
+            ]);
+        }
+
+        // 3. K: Penjualan = total_bruto (sebelum semua diskon)
         JurnalDetail::create([
             'jurnal_umum_id' => $jurnal->id,
             'akun_id'        => $akunPenjualan->id,
             'debit'          => 0,
-            'kredit'         => $nominal,
+            'kredit'         => $totalBruto,
         ]);
+
+        // ── Jurnal HPP (dalam jurnal yang sama) ──────────────────────────
+
+        if ($totalHpp > 0) {
+            // 4. D: Harga Pokok Penjualan
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunHpp->id,
+                'debit'          => $totalHpp,
+                'kredit'         => 0,
+            ]);
+
+            // 5. K: Persediaan Barang Jadi
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunPersediaan->id,
+                'debit'          => 0,
+                'kredit'         => $totalHpp,
+            ]);
+        }
     }
 
     /**
      * Tentukan akun debit untuk jurnal penjualan non-konsinyasi.
-     * - Marketplace  → Toko Online (113)
-     * - Kredit       → Piutang (130)
-     * - Lainnya      → Bank (112)
+     * - Marketplace → Toko Online (113)
+     * - Kredit      → Piutang Usaha (130)
+     * - Lainnya     → Bank (112)
      */
     protected static function getAkunDebitPenjualan(PenjualanNonKonsinyasi $penjualan): Coa
     {
         if ($penjualan->jenis_penjualan === 'MARKETPLACE') {
-            return Coa::where('kode_akun', '113')->firstOrFail(); // Akun Toko Online
+            return Coa::where('kode_akun', '113')->firstOrFail();
         }
 
         if (($penjualan->jenis_pembayaran ?? null) === 'kredit') {
-            return Coa::where('kode_akun', '130')->firstOrFail(); // Piutang
+            return Coa::where('kode_akun', '130')->firstOrFail();
         }
 
-        // tunai / transfer / lainnya → Bank
-        return Coa::where('kode_akun', '112')->firstOrFail(); // Bank
+        return Coa::where('kode_akun', '112')->firstOrFail();
     }
 
     /**
-     * Jurnal saat pembayaran piutang non-konsinyasi (kredit) diterima.
-     * Tunai tidak perlu jurnal pembayaran (sudah dicatat di jurnal penjualan).
-     * Kredit cicilan  : Bank (D) / Piutang (K)
-     * Kredit lunas    : Bank (D) / Penjualan (K)
+     * Jurnal saat pembayaran piutang non-konsinyasi diterima.
+     *
+     * Selalu: Bank (D) / Piutang Usaha (K)
+     * Penjualan tunai tidak perlu jurnal pembayaran.
      */
     public static function pembayaranNonKonsinyasi(Pembayaran $pembayaran): void
     {
@@ -97,7 +169,6 @@ class JurnalPerpetualService
             return;
         }
 
-        // Penjualan tunai: jurnal bank sudah dicatat di jurnal penjualan — skip.
         if ($penjualan && $penjualan->jenis_pembayaran === 'tunai') {
             return;
         }
@@ -105,50 +176,39 @@ class JurnalPerpetualService
         $referensi = 'Jurnal Pembayaran Piutang ' . $pembayaran->kode_pembayaran;
 
         $jurnalLama = JurnalUmum::where('keterangan', $referensi)->first();
-
         if ($jurnalLama) {
             $jurnalLama->details()->delete();
             $jurnalLama->delete();
         }
 
-        $akunDebit      = self::getAkunDebitPembayaran($pembayaran);
-        $totalPenjualan = (int) ($penjualan->total ?? 0);
-
-        // Bayar lunas sekaligus → Bank (D) / Penjualan (K)
-        // Bayar cicilan         → Bank (D) / Piutang (K)
-        if ($nominal >= $totalPenjualan) {
-            $akunKredit = Coa::where('kode_akun', '401')->firstOrFail(); // Penjualan
-        } else {
-            $akunKredit = Coa::where('kode_akun', '130')->firstOrFail(); // Piutang
-        }
+        $akunBank    = self::getAkunDebitPembayaran($pembayaran);
+        $akunPiutang = Coa::where('kode_akun', '130')->firstOrFail();
 
         $jurnal = JurnalUmum::create([
             'tanggal'    => $pembayaran->tanggal_bayar ?? now(),
             'keterangan' => $referensi,
         ]);
 
+        // 1. D: Bank
         JurnalDetail::create([
             'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunDebit->id,
+            'akun_id'        => $akunBank->id,
             'debit'          => $nominal,
             'kredit'         => 0,
         ]);
 
+        // 2. K: Piutang Usaha
         JurnalDetail::create([
             'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunKredit->id,
+            'akun_id'        => $akunPiutang->id,
             'debit'          => 0,
             'kredit'         => $nominal,
         ]);
     }
 
-    /**
-     * Tentukan akun debit untuk pembayaran non-konsinyasi.
-     * Semua metode pembayaran masuk ke Bank (112).
-     */
     protected static function getAkunDebitPembayaran(Pembayaran $pembayaran): Coa
     {
-        return Coa::where('kode_akun', '112')->firstOrFail(); // Bank
+        return Coa::where('kode_akun', '112')->firstOrFail();
     }
 
     // ─────────────────────────────────────────────
@@ -157,8 +217,6 @@ class JurnalPerpetualService
 
     /**
      * Jurnal saat Laporan Konsinyasi dibuat/diupdate.
-     * Piutang Konsinyasi (D) / Pendapatan Konsinyasi (K)
-     * Nominal: total_laporan
      */
     public static function laporanKonsinyasi(LaporanKonsinyasi $laporan): void
     {
@@ -166,8 +224,22 @@ class JurnalPerpetualService
     }
 
     /**
-     * Versi dengan nominal eksplisit — dipakai dari refreshTotalLaporan()
-     * agar tidak bergantung pada state model yang mungkin belum terupdate.
+     * Jurnal perpetual penjualan konsinyasi — satu nomor jurnal.
+     *
+     * Struktur jurnal_detail dalam satu jurnal_umum:
+     *
+     * Tanpa diskon:
+     *   D  Piutang Usaha            = nominal
+     *   K  Penjualan                = nominal
+     *   D  Harga Pokok Penjualan    = total_hpp
+     *   K  Persediaan Barang Jadi   = total_hpp
+     *
+     * Dengan diskon proporsional:
+     *   D  Piutang Usaha            = nominal (setelah diskon)
+     *   D  Potongan Penjualan       = diskon proporsional
+     *   K  Penjualan                = nominal + diskon proporsional
+     *   D  Harga Pokok Penjualan    = total_hpp
+     *   K  Persediaan Barang Jadi   = total_hpp
      */
     public static function laporanKonsinyasiDenganNominal(LaporanKonsinyasi $laporan, int $nominal): void
     {
@@ -175,42 +247,114 @@ class JurnalPerpetualService
             return;
         }
 
+        // Refresh + load relasi agar total_hpp dan penjualanKonsinyasi terbaca
+        $laporan->refresh();
+        $laporan->load('penjualanKonsinyasi', 'detailLaporan');
+
+        $totalHpp = (float) ($laporan->total_hpp ?? 0);
+
+        $diskonProporsional = self::hitungDiskonProporsionalKonsinyasi($laporan, $nominal);
+        $totalBruto         = $nominal + $diskonProporsional;
+        $kasPiutang         = $nominal;
+
         $referensi = 'Jurnal Laporan Konsinyasi ' . $laporan->no_laporan;
 
-        $jurnalLama = JurnalUmum::where('keterangan', $referensi)->first();
-
-        if ($jurnalLama) {
-            $jurnalLama->details()->delete();
-            $jurnalLama->delete();
+        // Hapus jurnal lama (penjualan + HPP) jika ada
+        foreach (['Jurnal Laporan Konsinyasi ', 'Jurnal HPP Konsinyasi '] as $prefix) {
+            $lama = JurnalUmum::where('keterangan', $prefix . $laporan->no_laporan)->first();
+            if ($lama) {
+                $lama->details()->delete();
+                $lama->delete();
+            }
         }
 
-        $akunPiutang    = Coa::where('kode_akun', '130')->firstOrFail(); // Piutang
-        $akunPendapatan = Coa::where('kode_akun', '401')->firstOrFail(); // Pendapatan
+        $akunPiutang    = Coa::where('kode_akun', '130')->firstOrFail();
+        $akunPenjualan  = Coa::where('kode_akun', '401')->firstOrFail();
+        $akunHpp        = Coa::where('kode_akun', '500')->firstOrFail();
+        $akunPersediaan = Coa::where('kode_akun', '143')->firstOrFail();
 
         $jurnal = JurnalUmum::create([
-            'tanggal'    => $laporan->created_at ?? now(),
+            'tanggal'    => $laporan->tanggal_laporan ?? $laporan->created_at ?? now(),
             'keterangan' => $referensi,
         ]);
 
+        // D: Piutang Usaha
         JurnalDetail::create([
             'jurnal_umum_id' => $jurnal->id,
             'akun_id'        => $akunPiutang->id,
-            'debit'          => $nominal,
+            'debit'          => $kasPiutang,
             'kredit'         => 0,
         ]);
 
+        // D: Potongan Penjualan (hanya jika ada diskon proporsional)
+        if ($diskonProporsional > 0) {
+            $akunPotongan = Coa::where('kode_akun', '403')->firstOrFail();
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunPotongan->id,
+                'debit'          => $diskonProporsional,
+                'kredit'         => 0,
+            ]);
+        }
+
+        // K: Penjualan = total_bruto
         JurnalDetail::create([
             'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunPendapatan->id,
+            'akun_id'        => $akunPenjualan->id,
             'debit'          => 0,
-            'kredit'         => $nominal,
+            'kredit'         => $totalBruto,
         ]);
+
+        // D: HPP + K: Persediaan (hanya jika ada HPP)
+        if ($totalHpp > 0) {
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunHpp->id,
+                'debit'          => $totalHpp,
+                'kredit'         => 0,
+            ]);
+
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunPersediaan->id,
+                'debit'          => 0,
+                'kredit'         => $totalHpp,
+            ]);
+        }
+
+        \Illuminate\Support\Facades\Log::info("Jurnal konsinyasi dibuat: {$referensi} | nominal={$nominal} | hpp={$totalHpp}");
+    }
+
+    /**
+     * Hitung diskon proporsional untuk satu laporan konsinyasi.
+     * diskon_laporan = diskon_total × (total_laporan / total_konsinyasi)
+     */
+    protected static function hitungDiskonProporsionalKonsinyasi(
+        LaporanKonsinyasi $laporan,
+        int $nominalLaporan
+    ): int {
+        $penjualan = $laporan->penjualanKonsinyasi;
+
+        if (! $penjualan) {
+            return 0;
+        }
+
+        $diskonHeader    = (int) ($penjualan->diskon ?? 0);
+        $diskonDetail    = (int) $penjualan->detailKonsinyasi()->sum('diskon');
+        $diskonTotal     = $diskonHeader + $diskonDetail;
+
+        $totalKonsinyasi = (int) ($penjualan->total_konsinyasi ?? 0);
+
+        if ($diskonTotal <= 0 || $totalKonsinyasi <= 0) {
+            return 0;
+        }
+
+        return (int) round($diskonTotal * ($nominalLaporan / $totalKonsinyasi));
     }
 
     /**
      * Jurnal saat pembayaran tagihan konsinyasi diterima.
-     * Bank (D) / Piutang Konsinyasi (K)
-     * Berlaku untuk cicilan maupun lunas — tidak dibedakan.
+     * Bank (D) / Piutang Usaha (K)
      */
     public static function pembayaranTagihanKonsinyasi(PembayaranTagihanKonsinyasi $pembayaran): void
     {
@@ -224,14 +368,13 @@ class JurnalPerpetualService
         $referensi = 'Jurnal Pembayaran Konsinyasi ' . $noTagihan . '-' . $pembayaran->id;
 
         $jurnalLama = JurnalUmum::where('keterangan', $referensi)->first();
-
         if ($jurnalLama) {
             $jurnalLama->details()->delete();
             $jurnalLama->delete();
         }
 
         $akunBank    = self::getAkunBankPembayaranKonsinyasi($pembayaran);
-        $akunPiutang = Coa::where('kode_akun', '130')->firstOrFail(); // Piutang
+        $akunPiutang = Coa::where('kode_akun', '130')->firstOrFail();
 
         $jurnal = JurnalUmum::create([
             'tanggal'    => $pembayaran->tanggal_bayar ?? now(),
@@ -253,12 +396,8 @@ class JurnalPerpetualService
         ]);
     }
 
-    /**
-     * Tentukan akun debit untuk pembayaran tagihan konsinyasi.
-     * Semua metode pembayaran masuk ke Bank (112).
-     */
     protected static function getAkunBankPembayaranKonsinyasi(PembayaranTagihanKonsinyasi $pembayaran): Coa
     {
-        return Coa::where('kode_akun', '112')->firstOrFail(); // Bank
+        return Coa::where('kode_akun', '112')->firstOrFail();
     }
 }

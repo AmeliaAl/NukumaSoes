@@ -36,6 +36,7 @@ class PenjualanKonsinyasiForm
                                 ->label('Tanggal')
                                 ->required()
                                 ->live()
+                                ->maxDate(now())
                                 ->afterStateUpdated(function (Get $get, Set $set) {
                                     self::hitungJatuhTempo($get, $set);
                                 }),
@@ -76,7 +77,50 @@ class PenjualanKonsinyasiForm
                                         ? "{$mitra->namaMitra} — " . ucfirst($mitra->jenisMitra)
                                         : null;
                                 })
-                                ->required(),
+                                ->required()
+                                ->live()
+                                ->rule(function () {
+                                    return function (string $attribute, $value, \Closure $fail) {
+                                        $mitra = Mitra::where('kode_mitra', $value)->first();
+                                        if ($mitra && $mitra->sisa_limit_piutang <= 0) {
+                                            $fail("Limit piutang mitra telah melebihi batas. Sisa limit: Rp " . number_format($mitra->sisa_limit_piutang, 0, ',', '.'));
+                                        }
+                                    };
+                                }),
+
+                            Placeholder::make('info_limit_piutang')
+                                ->label('Informasi Limit Piutang')
+                                ->content(function (Get $get) {
+                                    $kode_mitra = $get('kode_mitra');
+                                    if (! $kode_mitra) {
+                                        return 'Pilih mitra terlebih dahulu';
+                                    }
+
+                                    $mitra = Mitra::where('kode_mitra', $kode_mitra)->first();
+                                    if (! $mitra) {
+                                        return '-';
+                                    }
+
+                                    $limit = $mitra->limit_piutang;
+                                    $aktif = $mitra->piutang_aktif_konsinyasi;
+                                    $sisa = $mitra->sisa_limit_piutang;
+
+                                    $color = 'green';
+                                    if ($sisa <= 0) {
+                                        $color = 'red';
+                                    } elseif ($sisa <= ($limit * 0.2)) {
+                                        $color = 'orange';
+                                    }
+
+                                    return new \Illuminate\Support\HtmlString("
+                                        <div style='display: flex; flex-direction: column; gap: 4px;'>
+                                            <div>Limit Piutang: <strong>Rp " . number_format($limit, 0, ',', '.') . "</strong></div>
+                                            <div>Total Utang Aktif: <strong>Rp " . number_format($aktif, 0, ',', '.') . "</strong></div>
+                                            <div style='color: {$color}; font-weight: bold;'>Sisa Limit: Rp " . number_format($sisa, 0, ',', '.') . "</div>
+                                        </div>
+                                    ");
+                                })
+                                ->columnSpanFull(),
 
                             TextInput::make('term')
                                 ->label('Term (Hari)')
@@ -92,6 +136,9 @@ class PenjualanKonsinyasiForm
                                 ->label('Jatuh Tempo')
                                 ->disabled()
                                 ->dehydrated()
+                                ->validationMessages([
+                                    'required' => 'Kolom Jatuh Tempo wajib diisi.',
+                                ])
                                 ->required(),
 
                             DatePicker::make('tanggal_kirim')
@@ -120,8 +167,14 @@ class PenjualanKonsinyasiForm
                                 return 'Rp ' . number_format($subtotal, 0, ',', '.');
                             }),
                             TextInput::make('diskon')
-                                ->label('Diskon')
+                                ->label('Diskon Faktur')
                                 ->numeric()
+                                ->minValue(0)
+                                ->rule('regex:/^[0-9]+$/')
+                                ->extraInputAttributes([
+                                    'oninput' => "this.value = this.value.replace(/[^0-9]/g, '')",
+                                ])
+                                ->helperText('Diskon Barang+ Diskon Faktur.')
                                 ->default(0)
                                 ->live(debounce: 500),
 

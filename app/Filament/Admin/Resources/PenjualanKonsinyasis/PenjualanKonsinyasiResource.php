@@ -29,6 +29,11 @@ class PenjualanKonsinyasiResource extends Resource
     protected static ?string $recordTitleAttribute = 'no_konsinyasi';
     protected static ?string $pluralModelLabel = 'Kelola Penjualan Konsinyasi';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return PenjualanKonsinyasiForm::configure($schema);

@@ -1,16 +1,25 @@
 <x-filament-panels::page>
 
     {{-- Filter --}}
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:flex-end;">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:16px;align-items:flex-end;">
         <div>
-            <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Tanggal Dari</label>
+            <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Dari Tanggal </label>
             <input type="date" wire:model="inputDari"
                 style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;color:#111827;background:#fff;box-sizing:border-box;" />
         </div>
         <div>
-            <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Tanggal Sampai</label>
+            <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Sampai Tanggal </label>
             <input type="date" wire:model="inputSampai"
                 style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;color:#111827;background:#fff;box-sizing:border-box;" />
+        </div>
+        <div>
+            <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Tampilkan</label>
+            <select wire:model.live="filterAkun"
+                style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;color:#111827;background:#fff;box-sizing:border-box;cursor:pointer;">
+                <option value="semua">Semua (Pelanggan & Mitra)</option>
+                <option value="pelanggan">Piutang Pelanggan</option>
+                <option value="mitra">Piutang Mitra</option>
+            </select>
         </div>
         <div style="display:flex;gap:8px;">
             <button wire:click="applyFilter"
@@ -37,7 +46,7 @@
     @else
 
         {{-- ── PELANGGAN ── --}}
-        @if ($pelangganData->isNotEmpty())
+        @if ($pelangganData->isNotEmpty() && in_array($this->filterAkun, ['semua', 'pelanggan']))
             <div style="margin-bottom:16px;">
                 <h2 style="font-size:15px;font-weight:700;color:#374151;padding-bottom:6px;border-bottom:2px solid #f59e0b;display:inline-block;">
                     Piutang Pelanggan (Non-Konsinyasi)
@@ -104,7 +113,7 @@
         @endif
 
         {{-- ── MITRA ── --}}
-        @if ($mitraData->isNotEmpty())
+        @if ($mitraData->isNotEmpty() && in_array($this->filterAkun, ['semua', 'mitra']))
             <div style="margin-bottom:16px;margin-top:32px;">
                 <h2 style="font-size:15px;font-weight:700;color:#374151;padding-bottom:6px;border-bottom:2px solid #f59e0b;display:inline-block;">
                     Piutang Mitra (Konsinyasi)

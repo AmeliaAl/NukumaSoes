@@ -38,4 +38,21 @@ class Mitra extends Model
 
         return $noakhir;
     }
+
+    public function getPiutangAktifKonsinyasiAttribute(): float
+    {
+        return (float) \App\Models\TagihanKonsinyasi::where('status', 'BELUM LUNAS')
+            ->whereHas('laporanKonsinyasi.penjualanKonsinyasi', function ($query) {
+                $query->where('kode_mitra', $this->kode_mitra);
+            })
+            ->sum('sisa_tagihan');
+    }
+
+    public function getSisaLimitPiutangAttribute(): float
+    {
+        $limit = (float) ($this->limit_piutang ?? 0);
+        $piutangAktif = $this->piutang_aktif_konsinyasi;
+        
+        return max($limit - $piutangAktif, 0);
+    }
 }

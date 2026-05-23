@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class Diagram - Nukuma Soes</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      padding: 24px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .controls label { font-size: 14px; color: #555; align-self: center; }
+    .controls input[type=range] { width: 160px; }
+    .controls span { font-size: 14px; font-weight: bold; min-width: 40px; }
+    .diagram-wrapper {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 32px;
+      overflow: auto;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    #diagram { display: flex; justify-content: center; }
+  </style>
+</head>
+<body>
+  <h1>Class Diagram — Sistem Penjualan Nukuma Soes</h1>
+
+  <div class="controls">
+    <label>Ukuran Font:</label>
+    <input type="range" id="fontSlider" min="8" max="24" value="14" step="1" />
+    <span id="fontVal">14px</span>
+    <label style="margin-left:16px">Zoom:</label>
+    <input type="range" id="zoomSlider" min="30" max="200" value="100" step="5" />
+    <span id="zoomVal">100%</span>
+  </div>
+
+  <div class="diagram-wrapper">
+    <div id="diagram">
+      <pre class="mermaid">
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryBorderColor": "#333", "lineColor": "#333"}}}%%
+classDiagram
+  direction LR
+
+  class Kategori {
+    +String nama_kategori
+    +Float berat
+    +String jenis_kemasan
+    +Int masa_simpan
+    +String unit_waktu
+  }
+  class Barang {
+    +String kode_barang
+    +String nama_barang
+    +String rasa
+    +String satuan
+    +Int stok_awal
+    +Int stok
+    +getKodeBarang() String
+    +getNamaLengkap() String
+  }
+  class HargaBarang {
+    +Int barang_id
+    +String jenis_mitra
+    +Int harga
+  }
+  Kategori "1" --> "0..*" Barang : memiliki
+  Barang "1" --> "0..*" HargaBarang : tarif
+
+  class Pelanggan {
+    +String kode_pelanggan
+    +String namaPelanggan
+    +String alamat
+    +String telepon
+    +getKodePelanggan() String
+  }
+  class PenjualanNonKonsinyasi {
+    +String no_invoice
+    +Date tanggal
+    +String jenis_pembayaran
+    +String jenis_penjualan
+    +Date jatuh_tempo
+    +Int total
+    +Int total_terbayar
+    +Int diskon
+    +String status
+    +getNoInvoice() String
+    +hitungTotal() void
+    +refreshStatus() void
+    +isLocked() bool
+  }
+  class DetailPenjualanNonKonsinyasi {
+    +Int penjualan_id
+    +Int barang_id
+    +Int qty
+    +Int harga
+    +Int diskon
+    +Int subtotal
+  }
+  class Pembayaran {
+    +String kode_pembayaran
+    +Date tanggal_bayar
+    +Int jumlah_bayar
+    +String metode_bayar
+    +String bukti_bayar
+    +getKodePembayaran() String
+  }
+  Pelanggan "1" --> "0..*" PenjualanNonKonsinyasi : melakukan
+  PenjualanNonKonsinyasi "1" *-- "1..*" DetailPenjualanNonKonsinyasi : berisi
+  DetailPenjualanNonKonsinyasi "0..*" --> "1" Barang : merujuk
+  PenjualanNonKonsinyasi "1" --> "0..*" Pembayaran : dibayar via
+  Pembayaran "0..*" --> "1" Pelanggan : dari
+
+  class Mitra {
+    +String kode_mitra
+    +String nama_mitra
+    +String jenis_mitra
+    +String alamat
+    +getKodeMitra() String
+  }
+  class PenjualanKonsinyasi {
+    +String no_konsinyasi
+    +String kode_mitra
+    +Date tanggal_kirim
+    +Int total_konsinyasi
+    +Int total_laporan
+    +Int total_terbayar
+    +String status
+    +generateNo() String
+    +refreshStatus() void
+    +refreshTotalLaporan() void
+  }
+  class DetailKonsinyasi {
+    +Int penjualan_konsinyasi_id
+    +Int barang_id
+    +Int qty_titip
+    +Int harga_konsinyasi
+    +Int diskon
+    +Int subtotal
+  }
+  class LaporanKonsinyasi {
+    +String no_laporan
+    +Int penjualan_konsinyasi_id
+    +Int total_laporan
+    +Date tanggal
+    +generateNo() String
+    +refreshTotalLaporan() void
+  }
+  class DetailLaporanKonsinyasi {
+    +String no_laporan
+    +Int barang_id
+    +Int qty_terjual
+    +Int harga_konsinyasi
+    +Int subtotal
+  }
+  class TagihanKonsinyasi {
+    +String no_tagihan
+    +Date tanggal_tagihan
+    +Date jatuh_tempo
+    +Int total_tagihan
+    +Int total_terbayar
+    +Int sisa_tagihan
+    +String status
+    +generateNo() String
+    +refreshStatus() void
+  }
+  class PembayaranTagihanKonsinyasi {
+    +Int tagihan_konsinyasi_id
+    +Date tanggal_bayar
+    +Int jumlah_bayar
+    +String metode_bayar
+    +String bukti_bayar
+  }
+  Mitra "1" --> "0..*" PenjualanKonsinyasi : melakukan
+  PenjualanKonsinyasi "1" *-- "1..*" DetailKonsinyasi : berisi
+  DetailKonsinyasi "0..*" --> "1" Barang : merujuk
+  PenjualanKonsinyasi "1" --> "0..*" LaporanKonsinyasi : dilaporkan via
+  LaporanKonsinyasi "1" *-- "1..*" DetailLaporanKonsinyasi : berisi
+  DetailLaporanKonsinyasi "0..*" --> "1" Barang : merujuk
+  LaporanKonsinyasi "1" --> "1" TagihanKonsinyasi : menghasilkan
+  TagihanKonsinyasi "1" --> "0..*" PembayaranTagihanKonsinyasi : dibayar via
+
+  class SalesOrder {
+    +String no_so
+    +Date tanggal
+    +String referensi
+    +String jenis
+    +String status
+    +generateNoSO() String
+    +createFromNonKonsinyasi() SalesOrder
+    +createFromKonsinyasi() SalesOrder
+  }
+  class DetailSalesOrder {
+    +Int sales_order_id
+    +Int barang_id
+    +Int qty
+    +Int harga
+    +Int subtotal
+  }
+  PenjualanNonKonsinyasi "1" --> "0..1" SalesOrder : menghasilkan
+  PenjualanKonsinyasi "1" --> "0..1" SalesOrder : menghasilkan
+  SalesOrder "1" *-- "1..*" DetailSalesOrder : berisi
+  DetailSalesOrder "0..*" --> "1" Barang : merujuk
+
+  class ReturPenjualan {
+    +String no_retur
+    +Date tanggal
+    +String alasan
+    +String keterangan
+    +getNoRetur() String
+  }
+  class DetailReturPenjualan {
+    +Int retur_id
+    +Int barang_id
+    +Int qty
+    +String kondisi
+  }
+  PenjualanNonKonsinyasi "1" --> "0..*" ReturPenjualan : diretur via
+  PenjualanKonsinyasi "1" --> "0..*" ReturPenjualan : diretur via
+  ReturPenjualan "1" *-- "1..*" DetailReturPenjualan : berisi
+  DetailReturPenjualan "0..*" --> "1" Barang : merujuk
+
+  class Coa {
+    +String kode_akun
+    +String nama_akun
+    +String tipe
+    +Int saldo_normal
+  }
+  class JurnalUmum {
+    +String no_jurnal
+    +Date tanggal
+    +String keterangan
+    +getTotal() Int
+  }
+  class JurnalDetail {
+    +Int jurnal_umum_id
+    +Int akun_id
+    +Int debit
+    +Int kredit
+  }
+  JurnalUmum "1" *-- "2..*" JurnalDetail : berisi
+  JurnalDetail "0..*" --> "1" Coa : menggunakan akun
+      </pre>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'base' });
+
+    // Setelah Mermaid selesai render, inject font-size ke SVG
+    mermaid.init(undefined, document.querySelectorAll('.mermaid')).then(() => {
+      applyFont(14);
+      applyZoom(100);
+    });
+
+    function applyFont(size) {
+      const svg = document.querySelector('#diagram svg');
+      if (!svg) return;
+      // Terapkan ke semua text element dalam SVG
+      svg.querySelectorAll('text, .label, .classTitle, .member').forEach(el => {
+        el.style.fontSize = size + 'px';
+      });
+      // Inject style tag ke dalam SVG
+      let styleEl = svg.querySelector('#custom-font-style');
+      if (!styleEl) {
+        styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        styleEl.id = 'custom-font-style';
+        svg.insertBefore(styleEl, svg.firstChild);
+      }
+      styleEl.textContent = `
+        text { font-size: ${size}px !important; font-family: 'Segoe UI', Arial, sans-serif !important; }
+        .classTitle { font-size: ${size + 1}px !important; font-weight: bold !important; }
+        .label { font-size: ${size}px !important; }
+      `;
+    }
+
+    function applyZoom(pct) {
+      const svg = document.querySelector('#diagram svg');
+      if (!svg) return;
+      svg.style.transform = `scale(${pct / 100})`;
+      svg.style.transformOrigin = 'top left';
+    }
+
+    const fontSlider = document.getElementById('fontSlider');
+    const fontVal    = document.getElementById('fontVal');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomVal    = document.getElementById('zoomVal');
+
+    fontSlider.addEventListener('input', () => {
+      const v = parseInt(fontSlider.value);
+      fontVal.textContent = v + 'px';
+      applyFont(v);
+    });
+
+    zoomSlider.addEventListener('input', () => {
+      const v = parseInt(zoomSlider.value);
+      zoomVal.textContent = v + '%';
+      applyZoom(v);
+    });
+  </script>
+</body>
+</html>

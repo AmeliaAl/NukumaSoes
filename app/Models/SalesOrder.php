@@ -39,12 +39,12 @@ class SalesOrder extends Model
 
     public function penjualanNonKonsinyasi()
     {
-        return $this->belongsTo(PenjualanNonKonsinyasi::class);
+        return $this->belongsTo(PenjualanNonKonsinyasi::class)->with('pelanggan');
     }
 
     public function penjualanKonsinyasi()
     {
-        return $this->belongsTo(PenjualanKonsinyasi::class);
+        return $this->belongsTo(PenjualanKonsinyasi::class)->with('mitra');
     }
 
     public static function generateNoSO(): string
@@ -97,28 +97,42 @@ class SalesOrder extends Model
 
     public static function createFromPenjualanKonsinyasi(PenjualanKonsinyasi $penjualan): self
     {
-        // Cek apakah sudah ada SO untuk penjualan ini
-        if (self::where('referensi', $penjualan->no_konsinyasi)->exists()) {
-            return self::where('referensi', $penjualan->no_konsinyasi)->first();
+        // Jika SO sudah ada, sync ulang detail-nya
+        $existing = self::where('referensi', $penjualan->no_konsinyasi)->first();
+
+        if ($existing) {
+            // Hapus detail lama lalu copy ulang dari detail konsinyasi terbaru
+            $existing->detailSalesOrder()->delete();
+
+            foreach ($penjualan->detailKonsinyasi as $detail) {
+                DetailSalesOrder::create([
+                    'sales_order_id' => $existing->id,
+                    'barang_id'      => $detail->barang_id,
+                    'qty'            => $detail->qty_titip,
+                    'harga'          => $detail->harga_konsinyasi ?? 0,
+                    'subtotal'       => ($detail->qty_titip * ($detail->harga_konsinyasi ?? 0)),
+                ]);
+            }
+
+            return $existing;
         }
 
         $salesOrder = self::create([
-            'no_so' => self::generateNoSO(),
-            'tanggal' => now(),
-            'referensi' => $penjualan->no_konsinyasi,
-            'jenis' => 'Konsinyasi',
-            'status' => 'Draft',
+            'no_so'                   => self::generateNoSO(),
+            'tanggal'                 => now(),
+            'referensi'               => $penjualan->no_konsinyasi,
+            'jenis'                   => 'Konsinyasi',
+            'status'                  => 'Draft',
             'penjualan_konsinyasi_id' => $penjualan->id,
         ]);
 
-        // Copy detail konsinyasi ke detail sales order
         foreach ($penjualan->detailKonsinyasi as $detail) {
             DetailSalesOrder::create([
                 'sales_order_id' => $salesOrder->id,
-                'barang_id' => $detail->barang_id,
-                'qty' => $detail->qty,
-                'harga' => $detail->harga_konsinyasi ?? 0,
-                'subtotal' => ($detail->qty * ($detail->harga_konsinyasi ?? 0)),
+                'barang_id'      => $detail->barang_id,
+                'qty'            => $detail->qty_titip,
+                'harga'          => $detail->harga_konsinyasi ?? 0,
+                'subtotal'       => ($detail->qty_titip * ($detail->harga_konsinyasi ?? 0)),
             ]);
         }
 

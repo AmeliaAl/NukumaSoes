@@ -7,7 +7,9 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
         "doctrine/dbal": "*",
+        "filament/filament": "^4.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },
@@ -81,6 +83,14 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "abandoned": "ignore",
+            "block-insecure": false,
+            "ignore": {
+                "PKSA-1ds2-yqqr-64g1": "*",
+                "PKSA-jyd3-2srm-pfqd": "*"
+            }
         }
     },
     "minimum-stability": "stable",

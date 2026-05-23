@@ -13,23 +13,36 @@ class JurnalUmumsTable
     {
         return $table
             ->columns([
-                \Filament\Tables\Columns\TextColumn::make('no_jurnal')
-                    ->label('Nomor')
-                    ->searchable()
-                    ->sortable(),
-
-                \Filament\Tables\Columns\TextColumn::make('keterangan')
-                    ->label('Referensi')
-                    ->searchable(),
-
-                \Filament\Tables\Columns\TextColumn::make('tanggal')
+                \Filament\Tables\Columns\TextColumn::make('jurnal.tanggal')
                     ->label('Tanggal')
                     ->date()
                     ->sortable(),
 
-                \Filament\Tables\Columns\TextColumn::make('total')
-                    ->label('Jumlah')
-                    ->money('IDR', locale: 'id_ID'),
+                \Filament\Tables\Columns\TextColumn::make('akun.nama_akun')
+                    ->label('Nama Akun/perkiraan')
+                    ->formatStateUsing(function ($record) {
+                        return $record->kredit > 0 
+                            ? '&nbsp;&nbsp;&nbsp;&nbsp;' . $record->akun->nama_akun 
+                            : $record->akun->nama_akun;
+                    })
+                    ->html()
+                    ->searchable()
+                    ->sortable(),
+
+                \Filament\Tables\Columns\TextColumn::make('akun.kode_akun')
+                    ->label('Ref')
+                    ->searchable()
+                    ->sortable(),
+
+                \Filament\Tables\Columns\TextColumn::make('debit')
+                    ->label('Debit')
+                    ->money('IDR', locale: 'id_ID')
+                    ->summarize(\Filament\Tables\Columns\Summarizers\Sum::make()->money('IDR', locale: 'id_ID')),
+
+                \Filament\Tables\Columns\TextColumn::make('kredit')
+                    ->label('Kredit')
+                    ->money('IDR', locale: 'id_ID')
+                    ->summarize(\Filament\Tables\Columns\Summarizers\Sum::make()->money('IDR', locale: 'id_ID')),
             ])
             ->filters([
                 Filter::make('tanggal')
@@ -46,11 +59,11 @@ class JurnalUmumsTable
                         return $query
                             ->when(
                                 $data['dari'],
-                                fn (Builder $q) => $q->whereDate('tanggal', '>=', $data['dari'])
+                                fn (Builder $q) => $q->whereHas('jurnal', fn($q2) => $q2->whereDate('tanggal', '>=', $data['dari']))
                             )
                             ->when(
                                 $data['sampai'],
-                                fn (Builder $q) => $q->whereDate('tanggal', '<=', $data['sampai'])
+                                fn (Builder $q) => $q->whereHas('jurnal', fn($q2) => $q2->whereDate('tanggal', '<=', $data['sampai']))
                             );
                     })
                     ->indicateUsing(function (array $data): array {
@@ -67,7 +80,6 @@ class JurnalUmumsTable
                         return $indicators;
                     }),
             ])
-            ->recordAction('view')
-            ->defaultSort('tanggal', 'desc');
+            ->defaultSort(fn (Builder $query) => $query->orderBy('jurnal_umum_id', 'desc')->orderBy('id', 'asc'));
     }
 }

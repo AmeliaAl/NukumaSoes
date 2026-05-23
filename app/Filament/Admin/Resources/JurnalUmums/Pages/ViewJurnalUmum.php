@@ -3,7 +3,6 @@
 namespace App\Filament\Admin\Resources\JurnalUmums\Pages;
 
 use App\Filament\Admin\Resources\JurnalUmums\JurnalUmumResource;
-use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewJurnalUmum extends ViewRecord
@@ -12,8 +11,6 @@ class ViewJurnalUmum extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            EditAction::make(),
-        ];
+        return [];
     }
 }

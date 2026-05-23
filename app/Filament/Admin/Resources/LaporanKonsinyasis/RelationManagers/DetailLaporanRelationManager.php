@@ -211,8 +211,15 @@ class DetailLaporanRelationManager extends RelationManager
 
                 $subtotalItem = (int) $data['qty_terjual'] * (int) $data['harga_konsinyasi'];
 
-                $data['no_laporan'] = $laporan->no_laporan;
-                $data['subtotal'] = $subtotalItem;
+                // Ambil HPP dari detail_konsinyasi yang sudah menyimpan harga_modal_per_pack
+                // hasil FEFO saat barang dititipkan ke mitra
+                $hargaModalPerPack = (float) ($detailTitipan->harga_modal_per_pack ?? 0);
+                $subtotalHpp       = round($hargaModalPerPack * $qtyBaru, 2);
+
+                $data['no_laporan']          = $laporan->no_laporan;
+                $data['subtotal']            = $subtotalItem;
+                $data['harga_modal_per_pack'] = $hargaModalPerPack;
+                $data['subtotal_hpp']         = $subtotalHpp;
 
                 $this->getRelationship()->create($data);
 

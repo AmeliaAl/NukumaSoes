@@ -43,6 +43,15 @@ class DetailKonsinyasi extends Model
             if ($detail->penjualanKonsinyasi) {
                 $detail->penjualanKonsinyasi->hitungTotalKonsinyasi();
                 $detail->penjualanKonsinyasi->refresh();
+
+                // Sync SO setiap kali detail berubah
+                try {
+                    \App\Models\SalesOrder::createFromPenjualanKonsinyasi(
+                        $detail->penjualanKonsinyasi
+                    );
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("SO sync failed: {$e->getMessage()}");
+                }
             }
         });
 
@@ -50,6 +59,15 @@ class DetailKonsinyasi extends Model
             if ($detail->penjualanKonsinyasi) {
                 $detail->penjualanKonsinyasi->hitungTotalKonsinyasi();
                 $detail->penjualanKonsinyasi->refresh();
+
+                // Sync SO setelah detail dihapus
+                try {
+                    \App\Models\SalesOrder::createFromPenjualanKonsinyasi(
+                        $detail->penjualanKonsinyasi
+                    );
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("SO sync failed: {$e->getMessage()}");
+                }
             }
         });
     }

@@ -55,10 +55,12 @@ class LaporanKonsinyasi extends Model
             return;
         }
 
-        $total = (int) $this->detailLaporan()->sum('subtotal');
+        $total    = (int) $this->detailLaporan()->sum('subtotal');
+        $totalHpp = (float) $this->detailLaporan()->sum('subtotal_hpp');
 
         $this->updateQuietly([
             'total_laporan' => $total,
+            'total_hpp'     => $totalHpp,
         ]);
 
         if ($this->tagihan) {
@@ -72,7 +74,7 @@ class LaporanKonsinyasi extends Model
             ]);
         }
 
-        // Pass nominal langsung agar tidak bergantung pada state model
+        // Pass nominal dan total_hpp langsung agar tidak bergantung pada state model
         if ($total > 0) {
             \App\Services\JurnalPerpetualService::laporanKonsinyasiDenganNominal($this, $total);
         }
@@ -85,8 +87,8 @@ class LaporanKonsinyasi extends Model
         static::created(function ($laporan) {
             $laporan->tagihan()->create([
                 'no_tagihan'      => \App\Models\TagihanKonsinyasi::generateNo(),
-                'tanggal_tagihan' => now(),
-                'jatuh_tempo'     => now()->addDays(30),
+                'tanggal_tagihan' => $laporan->tanggal_laporan ?? now(),
+                'jatuh_tempo'     => null,
                 'total_tagihan'   => 0,
                 'total_terbayar'  => 0,
                 'sisa_tagihan'    => 0,
@@ -104,11 +106,20 @@ class LaporanKonsinyasi extends Model
             $laporan->tagihan()?->delete();
             $laporan->penjualanKonsinyasi?->refreshStatus();
 
-            $referensi = 'Jurnal Laporan Konsinyasi ' . $laporan->no_laporan;
-            $jurnal    = \App\Models\JurnalUmum::where('keterangan', $referensi)->first();
-            if ($jurnal) {
-                $jurnal->details()->delete();
-                $jurnal->delete();
+            // Hapus jurnal penjualan konsinyasi
+            $referensiPenjualan = 'Jurnal Laporan Konsinyasi ' . $laporan->no_laporan;
+            $jurnalPenjualan    = \App\Models\JurnalUmum::where('keterangan', $referensiPenjualan)->first();
+            if ($jurnalPenjualan) {
+                $jurnalPenjualan->details()->delete();
+                $jurnalPenjualan->delete();
+            }
+
+            // Hapus jurnal HPP konsinyasi
+            $referensiHpp = 'Jurnal HPP Konsinyasi ' . $laporan->no_laporan;
+            $jurnalHpp    = \App\Models\JurnalUmum::where('keterangan', $referensiHpp)->first();
+            if ($jurnalHpp) {
+                $jurnalHpp->details()->delete();
+                $jurnalHpp->delete();
             }
         });
     }

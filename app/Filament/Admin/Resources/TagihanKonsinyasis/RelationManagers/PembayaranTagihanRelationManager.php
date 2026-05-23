@@ -15,7 +15,6 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Validation\ValidationException;
 use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Grid;
 
@@ -29,6 +28,7 @@ class PembayaranTagihanRelationManager extends RelationManager
             DatePicker::make('tanggal_bayar')
                 ->label('Tanggal Bayar')
                 ->default(now())
+                ->minDate(fn () => $this->ownerRecord->tanggal_tagihan ?? now())
                 ->required(),
 
             TextInput::make('jumlah_bayar')
@@ -36,6 +36,10 @@ class PembayaranTagihanRelationManager extends RelationManager
                 ->numeric()
                 ->required()
                 ->minValue(1)
+                ->maxValue(function () {
+                    $tagihan = $this->ownerRecord;
+                    return max((int) $tagihan->total_tagihan - (int) $tagihan->total_terbayar, 0);
+                })
                 ->live(debounce: 500)
                 ->helperText(function (Get $get) {
                     $tagihan = $this->ownerRecord;
@@ -51,20 +55,6 @@ class PembayaranTagihanRelationManager extends RelationManager
                     }
 
                     return 'Maksimal pembayaran: Rp ' . number_format($sisa, 0, ',', '.');
-                })
-                ->rule(function () {
-                    return function ($attribute, $value, $fail) {
-                        $tagihan = $this->ownerRecord;
-                        $sisa = (int) $tagihan->total_tagihan - (int) $tagihan->total_terbayar;
-
-                        if ((int) $value <= 0) {
-                            $fail('Jumlah bayar harus lebih dari 0.');
-                        }
-
-                        if ((int) $value > $sisa) {
-                            $fail('Jumlah bayar melebihi sisa tagihan.');
-                        }
-                    };
                 }),
 
             Select::make('metode_bayar')
@@ -106,6 +96,7 @@ class PembayaranTagihanRelationManager extends RelationManager
                 Action::make('tambah')
                     ->label('Tambah Pembayaran')
                     ->icon('heroicon-o-plus')
+                    ->visible(fn () => ! $this->isReadOnly())
                     ->disabled(fn () => $this->ownerRecord->status === 'LUNAS')
                     ->tooltip(fn () => $this->ownerRecord->status === 'LUNAS' ? 'Tagihan sudah lunas' : null)
                     ->form(fn (Schema $schema) => $this->form($schema))
@@ -115,15 +106,11 @@ class PembayaranTagihanRelationManager extends RelationManager
                         $sisa = (int) $tagihan->total_tagihan - (int) $tagihan->total_terbayar;
 
                         if ((int) $data['jumlah_bayar'] <= 0) {
-                            throw ValidationException::withMessages([
-                                'jumlah_bayar' => 'Jumlah bayar harus lebih dari 0.',
-                            ]);
+                            return;
                         }
 
                         if ((int) $data['jumlah_bayar'] > $sisa) {
-                            throw ValidationException::withMessages([
-                                'jumlah_bayar' => 'Jumlah bayar melebihi sisa tagihan.',
-                            ]);
+                            return;
                         }
 
                         $this->getRelationship()->create($data);

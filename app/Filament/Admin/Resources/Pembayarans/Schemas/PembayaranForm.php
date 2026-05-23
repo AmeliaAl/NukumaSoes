@@ -23,12 +23,6 @@ class PembayaranForm
                 ->dehydrated()
                 ->required(),
 
-            DatePicker::make('tanggal_bayar')
-                ->label('Tanggal Bayar')
-                ->default(now())
-                ->required(),
-
-            // No Invoice — hanya tampilkan yang belum lunas
             Select::make('penjualan_id')
                 ->label('No Invoice')
                 ->searchable()
@@ -56,11 +50,28 @@ class PembayaranForm
                         $set('pelanggan_id', $penjualan->pelanggan_id);
                         $set('total_transaksi', $penjualan->total);
                         $set('jumlah_bayar', $sisa);
+                        // Set tanggal bayar default ke tanggal penjualan jika belum diisi
+                        $set('tanggal_bayar', now()->toDateString());
                     } else {
                         $set('pelanggan_id', null);
                         $set('total_transaksi', 0);
                         $set('jumlah_bayar', 0);
                     }
+                }),
+
+            // Tanggal bayar — minimal = tanggal penjualan yang dipilih
+            DatePicker::make('tanggal_bayar')
+                ->label('Tanggal Bayar')
+                ->default(now())
+                ->required()
+                ->minDate(function ($get) {
+                    $penjualan = PenjualanNonKonsinyasi::find($get('penjualan_id'));
+                    return $penjualan?->tanggal;
+                })
+                ->helperText(function ($get) {
+                    $penjualan = PenjualanNonKonsinyasi::find($get('penjualan_id'));
+                    if (! $penjualan?->tanggal) return null;
+                    return 'Minimal: ' . \Carbon\Carbon::parse($penjualan->tanggal)->translatedFormat('d M Y');
                 }),
 
             // Pelanggan (auto dari invoice)
@@ -71,7 +82,7 @@ class PembayaranForm
                 ->dehydrated()
                 ->required(),
 
-            // Total transaksi (read only, ganti sisa piutang)
+            // Total transaksi (read only)
             TextInput::make('total_transaksi')
                 ->label('Total')
                 ->numeric()
@@ -79,7 +90,7 @@ class PembayaranForm
                 ->dehydrated(false)
                 ->prefix('Rp'),
 
-            // Jumlah bayar — otomatis terisi = total, tapi bisa diedit
+            // Jumlah bayar — otomatis terisi = sisa, tapi bisa diedit
             TextInput::make('jumlah_bayar')
                 ->label('Jumlah Bayar')
                 ->numeric()

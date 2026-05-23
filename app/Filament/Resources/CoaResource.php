@@ -31,7 +31,12 @@ class CoaResource extends Resource
 
 
 
-public static function form(Schema $schema): Schema
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    public static function form(Schema $schema): Schema
     {
        return CoaForm::configure($schema);
     }

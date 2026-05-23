@@ -39,6 +39,12 @@ class MitraForm
                     ->maxLength(12)
                     ->regex('/^[0-9]+$/')
                     ->required(),
+                TextInput::make('limit_piutang')
+                    ->label('Limit Piutang')
+                    ->numeric()
+                    ->default(0)
+                    ->prefix('Rp')
+                    ->required(),
             ]);
     }
 }

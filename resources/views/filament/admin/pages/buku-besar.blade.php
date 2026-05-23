@@ -1,7 +1,7 @@
 <x-filament-panels::page>
 
     {{-- Filter --}}
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:flex-end;">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:16px;align-items:flex-end;">
         <div>
             <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Tanggal Dari</label>
             <input type="date" wire:model="inputDari"
@@ -11,6 +11,16 @@
             <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Tanggal Sampai</label>
             <input type="date" wire:model="inputSampai"
                 style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;color:#111827;background:#fff;box-sizing:border-box;" />
+        </div>
+        <div>
+            <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">Nama Akun</label>
+            <select wire:model.live="filterAkunId"
+                style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;color:#111827;background:#fff;box-sizing:border-box;cursor:pointer;">
+                <option value="">— Semua Akun —</option>
+                @foreach ($this->getAkunOptions() as $id => $label)
+                    <option value="{{ $id }}">{{ $label }}</option>
+                @endforeach
+            </select>
         </div>
         <div style="display:flex;gap:8px;">
             <button wire:click="applyFilter"

@@ -75,10 +75,6 @@ class TagihanKonsinyasi extends Model
     protected static function booted(): void
     {
         static::creating(function ($tagihan) {
-            if (empty($tagihan->jatuh_tempo)) {
-                $tagihan->jatuh_tempo = now()->addDays(30);
-            }
-
             $tagihan->total_terbayar = 0;
             $tagihan->sisa_tagihan = $tagihan->total_tagihan;
             $tagihan->status = self::STATUS_BELUM_LUNAS;

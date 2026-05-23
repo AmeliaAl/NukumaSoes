@@ -36,6 +36,7 @@ class TagihanKonsinyasiForm
                     $laporan = LaporanKonsinyasi::find($state);
 
                     $set('total_tagihan', $laporan?->total_laporan ?? 0);
+                    $set('tanggal_tagihan', $laporan?->tanggal_laporan ?? now()->toDateString());
                 }),
 
             Section::make('Detail Laporan Konsinyasi')
@@ -83,13 +84,11 @@ class TagihanKonsinyasiForm
                 ->columnSpanFull(),
 
             DatePicker::make('tanggal_tagihan')
+                ->label('Tanggal Tagihan')
                 ->default(now())
-                ->required(),
-
-            DatePicker::make('jatuh_tempo')
-                ->label('Jatuh Tempo')
-                ->required()
-                ->default(fn () => now()->addDays(30)),
+                ->disabled()
+                ->dehydrated()
+                ->helperText('Otomatis mengikuti tanggal laporan'),
 
             TextInput::make('total_tagihan')
                 ->label('Total Tagihan')

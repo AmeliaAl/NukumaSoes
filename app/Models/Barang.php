@@ -20,20 +20,18 @@ class Barang extends Model
         'kategori_id',
         'rasa',
         'satuan',
-        'stok_awal',
-        'harga_barang',
-        'stok',
         'foto',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function ($barang) {
-            if (blank($barang->stok)) {
-                $barang->stok = (int) ($barang->stok_awal ?? 0);
-            }
-        });
-    }
+    /**
+     * Set default values for deprecated columns
+     * to avoid "doesn't have a default value" errors during insert.
+     */
+    protected $attributes = [
+        'stok' => 0,
+        'stok_awal' => 0,
+        'stok_min' => 0,
+    ];
 
     public static function getKodeBarang()
     {
@@ -44,16 +42,6 @@ class Barang extends Model
         $no = (int) substr($kode, -3) + 1;
 
         return 'AB' . str_pad($no, 3, '0', STR_PAD_LEFT);
-    }
-
-    public function setHargaBarangAttribute($value)
-    {
-        if ($value === null || $value === '') {
-            $this->attributes['harga_barang'] = 0;
-            return;
-        }
-
-        $this->attributes['harga_barang'] = (int) str_replace(['.', ','], '', $value);
     }
 
     public function kategori(): BelongsTo
@@ -72,6 +60,26 @@ class Barang extends Model
             DetailPenjualanNonKonsinyasi::class,
             'barang_id'
         );
+    }
+
+    public function detailPersediaanProduk(): HasMany
+    {
+        return $this->hasMany(DetailPersediaanProduk::class, 'barang_id');
+    }
+
+    /**
+     * Hitung stok tersedia dari detail_persediaan_produk.
+     * Hanya batch yang belum expired dan masih ada stok.
+     */
+    public function getStokTersedia(): int
+    {
+        return (int) $this->detailPersediaanProduk()
+            ->where('stok_saat_ini', '>', 0)
+            ->where(function ($query) {
+                $query->whereNull('tanggal_expired')
+                    ->orWhere('tanggal_expired', '>=', now()->toDateString());
+            })
+            ->sum('stok_saat_ini');
     }
 
     public function getNamaLengkapAttribute(): string

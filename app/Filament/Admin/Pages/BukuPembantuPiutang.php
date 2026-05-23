@@ -29,6 +29,7 @@ class BukuPembantuPiutang extends Page
     public ?string $sampai      = null;
     public ?string $inputDari   = null;
     public ?string $inputSampai = null;
+    public string  $filterAkun  = 'semua'; // semua | pelanggan | mitra
 
     public function applyFilter(): void
     {
@@ -42,6 +43,7 @@ class BukuPembantuPiutang extends Page
         $this->sampai      = null;
         $this->inputDari   = null;
         $this->inputSampai = null;
+        $this->filterAkun  = 'semua';
     }
 
     /**

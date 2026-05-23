@@ -33,6 +33,7 @@ class PenjualanNonKonsinyasiForm
                 ->default(now())
                 ->required()
                 ->live()
+                ->maxDate(now())
                 ->disabled(fn ($record) => $record?->isLocked()),
 
             Select::make('pelanggan_id')
@@ -103,8 +104,14 @@ class PenjualanNonKonsinyasiForm
                         }),
 
                     TextInput::make('diskon')
-                        ->label('Diskon')
+                        ->label('Diskon Faktur')
                         ->numeric()
+                        ->minValue(0)
+                        ->rule('regex:/^[0-9]+$/')
+                        ->extraInputAttributes([
+                            'oninput' => "this.value = this.value.replace(/[^0-9]/g, '')",
+                        ])
+                        ->helperText('Diskon Barang + Diskon Faktur.')
                         ->default(0)
                         ->live(debounce: 500),
 

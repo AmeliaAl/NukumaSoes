@@ -17,8 +17,13 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions\EditAction;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Forms\Components\DatePicker;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\Action;
+use Filament\Tables\Actions\Action as TableAction;
 
 class SalesOrderResource extends Resource
 {
@@ -31,6 +36,11 @@ class SalesOrderResource extends Resource
     protected static ?string $recordTitleAttribute = 'no_so';
     protected static ?string $modelLabel = 'Sales Order';
     protected static ?string $pluralModelLabel = 'Sales Order';
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -71,17 +81,6 @@ class SalesOrderResource extends Resource
                     })
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Draft' => 'gray',
-                        'Diproses' => 'warning',
-                        'Selesai' => 'success',
-                        default => 'gray',
-                    })
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d/m/Y H:i')
@@ -96,9 +95,26 @@ class SalesOrderResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                //
+                Filter::make('tanggal')
+                    ->form([
+                        DatePicker::make('tanggal')
+                            ->label('Filter Tanggal')
+                            ->hiddenLabel()
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['tanggal'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('tanggal', '=', $date),
+                        );
+                    })
             ])
             ->recordActions([
+                Action::make('cetak_pdf')
+                    ->label('Cetak PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->url(fn ($record) => route('sales-order.pdf', $record->id))
+                    ->openUrlInNewTab()
+                    ->color('info'),
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
@@ -115,8 +131,7 @@ class SalesOrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // TODO: Fix Livewire component registration issue
-            // DetailSalesOrderRelationManager::class,
+            \App\Filament\Admin\Resources\SalesOrders\RelationManagers\DetailSalesOrderRelationManager::class,
         ];
     }
 

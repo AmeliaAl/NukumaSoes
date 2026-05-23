@@ -16,6 +16,8 @@ class DetailPenjualanNonKonsinyasi extends Model
         'harga',
         'diskon',
         'subtotal',
+        'harga_modal_per_pack',
+        'subtotal_hpp',
     ];
 
     public function penjualan()

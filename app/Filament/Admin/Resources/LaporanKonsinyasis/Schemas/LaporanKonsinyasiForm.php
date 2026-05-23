@@ -28,37 +28,63 @@ class LaporanKonsinyasiForm
                 ->relationship(
                     'penjualanKonsinyasi',
                     'no_konsinyasi',
-                    fn ($query) => $query->whereIn('status', ['BELUM TERJUAL', 'SEBAGIAN TERJUAL'])
+                    fn ($query, $record) => $query->whereIn('status', ['BELUM TERJUAL', 'SEBAGIAN TERJUAL'])
+                        ->when(
+                            $record?->penjualan_konsinyasi_id,
+                            fn ($q) => $q->orWhere('id', $record->penjualan_konsinyasi_id)
+                        )
                 )
                 ->searchable()
                 ->required()
                 ->live(),
 
+            \Filament\Schemas\Components\Section::make('Detail Konsinyasi')
+                ->schema([
+                    \Filament\Schemas\Components\Grid::make(2)
+                        ->schema([
+                            \Filament\Forms\Components\Placeholder::make('detail_mitra')
+                                ->label('Mitra')
+                                ->content(function (Get $get) {
+                                    $penjualan = PenjualanKonsinyasi::with('mitra')->find($get('penjualan_konsinyasi_id'));
+                                    return $penjualan?->mitra?->namaMitra ?? '-';
+                                }),
+                            \Filament\Forms\Components\Placeholder::make('tanggal_kirim')
+                                ->label('Tanggal Kirim / Tanggal Konsinyasi')
+                                ->content(function (Get $get) {
+                                    $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
+                                    return $penjualan?->tanggal_kirim ? \Carbon\Carbon::parse($penjualan->tanggal_kirim)->translatedFormat('d F Y') : '-';
+                                }),
+                            \Filament\Forms\Components\Placeholder::make('total_barang')
+                                ->label('Total Titip Barang')
+                                ->content(function (Get $get) {
+                                    $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
+                                    return $penjualan ? 'Rp ' . number_format($penjualan->total_barang, 0, ',', '.') : '-';
+                                }),
+                            \Filament\Forms\Components\Placeholder::make('status_konsinyasi')
+                                ->label('Status Konsinyasi')
+                                ->content(function (Get $get) {
+                                    $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
+                                    return $penjualan?->status ?? '-';
+                                }),
+                        ])
+                ])
+                ->visible(fn (Get $get) => filled($get('penjualan_konsinyasi_id')))
+                ->columnSpanFull(),
+
+
             TextInput::make('no_po_mitra')
                 ->label('No PO Mitra'),
 
-            // 1. Tanggal laporan diisi dulu: antara tanggal_kirim dan jatuh_tempo
+            // 1. Tanggal laporan: minimal tanggal_kirim, tanpa batas atas
             DatePicker::make('tanggal_laporan')
                 ->label('Tanggal Laporan')
                 ->default(now())
                 ->required()
                 ->live()
+                ->maxDate(now())
                 ->minDate(function (Get $get) {
                     $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
                     return $penjualan?->tanggal_kirim;
-                })
-                ->maxDate(function (Get $get) {
-                    $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
-                    return $penjualan?->jatuh_tempo;
-                })
-                ->helperText(function (Get $get) {
-                    $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
-                    if (! $penjualan?->tanggal_kirim || ! $penjualan?->jatuh_tempo) return null;
-
-                    $awal  = \Carbon\Carbon::parse($penjualan->tanggal_kirim)->translatedFormat('d M Y');
-                    $akhir = \Carbon\Carbon::parse($penjualan->jatuh_tempo)->translatedFormat('d M Y');
-
-                    return "Rentang: {$awal} s/d {$akhir}";
                 }),
 
             // 2. Periode awal: min tanggal_kirim, max tanggal_laporan

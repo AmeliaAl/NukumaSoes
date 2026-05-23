@@ -13,7 +13,10 @@ class ViewTagihanKonsinyasi extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()
+                ->label('Pembayaran')
+                ->icon('heroicon-o-banknotes')
+                ->visible(fn () => $this->record->status !== 'LUNAS'),
         ];
     }
 }

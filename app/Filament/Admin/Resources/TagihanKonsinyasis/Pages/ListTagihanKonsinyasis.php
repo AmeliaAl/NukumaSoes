@@ -3,7 +3,6 @@
 namespace App\Filament\Admin\Resources\TagihanKonsinyasis\Pages;
 
 use App\Filament\Admin\Resources\TagihanKonsinyasis\TagihanKonsinyasiResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListTagihanKonsinyasis extends ListRecords
@@ -12,8 +11,6 @@ class ListTagihanKonsinyasis extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            CreateAction::make(),
-        ];
+        return [];
     }
 }

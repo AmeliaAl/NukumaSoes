@@ -21,7 +21,15 @@ class MitrasTable
                 TextColumn::make('namaMitra')
                     ->searchable(),
                 TextColumn::make('alamat')
-                    ->searchable(),
+                    ->searchable()
+                    ->limit(50)
+                    ->tooltip(function (TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= $column->getCharacterLimit()) {
+                            return null;
+                        }
+                        return $state;
+                    }),
                 TextColumn::make('no_telepon')
                     ->searchable(),
                 TextColumn::make('created_at')
