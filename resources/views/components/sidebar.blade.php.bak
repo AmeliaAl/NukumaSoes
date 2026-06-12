@@ -71,7 +71,7 @@
         </a>
 
         <!-- Produk -->
-        <a href="{{ route('persediaan-produk.index') }}"
+        <a href="{{ route('produk.index') }}"
            class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
            {{ request()->routeIs('produk.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
             <span class="relative z-10 flex items-center w-full">
@@ -102,7 +102,7 @@
         <p class="px-4 text-xs font-semibold text-red-300 uppercase tracking-wider mt-6 mb-1">Inventory Control</p>
 
         <!-- Monitoring Produk FEFO -->
-        <a href="{{ route('persediaan.index') }}"
+        <a href="{{ route('monitoring.fefo') }}"
            class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
            {{ request()->routeIs('monitoring.fefo') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
             <span class="relative z-10 flex items-center w-full">
