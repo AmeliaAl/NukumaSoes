@@ -67,9 +67,9 @@ class KategoriAsetsTable
                 //     ])
             ])
             ->actions([
-                EditAction::make(),
+                //EditAction::make(),
                 // 5. Menambahkan aksi lain jika diperlukan
-                // \Filament\Tables\Actions\ViewAction::make(), 
+                //App\Filament\Tables\Actions\ViewAction::make(), 
             ])
             ->bulkActions([
                 BulkActionGroup::make([

@@ -28,8 +28,10 @@ class PersediaansTable
                     ->label('Kategori'),
 
                 TextColumn::make('qty')
-                    ->label('Qty')
-                    ->suffix(' unit'),
+                    ->label('Qty'),
+
+                TextColumn::make('satuan')
+                    ->label('Satuan'),
 
                 TextColumn::make('total')
                     ->label('Total')

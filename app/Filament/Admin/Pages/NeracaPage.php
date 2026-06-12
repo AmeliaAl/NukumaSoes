@@ -42,6 +42,8 @@ class NeracaPage extends Page
     // ================== AKTIVA ==================
     public array $aktivaLancar = [];
     public array $aktivaTetap  = [];
+    public array $aktivaTetapAset    = []; // Peralatan, Bangunan, dll
+    public array $aktivaTetapKontra  = []; // Akumulasi Penyusutan
     public int $totalAktivaLancar = 0;
     public int $totalAktivaTetap  = 0;
     public int $totalAktiva       = 0;
@@ -183,15 +185,25 @@ class NeracaPage extends Page
 
             if (in_array($subkode, [11, 12, 13, 14, 15])) {
                 // AKTIVA LANCAR (11x = Kas, 12x = Piutang, 13x = Persediaan, 14x = Investasi Jangka Pendek, 15x = Perlengkapan)
-                $this->aktivaLancar[] = $akun;
+                // Hanya tampilkan jika ada saldo
+                if ($saldo != 0) {
+                    $this->aktivaLancar[] = $akun;
+                }
                 $this->totalAktivaLancar += round($saldo, 0); // Bulatkan per akun
                 $kategori = 'Aset Lancar';
             } elseif (in_array($subkode, [16, 17, 18, 19])) {
-                // AKTIVA TETAP (16x = Tanah, 17x = Peralatan/Akumulasi, 18x = Kendaraan/Bangunan, 19x = Aset Tetap Lainnya)
-                $this->aktivaTetap[] = $akun;
-                $this->totalAktivaTetap += round($saldo, 0); // Bulatkan per akun
-                $kategori = 'Aset Tetap';
-            } else {
+    if ($isKontraAset) {
+        $this->aktivaTetapKontra[] = $akun;
+    } else {
+        $this->aktivaTetapAset[] = $akun;
+    }
+    // Hanya tampilkan jika ada saldo
+    if ($saldo != 0) {
+        $this->aktivaTetap[] = $akun;
+    }
+    $this->totalAktivaTetap += round($saldo, 0);
+    $kategori = 'Aset Tetap';
+}else {
                 $kategori = 'Tidak Terkategori';
             }
 
@@ -210,6 +222,24 @@ class NeracaPage extends Page
         }
 
         $this->totalAktiva = $this->totalAktivaLancar + $this->totalAktivaTetap;
+
+        // Sort Aset Lancar berdasarkan no_akun (ascending)
+        usort($this->aktivaLancar, function($a, $b) {
+            return strcmp($a->no_akun, $b->no_akun);
+        });
+
+        // Sort Aset Tetap: Aset normal dulu (16x), baru Akumulasi Penyusutan (17x)
+        usort($this->aktivaTetap, function($a, $b) {
+            $isKontraA = in_array((string) $a->no_akun, ['173', '174', '175', '176', '177']);
+            $isKontraB = in_array((string) $b->no_akun, ['173', '174', '175', '176', '177']);
+            
+            // Jika salah satu kontra dan satunya tidak, kontra ke bawah
+            if ($isKontraA && !$isKontraB) return 1;
+            if (!$isKontraA && $isKontraB) return -1;
+            
+            // Jika sama-sama kontra atau sama-sama bukan, urutkan berdasarkan no_akun
+            return strcmp($a->no_akun, $b->no_akun);
+        });
 
         // ================= LIABILITAS (header_akun 2) =================
         $akunLiabilitas = Akun::where('header_akun', 2)->get();
@@ -244,7 +274,11 @@ class NeracaPage extends Page
 
             $akun->saldo = $saldo;
             $akun->is_abnormal = $saldo < 0;
-            $this->liabilitas[] = $akun;
+            
+            // Hanya tampilkan jika ada saldo
+            if ($saldo != 0) {
+                $this->liabilitas[] = $akun;
+            }
             $this->totalLiabilitas += round($saldo, 0); // Bulatkan per akun
 
             // Debug info
@@ -315,8 +349,12 @@ class NeracaPage extends Page
 
             $akun->saldo = $saldo;
             $akun->is_abnormal = $saldo < 0 && !$isPrive;
-            $this->ekuitas[] = $akun;
-            $this->totalEkuitas += round($saldo, 0); // Bulatkan per akun
+            
+            // Hanya tampilkan jika ada saldo
+            if ($saldo != 0) {
+                $this->ekuitas[] = $akun;
+            }
+            $this->totalEkuitas += $saldo;
 
             // Debug info
             if ($debit != 0 || $credit != 0) {
@@ -372,7 +410,7 @@ class NeracaPage extends Page
         $beban = $debitBeban - $creditBeban;
 
         // LABA = Pendapatan - Beban
-        $laba = round($pendapatan - $beban, 0); // Bulatkan laba
+        $laba = $pendapatan - $beban;
 
         // Debug info laba
         $this->debugInfo['pendapatan'] = [
@@ -390,13 +428,15 @@ class NeracaPage extends Page
         // Tambahkan ke ekuitas
         $this->totalEkuitas += $laba;
 
-        // Tampilkan di tabel
-        $labaDitahan = (object)[
-            'nama_akun' => 'Laba Ditahan',
-            'saldo' => $laba,
-            'is_abnormal' => false
-        ];
-        $this->ekuitas[] = $labaDitahan;
+        // Tampilkan di tabel hanya jika ada laba/rugi
+        if ($laba != 0) {
+            $labaDitahan = (object)[
+                'nama_akun' => 'Laba Ditahan',
+                'saldo' => $laba,
+                'is_abnormal' => false
+            ];
+            $this->ekuitas[] = $labaDitahan;
+        }
 
         $this->totalPasiva = $this->totalLiabilitas + $this->totalEkuitas;
 
