@@ -112,6 +112,7 @@ class PersediaanForm
 
                                     $set('nama_barang', $item->nama_aset);
                                     $set('id_kategori', $item->id_kategori);
+                                    $set('satuan', $item->keterangan ?? 'Unit'); // Ambil dari keterangan
                                     $set('qty', $item->qty);
                                     $set('harga_satuan', $item->harga_satuan);
                                     $set('total', $item->total_harga);
@@ -144,7 +145,15 @@ class PersediaanForm
                                 ->disabled()
                                 ->dehydrated()
                                 ->required()
-                                ->columnSpan(2),
+                                ->columnSpan(1),
+
+                            TextInput::make('satuan')
+                                ->label('Satuan')
+                                ->disabled()
+                                ->dehydrated()
+                                ->required()
+                                ->default('Unit')
+                                ->columnSpan(1),
 
                             Select::make('id_kategori')
                                 ->label('Kategori')
@@ -169,7 +178,6 @@ class PersediaanForm
                                 ->disabled()
                                 ->dehydrated()
                                 ->required()
-                                ->suffix('unit')
                                 ->columnSpan(1),
 
                             TextInput::make('harga_satuan')

@@ -13,6 +13,7 @@ class asetLancar extends Model
     protected $fillable = [
         'kode_barang',
         'nama_barang',
+        'satuan',
         'id_kategori',
         'stok_tersedia',
         'harga_satuan_rata',

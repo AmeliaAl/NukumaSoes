@@ -193,6 +193,7 @@ class FakturPembelianForm
                             ->numeric()
                             ->prefix('Rp')
                             ->default(0)
+                            ->dehydrateStateUsing(fn ($state) => $state ?? 0)
                             ->minValue(0)
                             ->helperText('Biaya tambahan seperti ongkir, asuransi, dll')
                             ->live(onBlur: true)

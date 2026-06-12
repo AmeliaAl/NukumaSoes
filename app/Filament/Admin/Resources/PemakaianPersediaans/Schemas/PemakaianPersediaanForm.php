@@ -28,6 +28,7 @@ class PemakaianPersediaanForm
             DatePicker::make('tanggal')
                 ->label('Tanggal Pemakaian')
                 ->required()
+                ->maxDate(now())
                 ->default(now()),
 
             TextInput::make('jumlah')

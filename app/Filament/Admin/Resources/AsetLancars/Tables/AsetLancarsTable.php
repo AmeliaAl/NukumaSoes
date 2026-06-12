@@ -31,40 +31,15 @@ class AsetLancarsTable
                 ->label('Kategori')
                 ->sortable(),
 
-            TextColumn::make('stok_tersedia')
-                ->label('Stok')
-                ->numeric()
-                ->suffix(' unit')
-                ->sortable()
-                ->color(fn ($record) => $record->isStokMinimum() ? 'danger' : 'success')
-                ->weight(fn ($record) => $record->isStokMinimum() ? 'bold' : 'normal'),
-
-            TextColumn::make('harga_satuan_rata')
-                ->label('Harga Rata-rata')
-                ->money('IDR')
-                ->alignEnd()
-                ->sortable()
-                ->toggleable(),
-
-            TextColumn::make('nilai_total')
-                ->label('Nilai Total')
-                ->money('IDR')
-                ->sortable()
-                ->alignEnd()
-                ->weight('bold')
-                ->color('success'),
-
-            TextColumn::make('tanggal_update_terakhir')
-                ->label('Update Terakhir')
-                ->date('d M Y')
-                ->sortable()
-                ->toggleable(),
+             TextColumn::make('satuan')
+                ->label('Satuan')
+                ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                //EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

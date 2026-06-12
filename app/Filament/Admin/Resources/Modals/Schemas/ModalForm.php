@@ -34,6 +34,7 @@ class ModalForm
                     ->numeric()
                     ->required()
                     ->prefix('Rp')
+                    ->minValue(1)
                     ->live(onBlur: true)
                     ->rules([
                         function (Get $get) {
@@ -93,26 +94,26 @@ class ModalForm
                     })
 
                     ->rules([
-    function (Get $get) {
-        return function ($attribute, $value, $fail) use ($get) {
+                            function (Get $get) {
+                                return function ($attribute, $value, $fail) use ($get) {
 
-            $akunId  = $get('id_akun');
-            $tanggal = $get('tanggal');
-            $jenis   = $get('jenis');
+                                    $akunId  = $get('id_akun');
+                                    $tanggal = $get('tanggal');
+                                    $jenis   = $get('jenis');
 
-            // ⛔ HANYA validasi kalau prive
-            if ($jenis !== 'prive') return;
+                                    // ⛔ HANYA validasi kalau prive
+                                    if ($jenis !== 'prive') return;
 
-            if (!$akunId || !$tanggal) return;
+                                    if (!$akunId || !$tanggal) return;
 
-            $saldo = AkunHelper::getSaldo($akunId, $tanggal);
+                                    $saldo = AkunHelper::getSaldo($akunId, $tanggal);
 
-            if ((float) $value > $saldo) {
-                $fail('Jumlah melebihi saldo tersedia (Rp ' . number_format($saldo, 0, ',', '.') . ')');
-            }
-        };
-    }
-])
+                                    if ((float) $value > $saldo) {
+                                        $fail('Jumlah melebihi saldo tersedia (Rp ' . number_format($saldo, 0, ',', '.') . ')');
+                                    }
+                                };
+                            }
+                        ])
             ]);
     }
 }

@@ -59,17 +59,24 @@ class AsetForm
                     ->placeholder('Pilih tanggal perolehan'),
 
                 TextInput::make('nilai_perolehan')
-                    ->label('Nilai Perolehan')
-                    ->required()
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->placeholder('Masukkan nilai perolehan aset'),
+                        ->label('Nilai Perolehan')
+                        ->required()
+                        ->numeric()
+                        ->minValue(1)
+                        ->prefix('Rp')
+                        ->placeholder('Masukkan nilai perolehan aset'),
 
                 TextInput::make('nilai_residu')
-                    ->label('Nilai Residu')
-                    ->required()
-                    ->numeric()
-                    ->placeholder('Masukkan nilai residu aset'),
+                        ->label('Nilai Residu')
+                        ->required()
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(fn ($get) => $get('nilai_perolehan'))
+                        ->prefix('Rp')
+                        ->placeholder('Masukkan nilai residu aset')
+                        ->validationMessages([
+                            'max.numeric' => 'Nilai residu tidak boleh lebih besar dari nilai perolehan.',
+                        ]),
 
                 TextInput::make('masa_manfaat')
                     ->label('Masa Manfaat (dalam tahun)')

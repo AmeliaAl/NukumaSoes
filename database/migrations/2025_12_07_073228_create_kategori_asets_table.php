@@ -16,9 +16,9 @@ return new class extends Migration
             $table->string('kode_kategori')->unique();       
             $table->string('nama_kategori');  
             $table->enum('jenis_aset',['aset_tetap', 'aset_lancar']);  
-            $table->string('metode_penyusutan')->default('straight_line'); 
-            $table->integer('masa_manfaat');         
-            $table->integer('interval_pemeliharaan'); 
+            $table->string('metode_penyusutan')->nullable; 
+            $table->integer('masa_manfaat')->nullable;         
+            $table->integer('interval_pemeliharaan')->nullable; 
             $table->timestamps();
         });
     }
