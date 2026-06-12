@@ -400,4 +400,76 @@ class JurnalPerpetualService
     {
         return Coa::where('kode_akun', '112')->firstOrFail();
     }
+
+    // ─────────────────────────────────────────────
+    // SALDO AWAL
+    // ─────────────────────────────────────────────
+
+    public static function saldoAwal(\App\Models\SaldoAwal $saldoAwal): void
+    {
+        $saldoAwal->load('coa');
+        $nominal = (int) $saldoAwal->nominal;
+
+        if ($nominal <= 0) {
+            return;
+        }
+
+        $referensi = 'Saldo awal ' . $saldoAwal->coa->nama_akun . ' periode ' . $saldoAwal->bulan . '-' . $saldoAwal->tahun;
+
+        // Hapus jurnal lama (jika ada update)
+        $jurnalLama = JurnalUmum::where('keterangan', $referensi)->first();
+        if ($jurnalLama) {
+            $jurnalLama->details()->delete();
+            $jurnalLama->delete();
+        }
+
+        // Cari atau buat akun "Saldo Awal" penyeimbang
+        $akunSaldoAwal = Coa::firstOrCreate(
+            ['nama_akun' => 'Saldo Awal'],
+            [
+                'kode_akun' => '399',
+                'header_akun' => 3
+            ]
+        );
+
+        $tanggal = \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)->format('Y-m-d');
+
+        $jurnal = JurnalUmum::create([
+            'tanggal'    => $tanggal,
+            'keterangan' => $referensi,
+        ]);
+
+        $kodeAkun = $saldoAwal->coa->kode_akun;
+        $awalKode = substr((string)$kodeAkun, 0, 1);
+
+        if (in_array($awalKode, ['1', '5', '6', '8', '9'])) {
+            // Normal Debit
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $saldoAwal->coa_id,
+                'debit'          => $nominal,
+                'kredit'         => 0,
+            ]);
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunSaldoAwal->id,
+                'debit'          => 0,
+                'kredit'         => $nominal,
+            ]);
+        } else {
+            // Normal Kredit
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunSaldoAwal->id,
+                'debit'          => $nominal,
+                'kredit'         => 0,
+            ]);
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $saldoAwal->coa_id,
+                'debit'          => 0,
+                'kredit'         => $nominal,
+            ]);
+        }
+    }
 }

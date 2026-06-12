@@ -68,6 +68,33 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- Saldo Awal Row --}}
+                            @if ($this->dari || $akun['saldo_awal'] != 0)
+                            <tr style="border-top:1px solid #f3f4f6;background:#fefce8;">
+                                <td style="padding:10px 16px;color:#6b7280;font-family:monospace;font-size:12px;white-space:nowrap;">
+                                    {{ $this->dari ? \Carbon\Carbon::parse($this->dari)->format('d/m/Y') : '-' }}
+                                </td>
+                                <td style="padding:10px 16px;color:#374151;font-weight:600;">
+                                    Saldo Awal
+                                </td>
+                                <td style="padding:10px 16px;color:#9ca3af;font-family:monospace;font-size:12px;white-space:nowrap;">
+                                    -
+                                </td>
+                                <td style="padding:10px 16px;text-align:right;color:#374151;font-variant-numeric:tabular-nums;">
+                                    —
+                                </td>
+                                <td style="padding:10px 16px;text-align:right;color:#374151;font-variant-numeric:tabular-nums;">
+                                    —
+                                </td>
+                                <td style="padding:10px 16px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;color:{{ $akun['saldo_awal'] < 0 ? '#dc2626' : '#111827' }};">
+                                    {{ number_format(abs($akun['saldo_awal']), 0, ',', '.') }}
+                                    @if($akun['saldo_awal'] < 0)
+                                        <span style="font-size:11px;font-weight:400;"> ({{ $akun['is_debit_normal'] ? 'K' : 'D' }})</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endif
+
                             @foreach ($akun['rows'] as $i => $row)
                                 <tr style="border-top:1px solid #f3f4f6;background:{{ $i % 2 === 0 ? '#fff' : '#fafafa' }};">
                                     <td style="padding:10px 16px;color:#6b7280;font-family:monospace;font-size:12px;white-space:nowrap;">
@@ -87,7 +114,9 @@
                                     </td>
                                     <td style="padding:10px 16px;text-align:right;font-weight:500;font-variant-numeric:tabular-nums;color:{{ $row['saldo'] < 0 ? '#dc2626' : '#111827' }};">
                                         {{ number_format(abs($row['saldo']), 0, ',', '.') }}
-                                        @if($row['saldo'] < 0)<span style="font-size:11px;font-weight:400;"> (K)</span>@endif
+                                        @if($row['saldo'] < 0)
+                                            <span style="font-size:11px;font-weight:400;"> ({{ $akun['is_debit_normal'] ? 'K' : 'D' }})</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -103,7 +132,9 @@
                                 </td>
                                 <td style="padding:10px 16px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:{{ $akun['saldo_akhir'] < 0 ? '#dc2626' : '#16a34a' }};">
                                     {{ number_format(abs($akun['saldo_akhir']), 0, ',', '.') }}
-                                    @if($akun['saldo_akhir'] < 0)<span style="font-size:11px;font-weight:400;"> (K)</span>@endif
+                                    @if($akun['saldo_akhir'] < 0)
+                                        <span style="font-size:11px;font-weight:400;"> ({{ $akun['is_debit_normal'] ? 'K' : 'D' }})</span>
+                                    @endif
                                 </td>
                             </tr>
                         </tfoot>

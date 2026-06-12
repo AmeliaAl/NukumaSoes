@@ -69,33 +69,66 @@ class BukuBesar extends Page
 
     public function getBukuBesarData(): Collection
     {
-        $akunIds = JurnalDetail::query()
-            ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id')
-            ->when($this->dari, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '>=', $this->dari))
-            ->when($this->sampai, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '<=', $this->sampai))
-            ->when($this->filterAkunId, fn ($q) => $q->where('jurnal_detail.akun_id', $this->filterAkunId))
-            ->distinct()
-            ->pluck('jurnal_detail.akun_id');
-
-        $akuns = Coa::whereIn('id', $akunIds)
-            ->orderBy('kode_akun')
-            ->get();
+        $akunQuery = Coa::orderBy('kode_akun');
+        if ($this->filterAkunId) {
+            $akunQuery->where('id', $this->filterAkunId);
+        }
+        $akuns = $akunQuery->get();
 
         return $akuns->map(function ($akun) {
-            $details = JurnalDetail::query()
+            $awalKode = substr((string)$akun->kode_akun, 0, 1);
+            $isDebitNormal = in_array($awalKode, ['1', '5', '6', '8', '9']);
+
+            $querySaldoAwal = JurnalDetail::query()
+                ->where('akun_id', $akun->id)
+                ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id');
+            
+            if ($this->dari) {
+                $querySaldoAwal->where(function($q) {
+                    $q->whereDate('jurnal_umum.tanggal', '<', $this->dari)
+                      ->orWhere(function($subQ) {
+                          $subQ->whereDate('jurnal_umum.tanggal', '=', $this->dari)
+                               ->where('jurnal_umum.keterangan', 'like', 'Saldo awal %');
+                      });
+                });
+            } else {
+                $querySaldoAwal->where('jurnal_umum.keterangan', 'like', 'Saldo awal %');
+            }
+
+            $saldoAwalDebit = $querySaldoAwal->sum('jurnal_detail.debit');
+            $saldoAwalKredit = $querySaldoAwal->sum('jurnal_detail.kredit');
+            
+            $saldoAwal = $isDebitNormal 
+                ? ($saldoAwalDebit - $saldoAwalKredit) 
+                : ($saldoAwalKredit - $saldoAwalDebit);
+
+            $queryTransaksi = JurnalDetail::query()
                 ->with('jurnal')
                 ->where('akun_id', $akun->id)
                 ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id')
-                ->when($this->dari, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '>=', $this->dari))
-                ->when($this->sampai, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '<=', $this->sampai))
+                ->where('jurnal_umum.keterangan', 'not like', 'Saldo awal %');
+            
+            if ($this->dari) {
+                $queryTransaksi->whereDate('jurnal_umum.tanggal', '>=', $this->dari);
+            }
+            if ($this->sampai) {
+                $queryTransaksi->whereDate('jurnal_umum.tanggal', '<=', $this->sampai);
+            }
+            
+            $details = $queryTransaksi
                 ->orderBy('jurnal_umum.tanggal')
                 ->orderBy('jurnal_umum.id')
                 ->select('jurnal_detail.*')
                 ->get();
 
-            $saldo = 0;
-            $rows = $details->map(function ($detail) use (&$saldo) {
-                $saldo += $detail->debit - $detail->kredit;
+            $saldo = $saldoAwal;
+            $rows = $details->map(function ($detail) use (&$saldo, $isDebitNormal) {
+                if ($isDebitNormal) {
+                    $saldo += $detail->debit - $detail->kredit;
+                } else {
+                    $saldo += $detail->kredit - $detail->debit;
+                }
+                
                 return [
                     'tanggal'    => $detail->jurnal?->tanggal,
                     'keterangan' => $detail->jurnal?->keterangan,
@@ -107,13 +140,17 @@ class BukuBesar extends Page
             });
 
             return [
-                'kode_akun'    => $akun->kode_akun,
-                'nama_akun'    => $akun->nama_akun,
-                'rows'         => $rows,
-                'total_debit'  => $details->sum('debit'),
-                'total_kredit' => $details->sum('kredit'),
-                'saldo_akhir'  => $saldo,
+                'kode_akun'     => $akun->kode_akun,
+                'nama_akun'     => $akun->nama_akun,
+                'is_debit_normal'=> $isDebitNormal,
+                'saldo_awal'    => $saldoAwal,
+                'rows'          => $rows,
+                'total_debit'   => $details->sum('debit'),
+                'total_kredit'  => $details->sum('kredit'),
+                'saldo_akhir'   => $saldo,
             ];
-        });
+        })->filter(function ($akun) {
+            return count($akun['rows']) > 0 || $akun['saldo_awal'] != 0;
+        })->values();
     }
 }

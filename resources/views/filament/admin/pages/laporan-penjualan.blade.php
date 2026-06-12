@@ -66,8 +66,8 @@
                         <th style="padding:10px 16px;text-align:left;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Tanggal</th>
                         <th style="padding:10px 16px;text-align:left;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Ref</th>
                         <th style="padding:10px 16px;text-align:left;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;">Pelanggan/Mitra</th>
-                        <th style="padding:10px 16px;text-align:left;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Kode</th>
                         <th style="padding:10px 16px;text-align:left;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;">Nama Barang</th>
+                        <th style="padding:10px 16px;text-align:left;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Kategori</th>
                         <th style="padding:10px 16px;text-align:right;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Harga</th>
                         <th style="padding:10px 16px;text-align:right;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Qty</th>
                         <th style="padding:10px 16px;text-align:right;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">Subtotal</th>
@@ -89,11 +89,11 @@
                             <td style="padding:10px 16px;color:#374151;">
                                 {{ $item->pelanggan_mitra }}
                             </td>
-                            <td style="padding:10px 16px;color:#374151;font-family:monospace;font-size:12px;white-space:nowrap;">
-                                {{ $item->kode_barang }}
-                            </td>
                             <td style="padding:10px 16px;color:#374151;">
                                 {{ $item->nama_barang }}
+                            </td>
+                            <td style="padding:10px 16px;color:#6b7280;font-size:12px;white-space:nowrap;">
+                                {{ $item->nama_kategori }}
                             </td>
                             <td style="padding:10px 16px;text-align:right;color:#374151;font-variant-numeric:tabular-nums;">
                                 {{ number_format($item->harga, 0, ',', '.') }}

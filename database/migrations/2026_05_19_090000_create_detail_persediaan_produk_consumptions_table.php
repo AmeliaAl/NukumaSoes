@@ -25,8 +25,8 @@ return new class extends Migration
                 ->on('detail_persediaan_produk')
                 ->cascadeOnDelete();
 
-            $table->index(['detail_transaksi_type', 'detail_transaksi_id'], 'idx_dppc_det_transaksi_type_id');
-            $table->index(['detail_persediaan_produk_id'], 'idx_dppc_det_persediaan_produk_id');
+            $table->index(['detail_transaksi_type', 'detail_transaksi_id']);
+            $table->index(['detail_persediaan_produk_id']);
         });
     }
 
