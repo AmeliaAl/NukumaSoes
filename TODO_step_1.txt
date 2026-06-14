@@ -1,0 +1,10 @@
+Step 1 completed (migrations created/defined):
+- detail_persediaan_produk (fields added: barang_id, batch, stok_awal, stok_saat_ini, harga, tanggal_expired + FK)
+- detail_persediaan_produk_consumptions (ledger table untuk revert)
+Next:
+- run migrations
+- create model DetailPersediaanProduk
+- add relations in Barang model
+- create Filament Resource “Detail Persediaan Produk”
+
+

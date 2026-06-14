@@ -11,11 +11,7 @@
     }
     
     .bukubesar-header {
-<<<<<<< HEAD
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-=======
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
->>>>>>> 0e9a011746a93c000fadadc9232429c9cae71eb2
         border-radius: 12px;
         padding: 24px;
         text-align: center;
@@ -55,21 +51,13 @@
     
     .filter-input:focus, .filter-select:focus {
         outline: none;
-<<<<<<< HEAD
         border-color: #4338ca;
-=======
-        border-color: #3b82f6;
->>>>>>> 0e9a011746a93c000fadadc9232429c9cae71eb2
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     
     .filter-button {
         width: 100%;
-<<<<<<< HEAD
         background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
-=======
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
->>>>>>> 0e9a011746a93c000fadadc9232429c9cae71eb2
         color: white;
         padding: 11px 24px;
         border-radius: 8px;
@@ -85,11 +73,7 @@
     }
     
     .filter-button:hover {
-<<<<<<< HEAD
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-=======
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
->>>>>>> 0e9a011746a93c000fadadc9232429c9cae71eb2
         box-shadow: 0 4px 6px rgba(37, 99, 235, 0.4);
         transform: translateY(-1px);
     }
@@ -123,11 +107,7 @@
     }
     
     .bukubesar-table thead {
-<<<<<<< HEAD
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-=======
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
->>>>>>> 0e9a011746a93c000fadadc9232429c9cae71eb2
         color: white;
     }
     
@@ -201,23 +181,14 @@
     }
     
     .account-info-badge {
-<<<<<<< HEAD
         background: linear-gradient(135deg, #c7d2fe 0%, #bfdbfe 100%);
         border: 2px solid #818cf8;
-=======
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        border: 2px solid #93c5fd;
->>>>>>> 0e9a011746a93c000fadadc9232429c9cae71eb2
         border-radius: 12px;
         padding: 16px 20px;
         margin-top: 20px;
         margin-bottom: 20px;
         font-weight: 600;
-<<<<<<< HEAD
         color: #4f46e5;
-=======
-        color: #1e40af;
->>>>>>> 0e9a011746a93c000fadadc9232429c9cae71eb2
         text-align: center;
         box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }

@@ -18,6 +18,7 @@ use App\Http\Controllers\AkunController;
 use App\Http\Controllers\AsetController;
 use App\Http\Controllers\KategoriAsetController;
 use App\Http\Controllers\FlavorController;
+use App\Http\Controllers\SalesOrderPdfController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -90,4 +91,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Rasa (Flavor)
     Route::resource('rasa', FlavorController::class);
+    
+    // Sales Order PDF
+    Route::get('/sales-order/{id}/pdf', [SalesOrderPdfController::class, 'download'])->name('sales-order.pdf');
 });

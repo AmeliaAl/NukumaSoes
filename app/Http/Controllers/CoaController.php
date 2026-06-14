@@ -2,16 +2,23 @@
 
 namespace App\Http\Controllers;
 
+<<<<<<< HEAD
 use App\Imports\CoaImport;
 use App\Models\Coa;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+=======
+use App\Models\coa;
+use App\Http\Requests\StorecoaRequest;
+use App\Http\Requests\UpdatecoaRequest;
+>>>>>>> origin/sarah-backup-final
 
 class CoaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+<<<<<<< HEAD
     public function index(Request $request)
     {
         $kodeAkunSearch = $request->get('kode_akun_search');
@@ -35,6 +42,17 @@ class CoaController extends Controller
     public function importForm()
     {
         return view('coa.import');
+=======
+    public function index(){
+        $coa = Coa::all();
+        return view('coa/view',
+                        [ 
+                            'coa'=>$coa,
+                            'title'=>'contoh m2',
+                            'nama'=>'Sarah Al Arroya'
+                        ]
+                    ); 
+>>>>>>> origin/sarah-backup-final
     }
 
     /**
@@ -42,12 +60,17 @@ class CoaController extends Controller
      */
     public function create()
     {
+<<<<<<< HEAD
         return view('coa.create');
+=======
+        //
+>>>>>>> origin/sarah-backup-final
     }
 
     /**
      * Store a newly created resource in storage.
      */
+<<<<<<< HEAD
     public function store(Request $request)
     {
         $request->validate([
@@ -59,29 +82,47 @@ class CoaController extends Controller
         Coa::create($request->all());
 
         return redirect()->route('coa.index')->with('success', 'COA berhasil ditambahkan.');
+=======
+    public function store(StorecoaRequest $request)
+    {
+        //
+>>>>>>> origin/sarah-backup-final
     }
 
     /**
      * Display the specified resource.
      */
+<<<<<<< HEAD
     public function show(string $id)
     {
         $coa = Coa::findOrFail($id);
         return view('coa.show', compact('coa'));
+=======
+    public function show(coa $coa)
+    {
+        //
+>>>>>>> origin/sarah-backup-final
     }
 
     /**
      * Show the form for editing the specified resource.
      */
+<<<<<<< HEAD
     public function edit(string $id)
     {
         $coa = Coa::findOrFail($id);
         return view('coa.edit', compact('coa'));
+=======
+    public function edit(coa $coa)
+    {
+        //
+>>>>>>> origin/sarah-backup-final
     }
 
     /**
      * Update the specified resource in storage.
      */
+<<<<<<< HEAD
     public function update(Request $request, string $id)
     {
         $request->validate([
@@ -93,11 +134,17 @@ class CoaController extends Controller
         $coa->update($request->all());
 
         return redirect()->route('coa.index')->with('success', 'COA berhasil diperbarui.');
+=======
+    public function update(UpdatecoaRequest $request, coa $coa)
+    {
+        //
+>>>>>>> origin/sarah-backup-final
     }
 
     /**
      * Remove the specified resource from storage.
      */
+<<<<<<< HEAD
     public function destroy(string $id)
     {
         $coa = Coa::findOrFail($id);
@@ -127,5 +174,10 @@ class CoaController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Import gagal: ' . $e->getMessage());
         }
+=======
+    public function destroy(coa $coa)
+    {
+        //
+>>>>>>> origin/sarah-backup-final
     }
 }

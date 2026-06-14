@@ -11,7 +11,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -22,7 +21,7 @@ use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Assets\Css;
 use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationItem;
-
+use Filament\Support\Enums\Width;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -32,13 +31,57 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandName('Nukuma Soes')
+            ->maxContentWidth(Width::Full)
             ->login()
-           // ->viteTheme('resources/css/filament/custom.css')
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->renderHook(
+                'panels::head.end',
+                fn () => '<style>
+                    /* Sidebar: putih dengan teks ungu */
+                    .fi-sidebar {
+                        background-color: #ffffff !important;
+                        border-right: 1px solid #e9d5ff !important;
+                    }
+                    .fi-sidebar .fi-sidebar-item-label { color: #6d28d9 !important; }
+                    .fi-sidebar .fi-sidebar-group-label { color: #7c3aed !important; font-weight: 600 !important; }
+                    .fi-sidebar .fi-sidebar-item-icon { color: #7c3aed !important; }
+                    .fi-sidebar .fi-active .fi-sidebar-item-label { color: #5b21b6 !important; font-weight: 600 !important; }
+
+                    /* Topbar: putih */
+                    .fi-topbar { background-color: #ffffff !important; border-bottom: 1px solid #e9d5ff !important; }
+
+                    /* Background konten utama: ungu muda */
+                    .fi-main, .fi-body, .fi-page, .fi-simple-main { background-color: #ede9fe !important; }
+
+                    /* Tabel Filament: putih bersih (hanya tabel Filament, bukan blade custom) */
+                    .fi-ta-ctn, .fi-ta-table, .fi-ta-header-cell, .fi-ta-cell { background-color: #ffffff !important; }
+
+                    /* Teks tabel */
+                    .fi-ta-header-cell-label { color: #000000ff !important; font-weight: 600 !important; }
+                    .fi-ta-cell { color: #374151 !important; }
+
+                    /* Card & section: putih */
+                    .fi-section, .fi-card, .fi-wi-stats-overview-stat { background-color: #ffffff !important; }
+
+                    /* Input field: override warna primary-50 (biru muda) jadi putih */
+                    .fi-input-wrp { background-color: #ffffff !important; }
+                    .fi-input-wrp input,
+                    .fi-input-wrp textarea,
+                    .fi-input-wrp select {
+                        background-color: #ffffff !important;
+                        --tw-ring-color: transparent !important;
+                    }
+                    /* Override CSS variable Tailwind yang dipakai Filament untuk bg input */
+                    :root {
+                        --color-primary-50: 255 255 255 !important;
+                    }
+                </style>'
+            )
             ->resources([
-                 \App\Filament\Resources\Akuns\AkunResource::class,
+                \App\Filament\Resources\Akuns\AkunResource::class,
             ])
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
@@ -47,8 +90,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
             ->widgets([
-                //AccountWidget::class,
-                //FilamentInfoWidget::class,
+                AccountWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -71,18 +113,33 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-o-home'),
             ])
             ->navigationItems([
-                NavigationItem::make('Dashboard Persediaan')
+                NavigationItem::make('Dashboard Laravel')
                     ->url('/dashboard')
                     ->icon('heroicon-o-home')
-                    ->group('Halaman Operasional')
+                    ->group('🚀 Laravel')
                     ->sort(-10),
+                NavigationItem::make('COA (Chart of Accounts)')
+                    ->url('/coa')
+                    ->icon('heroicon-o-document-text')
+                    ->group('🚀 Laravel')
+                    ->sort(-9),
+                NavigationItem::make('Kategori Produk')
+                    ->url('/kategori')
+                    ->icon('heroicon-o-tag')
+                    ->group('🚀 Laravel')
+                    ->sort(-8),
+                NavigationItem::make('Persediaan Produk')
+                    ->url('/persediaan-produk')
+                    ->icon('heroicon-o-cube')
+                    ->group('🚀 Laravel')
+                    ->sort(-7),
             ]);
     }
 
     public function boot(): void
-{
-    FilamentAsset::register([
-        Css::make('custom-theme', asset('css/filament/custom.css')),
-    ]);
-}
+    {
+        FilamentAsset::register([
+            Css::make('custom-theme', asset('css/filament/custom.css')),
+        ]);
+    }
 }

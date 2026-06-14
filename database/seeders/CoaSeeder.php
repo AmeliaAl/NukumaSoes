@@ -2,10 +2,15 @@
 
 namespace Database\Seeders;
 
+<<<<<<< HEAD
 use App\Models\Coa;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+=======
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+>>>>>>> origin/sarah-backup-final
 
 class CoaSeeder extends Seeder
 {
@@ -14,6 +19,7 @@ class CoaSeeder extends Seeder
      */
     public function run(): void
     {
+<<<<<<< HEAD
         // Truncate the table to clear existing corrupted data
         Schema::disableForeignKeyConstraints();
         Coa::truncate();
@@ -35,5 +41,8 @@ class CoaSeeder extends Seeder
         foreach ($coas as $coa) {
             Coa::create($coa);
         }
+=======
+        //
+>>>>>>> origin/sarah-backup-final
     }
 }

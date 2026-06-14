@@ -24,6 +24,16 @@ class User extends Authenticatable
         'role',
     ];
 
+    public function isAdmins(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isPemiliks(): bool
+    {
+        return $this->role === 'pemilik';
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *
