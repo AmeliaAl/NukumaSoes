@@ -1,231 +1,614 @@
-<x-app-layout>
-    <div class="py-12">
-    <div class="py-8 w-full">
-        <div class="px-4 sm:px-6 lg:px-8">
-            <!-- Filter Section -->
-            <div class="mb-6 bg-white p-4 rounded-2xl shadow-md border border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <form method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-end gap-4 w-full">
-                    <div class="flex-1 min-w-[200px]">
-                        <label for="periode" class="block text-sm font-medium text-gray-700 mb-1">Pilih Periode</label>
-                        <input type="month" name="periode" id="periode" value="{{ request('periode', $startDate->format('Y-m')) }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm">
-                    </div>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button type="submit" class="flex-1 sm:flex-none bg-red-800 text-white px-6 py-2.5 rounded-lg hover:bg-red-900 transition-colors shadow-sm font-medium text-sm flex justify-center items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                            Filter
-                        </button>
-                        <a href="{{ route('dashboard') }}" class="flex-1 sm:flex-none bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-200 transition-colors shadow-sm font-medium text-sm flex justify-center items-center">
-                            Reset
-                        </a>
-                    </div>
-                </form>
+@extends('layouts.app')
+
+@section('title', 'Dashboard Overview')
+
+@section('content')
+@php
+    // Persiapkan nama bulan Indonesia
+    $namaBulan = [
+        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+        7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+    ];
+
+    $chartJobLabels = [];
+    $chartJobData = [];
+    foreach($jobPerBulan as $item) {
+        $chartJobLabels[] = ($namaBulan[$item->bulan] ?? '') . ' ' . $item->tahun;
+        $chartJobData[] = $item->total;
+    }
+
+    $chartTopLabels = [];
+    $chartTopData = [];
+    foreach($topProduk as $item) {
+        $chartTopLabels[] = $item->produk->nama_produk ?? 'Tidak Diketahui';
+        $chartTopData[] = $item->total_produksi;
+    }
+@endphp
+
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header border-0 mb-4 p-4 shadow-sm" style="border-radius: 16px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3 class="fw-bold mb-1 text-dark">Dashboard Overview</h3>
+                <p class="text-muted mb-0">Selamat datang kembali di sistem akuntansi biaya produksi **Nukuma Cantique**.</p>
             </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <span class="badge px-3 py-2 bg-primary bg-opacity-10 text-primary fw-semibold" style="font-size: 13px; border-radius: 20px;">
+                    <i class="fas fa-calendar-day me-2"></i>{{ now()->format('d F Y') }}
+                </span>
+            </div>
+        </div>
+    </div>
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
-                <!-- Card 1: Total Produk -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-red-800 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Total Produk</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $totalProduk }}</h3>
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <svg class="w-6 h-6 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
+    <!-- Metrik Utama Grid -->
+    <div class="row mb-4">
+        <!-- Highlight Card: Total Biaya Bulan Ini -->
+        <div class="col-xl-4 col-lg-5 mb-3">
+            <div class="card border-0 kpi-card p-4 h-100 d-flex flex-column justify-content-between" style="border-radius: 16px;">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-white-50 fw-semibold text-uppercase tracking-wider" style="font-size: 12px;">Biaya Produksi</span>
+                        <div class="bg-white bg-opacity-20 text-white rounded-3 p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-wallet fs-5"></i>
                         </div>
                     </div>
+                    <p class="text-white-50 mb-1" style="font-size: 14px;">Total Biaya Produksi (Bulan Ini)</p>
+                    <h2 class="fw-bold text-white mb-2">Rp {{ number_format($totalBiayaBulanIni, 0, ',', '.') }}</h2>
                 </div>
-
-                <!-- Card 2: Produk Aman -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-green-600 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Produk Aman</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $produkAman }}</h3>
-                        </div>
-                        <div class="p-3 bg-green-50 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 3: Akan Expired -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-yellow-500 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Hampir Expired</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $produkAkanExpired }}</h3>
-                            <p class="text-xs text-yellow-600 font-medium mt-1">Dalam 30 hari</p>
-                        </div>
-                        <div class="p-3 bg-yellow-50 rounded-lg">
-                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 4: Expired -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-red-600 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Produk Expired</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $produkExpired }}</h3>
-                            <p class="text-xs text-red-600 font-medium mt-1">Perlu tindakan</p>
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 5: Total Transaksi -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-blue-600 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Total Transaksi</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $totalTransaksi }}</h3>
-                            <p class="text-xs text-blue-600 font-medium mt-1">Masuk & Keluar</p>
-                        </div>
-                        <div class="p-3 bg-blue-50 rounded-lg">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                        </div>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center bg-white bg-opacity-10 rounded-3 p-2 text-white-50" style="font-size: 13px;">
+                        <i class="fas fa-info-circle me-2 text-white"></i>
+                        <span>Akumulasi real-time seluruh pesanan selesai bulan ini.</span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                <!-- Pie Chart -->
-                <div class="bg-white rounded-2xl shadow-xl p-8 border-t-8 border-red-900">
-                    <h3 class="text-2xl font-serif font-bold text-gray-800 mb-6 text-center border-b pb-4">Status Produk Expired</h3>
-                    <div class="relative h-72 w-full flex justify-center">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                    <div class="mt-8 grid grid-cols-3 gap-4 text-center">
-                        <div class="p-3 bg-green-50 rounded-xl shadow-inner">
-                            <span class="block text-2xl font-bold text-green-700">{{ $produkAman }}</span>
-                            <span class="text-xs text-green-600 font-medium uppercase">Aman</span>
+        <!-- 2x2 Grid untuk Stat Lainnya -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="row h-100">
+                <!-- Bahan Baku -->
+                <div class="col-md-6 mb-3">
+                    <div class="card glass-card border-0 p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1" style="font-size: 14px;">Bahan Baku</p>
+                                <h3 class="fw-bold text-dark mb-0">{{ $totalBahanBaku }}</h3>
+                            </div>
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                                <i class="fas fa-boxes"></i>
+                            </div>
                         </div>
-                        <div class="p-3 bg-yellow-50 rounded-xl shadow-inner">
-                            <span class="block text-2xl font-bold text-yellow-700">{{ $produkAkanExpired }}</span>
-                            <span class="text-xs text-yellow-600 font-medium uppercase">Warning</span>
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-xl shadow-inner">
-                            <span class="block text-2xl font-bold text-red-700">{{ $produkExpired }}</span>
-                            <span class="text-xs text-red-600 font-medium uppercase">Expired</span>
+                        <div class="mt-3">
+                            <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="border-radius: 20px;">
+                                <i class="fas fa-check-circle me-1"></i> {{ $totalBahanBaku }} Aktif
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Transaction Chart -->
-                <div class="bg-white rounded-2xl shadow-xl p-8 border-t-8 border-red-900">
-                    <h3 class="text-2xl font-serif font-bold text-gray-800 mb-6 text-center border-b pb-4">Grafik Transaksi Produk<br><span class="text-sm font-normal text-gray-500">Periode {{ $startDate->format('F Y') }}</span></h3>
-                    <div class="relative h-72 w-full">
-                        <canvas id="transactionChart"></canvas>
+                <!-- Tenaga Kerja -->
+                <div class="col-md-6 mb-3">
+                    <div class="card glass-card border-0 p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1" style="font-size: 14px;">Tenaga Kerja</p>
+                                <h3 class="fw-bold text-dark mb-0">{{ $totalTenagaKerja }}</h3>
+                            </div>
+                            <div class="stat-icon bg-success bg-opacity-10 text-success">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="border-radius: 20px;">
+                                <i class="fas fa-check-circle me-1"></i> {{ $totalTenagaKerja }} Aktif
+                            </span>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Produk Jadi -->
+                <div class="col-md-6 mb-3">
+                    <div class="card glass-card border-0 p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1" style="font-size: 14px;">Produk Jadi</p>
+                                <h3 class="fw-bold text-dark mb-0">{{ $totalProduk }}</h3>
+                            </div>
+                            <div class="stat-icon bg-info bg-opacity-10 text-info">
+                                <i class="fas fa-box"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-success bg-opacity-10 text-success fw-semibold" style="border-radius: 20px;">
+                                <i class="fas fa-check-circle me-1"></i> {{ $totalProduk }} Aktif
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Order -->
+                <div class="col-md-6 mb-3">
+                    <div class="card glass-card border-0 p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1" style="font-size: 14px;">Job Order</p>
+                                <h3 class="fw-bold text-dark mb-0">{{ $totalJob }}</h3>
+                            </div>
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary fw-semibold" style="border-radius: 20px;">
+                                <i class="fas fa-history me-1"></i> Akumulasi Total
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Pekerjaan Dinamis (Mini Banner) -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card glass-card border-0 p-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-3 me-3" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fas fa-pause-circle"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-0">Pesanan Pending</p>
+                        <h4 class="fw-bold mb-0 text-dark">{{ $jobPending }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card glass-card border-0 p-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-3 me-3" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-0">Pesanan Diproses</p>
+                        <h4 class="fw-bold mb-0 text-dark">{{ $jobProses }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card glass-card border-0 p-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-success bg-opacity-10 text-success rounded-3 me-3" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-0">Pesanan Selesai</p>
+                        <h4 class="fw-bold mb-0 text-dark">{{ $jobSelesai }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafik Visualisasi Data -->
+    <div class="row mb-4">
+        <!-- Grafik Tren Job Order -->
+        <div class="col-lg-8 mb-4">
+            <div class="card glass-card border-0 p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">Tren Job Order</h5>
+                        <p class="text-muted small mb-0">Frekuensi pembukaan pesanan 6 bulan terakhir.</p>
+                    </div>
+                    <span class="badge bg-light text-muted border px-2 py-1"><i class="fas fa-chart-line me-1 text-primary"></i> Line Chart</span>
+                </div>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="jobOrderChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafik Top Produk -->
+        <div class="col-lg-4 mb-4">
+            <div class="card glass-card border-0 p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">Produk Terlaris</h5>
+                        <p class="text-muted small mb-0">Berdasarkan volume produksi (Selesai).</p>
+                    </div>
+                    <span class="badge bg-light text-muted border px-2 py-1"><i class="fas fa-chart-pie me-1 text-success"></i> Doughnut</span>
+                </div>
+                <div style="height: 300px; position: relative; display: flex; align-items: center; justify-content: center;">
+                    <canvas id="topProdukChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Antrean & Peringatan Bahan -->
+    <div class="row mb-4">
+        <!-- Stok Menipis Alert -->
+        <div class="col-lg-6 mb-4">
+            <div class="card glass-card border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i> Stok Menipis
+                    </h5>
+                    <span class="badge bg-danger rounded-pill px-2.5 py-1.5">{{ $stokMenipis->count() }}</span>
+                </div>
+                <div class="card-body px-4 py-3">
+                    @if($stokMenipis->count() > 0)
+                        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr class="text-muted small" style="border-bottom: 2px solid #f0f0f0;">
+                                        <th class="ps-0">Bahan Baku</th>
+                                        <th class="text-end">Stok Sekarang</th>
+                                        <th class="text-end">Stok Minimum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($stokMenipis as $bahan)
+                                    <tr style="border-bottom: 1px solid #f8f9fa;">
+                                        <td class="ps-0 py-3">
+                                            <div class="fw-bold text-dark">{{ $bahan->nama_bahan }}</div>
+                                            <small class="text-muted text-uppercase">{{ $bahan->kode_bahan }}</small>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-danger bg-opacity-10 text-danger fw-semibold px-2 py-1.5">
+                                                {{ number_format($bahan->stok_saat_ini, 0) }} {{ $bahan->satuan }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end text-muted small">
+                                            {{ number_format($bahan->stok_minimum, 0) }} {{ $bahan->satuan }}
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-5 text-muted">
+                            <div class="bg-success bg-opacity-10 text-success rounded-circle p-3 d-inline-flex mb-3" style="width: 60px; height: 60px; align-items: center; justify-content: center;">
+                                <i class="fas fa-check-circle fs-3"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark">Stok Bahan Baku Aman!</h6>
+                            <p class="small mb-0">Semua kuantitas bahan baku berada di atas batas minimum.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- Permintaan Bahan Baku Pending -->
+        <div class="col-lg-6 mb-4">
+            <div class="card glass-card border-0 h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-clock text-warning me-2"></i> Permintaan Pending
+                    </h5>
+                    <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1.5">{{ $permintaanPending->count() }}</span>
+                </div>
+                <div class="card-body px-4 py-3">
+                    @if($permintaanPending->count() > 0)
+                        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr class="text-muted small" style="border-bottom: 2px solid #f0f0f0;">
+                                        <th class="ps-0">No. Permintaan</th>
+                                        <th>Bahan Baku</th>
+                                        <th class="text-end">Jumlah</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($permintaanPending as $permintaan)
+                                    <tr style="border-bottom: 1px solid #f8f9fa;">
+                                        <td class="ps-0 py-3">
+                                            <div class="fw-bold text-dark">{{ $permintaan->nomor_permintaan }}</div>
+                                            <small class="text-muted">{{ $permintaan->tanggal_permintaan->format('d/m/Y') }}</small>
+                                        </td>
+                                        <td>{{ $permintaan->bahanBaku->nama_bahan ?? 'N/A' }}</td>
+                                        <td class="text-end fw-semibold text-dark">
+                                            {{ number_format($permintaan->jumlah_permintaan, 0) }} {{ $permintaan->bahanBaku->satuan ?? '' }}
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-5 text-muted">
+                            <div class="bg-light rounded-circle p-3 d-inline-flex mb-3" style="width: 60px; height: 60px; align-items: center; justify-content: center;">
+                                <i class="fas fa-inbox fs-3 text-secondary"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark">Antrean Bersih</h6>
+                            <p class="small mb-0">Tidak ada permintaan bahan baku yang berstatus pending.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Order Terbaru -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card glass-card border-0">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-clipboard-list text-primary me-2"></i> Job Order Terbaru
+                    </h5>
+                    <p class="text-muted small mb-0 mt-1">Status dan pembebanan biaya dari 5 pesanan teranyar.</p>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    @if($jobTerbaru->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr class="text-muted small" style="border-bottom: 2px solid #f0f0f0;">
+                                        <th class="ps-0">Nomor Job</th>
+                                        <th>Produk</th>
+                                        <th>Jumlah Produksi</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Total Biaya Produksi</th>
+                                        <th class="text-center">Detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($jobTerbaru as $job)
+                                    <tr style="border-bottom: 1px solid #f8f9fa;">
+                                        <td class="ps-0 py-3">
+                                            <div class="fw-bold text-dark">{{ $job->nomor_job }}</div>
+                                            <small class="text-muted">{{ $job->tanggal_mulai->format('d/m/Y') }}</small>
+                                        </td>
+                                        <td class="fw-semibold text-dark">{{ $job->produk->nama_produk ?? 'N/A' }}</td>
+                                        <td>{{ number_format($job->jumlah_produksi, 0) }} {{ $job->produk->satuan_produk ?? '' }}</td>
+                                        <td>
+                                            @if($job->status == 'pending')
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary fw-semibold px-2.5 py-1.5" style="border-radius: 12px;">Pending</span>
+                                            @elseif($job->status == 'proses')
+                                                <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-2.5 py-1.5" style="border-radius: 12px;">Proses</span>
+                                            @else
+                                                <span class="badge bg-success bg-opacity-10 text-success fw-semibold px-2.5 py-1.5" style="border-radius: 12px;">Selesai</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end fw-bold text-dark">
+                                            Rp {{ number_format($job->total_biaya_produksi, 0, ',', '.') }}
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="{{ route('permintaan-produksi.show', $job->id_permintaan_produksi) }}" 
+                                               class="btn btn-sm btn-outline-primary border-0 rounded-circle" 
+                                               style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"
+                                               data-bs-toggle="tooltip" 
+                                               title="Lihat Rincian Job">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-5 text-muted">
+                            <div class="bg-light rounded-circle p-3 d-inline-flex mb-3" style="width: 60px; height: 60px; align-items: center; justify-content: center;">
+                                <i class="fas fa-folder-open fs-3"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark">Belum Ada Job Order</h6>
+                            <p class="small mb-0">Klik menu transaksi untuk membuat dokumen produksi pertama.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+@push('styles')
+<style>
+    .dashboard-container {
+        animation: fadeIn 0.6s ease-out;
+    }
 
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    .kpi-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.35);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.5);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    }
+
+
+</style>
+@endpush
+@endsection
+
+@section('scripts')
 <script>
-    document.addEventListener('turbo:load', function () {
-        console.log('Dashboard Blade Script: Turbo load detected');
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // ==========================================
+        // CHART 1: TREN JOB ORDER PER BULAN
+        // ==========================================
+        const ctxJob = document.getElementById('jobOrderChart').getContext('2d');
         
-        // Data from PHP
-        const statusData = {!! json_encode($statusChartData) !!};
-        const transactionData = {!! json_encode($transactionChartData ?? []) !!};
+        // Buat gradien untuk background chart
+        const jobGradient = ctxJob.createLinearGradient(0, 0, 0, 300);
+        jobGradient.addColorStop(0, 'rgba(102, 126, 234, 0.4)');
+        jobGradient.addColorStop(1, 'rgba(102, 126, 234, 0.0)');
 
-        // --- 1. Status Produk Chart ---
-        const statusCtx = document.getElementById('statusChart');
-        if (statusCtx) {
-            new Chart(statusCtx, {
-                type: 'pie',
-                data: {
-                    labels: statusData.labels,
-                    datasets: [{
-                        data: statusData.data,
-                        backgroundColor: ['#3498db', '#f39c12', '#e74c3c'],
-                        borderColor: '#ffffff',
-                        borderWidth: 2
-                    }]
-                },
-                plugins: [typeof ChartDataLabels !== 'undefined' ? ChartDataLabels : {}],
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            color: '#fff',
-                            font: { weight: 'bold', size: 14 },
-                            formatter: (value, context) => {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                return percentage > 0 ? `${context.chart.data.labels[context.dataIndex]}\n${percentage}%` : '';
-                            },
-                            textAlign: 'center'
-                        }
-                    }
-                }
-            });
-        }
-
-        // --- 2. Transaction Chart ---
-        const transCtx = document.getElementById('transactionChart');
-        if (transCtx) {
-            new Chart(transCtx, {
-                type: 'line',
-                data: {
-                    labels: transactionData.labels,
-                    datasets: [
-                        {
-                            label: 'Produk Masuk',
-                            data: transactionData.masuk || [],
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 4
-                        },
-                        {
-                            label: 'Produk Keluar',
-                            data: transactionData.keluar || [],
-                            borderColor: '#EF4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+        new Chart(ctxJob, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($chartJobLabels) !!},
+                datasets: [{
+                    label: 'Job Order Dibuka',
+                    data: {!! json_encode($chartJobData) !!},
+                    borderColor: '#667eea',
+                    borderWidth: 3,
+                    backgroundColor: jobGradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
                     },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    tooltip: {
+                        padding: 12,
+                        cornerRadius: 8,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleFont: {
+                            family: 'Segoe UI',
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            family: 'Segoe UI'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Segoe UI',
+                                size: 11
+                            },
+                            color: '#888'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            beginAtZero: true,
+                            font: {
+                                family: 'Segoe UI',
+                                size: 11
+                            },
+                            color: '#888'
+                        }
                     }
                 }
-            });
-        }
+            }
+        });
+
+        // ==========================================
+        // CHART 2: TOP 5 PRODUK TERLARIS (DOUGHNUT)
+        // ==========================================
+        const ctxTop = document.getElementById('topProdukChart').getContext('2d');
+        
+        new Chart(ctxTop, {
+            type: 'doughnut',
+            data: {
+                labels: {!! json_encode($chartTopLabels) !!},
+                datasets: [{
+                    data: {!! json_encode($chartTopData) !!},
+                    backgroundColor: [
+                        '#667eea',
+                        '#764ba2',
+                        '#198754',
+                        '#0dcaf0',
+                        '#ffc107'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15,
+                            font: {
+                                family: 'Segoe UI',
+                                size: 11
+                            },
+                            color: '#555'
+                        }
+                    },
+                    tooltip: {
+                        padding: 12,
+                        cornerRadius: 8,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                let value = context.raw || 0;
+                                return ' ' + label + ': ' + value + ' unit';
+                            }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
     });
 </script>
-</x-app-layout>
+@endsection

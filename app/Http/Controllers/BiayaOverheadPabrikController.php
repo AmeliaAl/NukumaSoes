@@ -33,7 +33,7 @@ class BiayaOverheadPabrikController extends Controller
                                                     'is_otomatis' => false,
                                                     'tipe' => 'manual',
                                                 ];
-                                            ]);
+                                            });
 
         $btktlOverhead = \App\Models\BiayaTenagaKerja::whereHas('tenagaKerja', fn($q) => $q->where('jenis_tenaga', 'tidak_langsung'))
                                             ->with(['permintaanProduksi.produk', 'tenagaKerja', 'admin'])
@@ -56,7 +56,7 @@ class BiayaOverheadPabrikController extends Controller
                                                     'is_otomatis' => true,
                                                     'tipe' => 'btktl',
                                                 ];
-                                            ]);
+                                            });
 
         $bahanTidakLangsung = \App\Models\PemakaianBahanBaku::whereHas('bahanBaku', fn($q) => $q->where('jenis_bahan', 'tidak_langsung'))
                                             ->with(['permintaanProduksi.produk', 'bahanBaku', 'admin'])
@@ -79,7 +79,7 @@ class BiayaOverheadPabrikController extends Controller
                                                     'is_otomatis' => true,
                                                     'tipe' => 'bahan_tidak_langsung',
                                                 ];
-                                            ]);
+                                            });
 
         $biayaOverhead = $manualOverhead->concat($btktlOverhead)->concat($bahanTidakLangsung)
                                         ->sortByDesc(fn($item) => \Carbon\Carbon::parse($item->tanggal)->timestamp);

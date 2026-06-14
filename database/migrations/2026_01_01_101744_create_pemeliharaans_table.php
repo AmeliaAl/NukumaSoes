@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('jenis_perbaikan'); // maintenance | peningkatan
             $table->decimal('biaya', 15, 2);
             $table->string('keterangan')->nullable();
-            $table->string('metode_pembayaran')->after('biaya');
+            $table->string('metode_pembayaran');
             $table->foreignId('id_akun')
                 ->nullable()
                 ->constrained('akun')
