@@ -6,44 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class SaldoAwal extends Model
 {
-    protected $table = 'saldoawal';
+    protected $guarded = [];
 
-    protected $fillable = [
-        'bulan',
-        'tahun',
-        'akun_id',
-        'nominal',
-        'jurnal_id',
-    ];
-    
-    public function akun()
+    public function coa()
     {
-        return $this->belongsTo(Akun::class, 'akun_id');
-    }
-
-    public function jurnal()
-    {
-        return $this->belongsTo(Jurnal::class, 'jurnal_id');
-    }
-
-    /**
-     * Boot method untuk handle events
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        // Event setelah data dibuat
-        static::created(function ($saldoAwal) {
-            \App\Services\SaldoAwalService::generateJurnalForNewSaldoAwal($saldoAwal);
-        });
-
-        // Event setelah data dihapus
-        static::deleted(function ($saldoAwal) {
-            \App\Services\SaldoAwalService::deleteJurnalSaldoAwalIfEmpty(
-                $saldoAwal->bulan,
-                $saldoAwal->tahun
-            );
-        });
+        return $this->belongsTo(coa::class, 'coa_id');
     }
 }
