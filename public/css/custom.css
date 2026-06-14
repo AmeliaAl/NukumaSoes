@@ -1,0 +1,10 @@
+.brand-link .brand-image {
+    max-height: 45px !important;
+    width: 45px !important;
+    height: 45px !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+    margin-top: -8px !important;
+    margin-left: 0.5rem !important;
+    background-color: white;
+}
