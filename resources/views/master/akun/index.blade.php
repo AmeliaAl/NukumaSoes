@@ -51,7 +51,25 @@
                             <td>{{ $akun->nama_akun }}</td>
                             <td><span class="badge bg-info text-dark">{{ ucfirst($akun->tipe_akun) }}</span></td>
                             <td><span class="badge {{ $akun->saldo_normal == 'debit' ? 'bg-primary' : 'bg-warning text-dark' }}">{{ ucfirst($akun->saldo_normal) }}</span></td>
-                            <td class="text-end">Rp {{ number_format($akun->saldo, 0, ',', '.') }}</td>
+                            <td class="text-end">
+                                @php
+                                    $saldoVal  = floatval($akun->saldo);
+                                    $isAbnormal = ($akun->saldo_normal === 'debit'   && $saldoVal < 0)
+                                               || ($akun->saldo_normal === 'kredit'  && $saldoVal < 0);
+                                    $label = '';
+                                    if ($saldoVal < 0) {
+                                        $label = $akun->saldo_normal === 'debit' ? '(K)' : '(D)';
+                                    }
+                                @endphp
+                                @if($isAbnormal)
+                                    <span class="text-danger fw-semibold" title="Saldo tidak normal">
+                                        Rp {{ number_format(abs($saldoVal), 0, ',', '.') }}
+                                        <small class="badge bg-danger ms-1">{{ $label }} Abnormal</small>
+                                    </span>
+                                @else
+                                    Rp {{ number_format(abs($saldoVal), 0, ',', '.') }}
+                                @endif
+                            </td>
                             <td>
                                 @if($akun->status == 'aktif')
                                     <span class="badge bg-success">Aktif</span>
