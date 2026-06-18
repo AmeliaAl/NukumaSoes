@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\JurnalUmum;
 
 class BiayaOverheadPabrik extends Model
 {
@@ -24,6 +25,7 @@ class BiayaOverheadPabrik extends Model
         'nominal',
         'total_nominal_global',
         'jumlah_batch_terlibat',
+        'id_jurnal_aktual',
     ];
 
     protected $casts = [
@@ -121,6 +123,22 @@ class BiayaOverheadPabrik extends Model
         return $this->belongsTo(KategoriBop::class, 'id_kategori_bop', 'id_kategori_bop');
     }
 
+    /**
+     * Relasi ke jurnal aktual BOP (pengeluaran sesungguhnya).
+     */
+    public function jurnalAktual()
+    {
+        return $this->belongsTo(JurnalUmum::class, 'id_jurnal_aktual', 'id_jurnal');
+    }
+
+    /**
+     * Apakah BOP ini sudah diaktualkan (sudah ada pembayaran aktual)?
+     */
+    public function isSudahDiaktualkan(): bool
+    {
+        return !is_null($this->id_jurnal_aktual);
+    }
+
     // ─── Scopes ──────────────────────────────────────────────────────────────────
 
     public function scopeByJob($query, $idJob)
@@ -131,6 +149,16 @@ class BiayaOverheadPabrik extends Model
     public function scopeByJenis($query, $jenis)
     {
         return $query->where('jenis_overhead', $jenis);
+    }
+
+    public function scopeBelumDiaktualkan($query)
+    {
+        return $query->whereNull('id_jurnal_aktual');
+    }
+
+    public function scopeSudahDiaktualkan($query)
+    {
+        return $query->whereNotNull('id_jurnal_aktual');
     }
 
     public function scopeByTanggal($query, $tanggalMulai, $tanggalAkhir = null)

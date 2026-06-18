@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\BiayaOverheadPabrik;
 use App\Models\PermintaanProduksi;
 use App\Models\KategoriBop;
+use App\Models\JurnalUmum;
+use App\Models\Akun;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -32,6 +34,7 @@ class BiayaOverheadPabrikController extends Controller
                                                     'keterangan' => $item->keterangan ?? '-',
                                                     'is_otomatis' => false,
                                                     'tipe' => 'manual',
+                                                    'id_jurnal_aktual' => $item->id_jurnal_aktual,
                                                 ];
                                             });
 

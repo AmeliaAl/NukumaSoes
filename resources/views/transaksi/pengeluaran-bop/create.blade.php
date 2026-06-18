@@ -97,6 +97,53 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
+                    {{-- Opsi: Link ke BOP yang belum diaktualkan --}}
+                    @if($bopBelumAktual->count() > 0)
+                    <hr>
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-link me-1 text-primary"></i>
+                            Kaitkan dengan BOP Dianggarkan 
+                            <span class="badge bg-secondary">Opsional</span>
+                        </label>
+                        <small class="d-block text-muted mb-3">
+                            Pilih item BOP yang dianggarkan yang terkait dengan pembayaran ini. 
+                            Item yang dipilih akan ditandai sebagai "Sudah Diaktualkan".
+                        </small>
+                        
+                        <div class="border rounded p-3" style="max-height: 280px; overflow-y: auto; background: #fafbfc;">
+                            @foreach($bopBelumAktual as $bop)
+                            <div class="form-check mb-2 p-2 rounded {{ in_array($bop->id_overhead, old('bop_terkait', [])) ? 'bg-primary bg-opacity-10 border border-primary' : 'bg-white border' }}">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="bop_terkait[]" 
+                                       value="{{ $bop->id_overhead }}" 
+                                       id="bop_{{ $bop->id_overhead }}"
+                                       {{ in_array($bop->id_overhead, old('bop_terkait', [])) ? 'checked' : '' }}>
+                                <label class="form-check-label w-100" for="bop_{{ $bop->id_overhead }}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-info text-dark me-1">{{ $bop->jenis_overhead }}</span>
+                                            <span class="text-muted small">
+                                                {{ $bop->permintaanProduksi->nomor_job ?? '-' }} 
+                                                — {{ $bop->permintaanProduksi->produk->nama_produk ?? '-' }}
+                                            </span>
+                                        </div>
+                                        <strong class="text-primary">Rp {{ number_format($bop->nominal, 0, ',', '.') }}</strong>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ \Carbon\Carbon::parse($bop->tanggal_overhead)->format('d/m/Y') }}
+                                        @if($bop->keterangan)
+                                            — {{ Str::limit($bop->keterangan, 50) }}
+                                        @endif
+                                    </small>
+                                </label>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                     
                     <hr>
                     

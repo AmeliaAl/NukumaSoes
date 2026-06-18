@@ -44,6 +44,7 @@
                         <th class="text-end">Nominal</th>
                         <th class="text-end">Jumlah</th>
                         <th class="text-end">Total Biaya</th>
+                        <th class="text-center">Status Aktual</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -88,6 +89,21 @@
                         </td>
                         <td class="text-end">
                             <strong class="text-primary">Rp {{ number_format($overhead->total_biaya, 0, ',', '.') }}</strong>
+                        </td>
+                        <td class="text-center">
+                            @if(!$overhead->is_otomatis)
+                                @if(isset($overhead->id_jurnal_aktual) && $overhead->id_jurnal_aktual)
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Sudah Diaktualkan
+                                    </span>
+                                @else
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock me-1"></i>Belum Diaktualkan
+                                    </span>
+                                @endif
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
                         </td>
                         <td class="text-center">
                             @if(!$overhead->is_otomatis)

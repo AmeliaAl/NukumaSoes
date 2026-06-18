@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Akun;
 use App\Models\JurnalUmum;
 use App\Models\JurnalUmumDetail;
+use App\Models\BiayaOverheadPabrik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -31,12 +32,18 @@ class PengeluaranBopController extends Controller
     public function create()
     {
         // Ambil akun untuk debit (Beban BOP / Operasional aktual)
-        $akunDebit = Akun::whereIn('kode_akun', ['600', '601', '612', '613', '620', '705', '712'])
+        $akunDebit = Akun::whereIn('kode_akun', ['600', '601', '612', '613', '620', '705', '712', '713'])
             ->aktif()
             ->orderBy('kode_akun')
             ->get();
+
+        // Ambil BOP yang belum diaktualkan (opsional: user bisa pilih untuk di-link)
+        $bopBelumAktual = BiayaOverheadPabrik::with(['permintaanProduksi.produk'])
+            ->belumDiaktualkan()
+            ->orderBy('tanggal_overhead', 'desc')
+            ->get();
             
-        return view('transaksi.pengeluaran-bop.create', compact('akunDebit'));
+        return view('transaksi.pengeluaran-bop.create', compact('akunDebit', 'bopBelumAktual'));
     }
 
     /**
@@ -49,6 +56,8 @@ class PengeluaranBopController extends Controller
             'keterangan' => 'required|string|max:255',
             'nominal' => 'required|numeric|min:1',
             'akun_debit' => 'required|exists:akun,id_akun',
+            'bop_terkait' => 'nullable|array',
+            'bop_terkait.*' => 'exists:biaya_overhead_pabrik,id_overhead',
         ]);
 
         $akunDebit = Akun::find($request->akun_debit);
@@ -95,6 +104,13 @@ class PengeluaranBopController extends Controller
             $akunKredit->saldo += $request->nominal;
             $akunKredit->save();
 
+            // 4. Link BOP terkait (opsional) — tandai sebagai "sudah diaktualkan"
+            if ($request->has('bop_terkait') && is_array($request->bop_terkait)) {
+                BiayaOverheadPabrik::whereIn('id_overhead', $request->bop_terkait)
+                    ->whereNull('id_jurnal_aktual')
+                    ->update(['id_jurnal_aktual' => $jurnal->id_jurnal]);
+            }
+
             DB::commit();
             return redirect()->route('pengeluaran-bop.index')
                 ->with('success', 'Pengeluaran BOP Aktual berhasil disimpan dan dijurnal.');
@@ -135,6 +151,10 @@ class PengeluaranBopController extends Controller
                     $akun->save();
                 }
             }
+
+            // Unlink BOP yang terkait jurnal ini
+            BiayaOverheadPabrik::where('id_jurnal_aktual', $jurnal->id_jurnal)
+                ->update(['id_jurnal_aktual' => null]);
             
             // Hapus header (detail terhapus otomatis via cascade jika db diset, tapi lebih aman eksplisit)
             JurnalUmumDetail::where('id_jurnal', $jurnal->id_jurnal)->delete();
