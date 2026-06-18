@@ -205,7 +205,7 @@
                 <a href="{{ route('laporan.neraca-saldo') }}" 
                    class="menu-item {{ request()->routeIs('laporan.neraca-saldo*') ? 'active' : '' }}">
                     <i class="fas fa-balance-scale"></i>
-                    <span>Neraca Saldo</span>
+                    <span>Neraca Lajur</span>
                 </a>
             </li>
 
