@@ -16,8 +16,6 @@ use App\Http\Controllers\PengeluaranBopController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\StokProdukController;
 use App\Http\Controllers\AkunController;
-use App\Http\Controllers\JurnalUmumController;
-use App\Http\Controllers\BukuBesarController;
 use App\Http\Controllers\PenerimaanOrderProduksiController;
 use App\Http\Controllers\KehadiranController;
 use App\Http\Controllers\KategoriBopController;
@@ -218,12 +216,12 @@ Route::middleware(['auth:admin', 'check.admin'])->group(function () {
          ->name('laporan.analisis-varians');
 
     // Jurnal Umum
-    Route::get('laporan/jurnal-umum', [JurnalUmumController::class, 'index'])
+    Route::get('laporan/jurnal-umum', [LaporanController::class, 'jurnalUmum'])
          ->name('jurnal-umum.index');
-    Route::get('laporan/jurnal-umum/{id}', [JurnalUmumController::class, 'show'])
+    Route::get('laporan/jurnal-umum/{id}', [LaporanController::class, 'jurnalUmumShow'])
          ->name('jurnal-umum.show');
 
     // Buku Besar
-    Route::get('laporan/buku-besar', [BukuBesarController::class, 'index'])
+    Route::get('laporan/buku-besar', [LaporanController::class, 'bukuBesar'])
          ->name('buku-besar.index');
 });

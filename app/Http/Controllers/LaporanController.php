@@ -3,490 +3,431 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Exports\JurnalUmumExport;
-use App\Exports\BukuBesarExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\PermintaanProduksi;
+use App\Models\BahanBaku;
+use App\Models\StokBahanBaku;
+use App\Models\Produk;
+use App\Models\PemakaianBahanBaku;
+use App\Models\BiayaTenagaKerja;
+use App\Models\BiayaOverheadPabrik;
+use App\Models\Akun;
+use App\Models\JurnalUmum;
+use App\Models\JurnalUmumDetail;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 
 class LaporanController extends Controller
 {
-    public function keuangan()
+    /**
+     * Display a listing of completed job orders (Laporan Biaya Produksi)
+     */
+    public function index(Request $request)
     {
-        return view('laporan.keuangan');
+        $query = PermintaanProduksi::with('produk')
+            ->where('status', 'selesai')
+            ->orderBy('tanggal_mulai', 'desc');
+
+        // Filter by date range
+        if ($request->filled('tanggal_mulai')) {
+            $query->where('tanggal_mulai', '>=', $request->tanggal_mulai);
+        }
+
+        if ($request->filled('tanggal_akhir')) {
+            $query->where('tanggal_mulai', '<=', $request->tanggal_akhir);
+        }
+
+        // Filter by product
+        if ($request->filled('id_produk')) {
+            $query->where('id_produk', $request->id_produk);
+        }
+
+        $jobOrders = $query->paginate(15);
+        $produkList = Produk::orderBy('nama_produk')->get();
+
+        return view('laporan.biaya-produksi.index', compact('jobOrders', 'produkList'));
     }
 
+    /**
+     * Display the specified job order detail
+     */
+    public function show($id)
+    {
+        $jobOrder = PermintaanProduksi::with([
+            'produk',
+            'admin',
+            'pemakaianBahanBaku.bahanBaku',
+            'pemakaianBahanBaku.stokBahanBaku',
+            'biayaTenagaKerja.tenagaKerja',
+            'biayaOverheadPabrik'
+        ])->findOrFail($id);
+
+        return view('laporan.biaya-produksi.show', compact('jobOrder'));
+    }
+
+    /**
+     * Display job order cost card (Kartu Biaya)
+     */
+    public function kartuBiaya($id)
+    {
+        $jobOrder = PermintaanProduksi::with([
+            'produk',
+            'admin',
+            'pemakaianBahanBaku.bahanBaku',
+            'pemakaianBahanBaku.stokBahanBaku',
+            'biayaTenagaKerja.tenagaKerja',
+            'biayaOverheadPabrik'
+        ])->findOrFail($id);
+
+        return view('laporan.biaya-produksi.kartu-biaya', compact('jobOrder'));
+    }
+
+    /**
+     * Export job order to PDF
+     */
+    public function exportPdf($id)
+    {
+        $jobOrder = PermintaanProduksi::with([
+            'produk',
+            'admin',
+            'pemakaianBahanBaku.bahanBaku',
+            'pemakaianBahanBaku.stokBahanBaku',
+            'biayaTenagaKerja.tenagaKerja',
+            'biayaOverheadPabrik'
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('laporan.biaya-produksi.pdf', compact('jobOrder'));
+        
+        return $pdf->download('Kartu-Biaya-' . $jobOrder->nomor_job . '.pdf');
+    }
+
+    /**
+     * Display summary report (Laporan Ringkasan)
+     */
+    public function summary(Request $request)
+    {
+        // Default periode: bulan ini
+        $tanggal_mulai = $request->input('tanggal_mulai', date('Y-m-01'));
+        $tanggal_akhir = $request->input('tanggal_akhir', date('Y-m-d'));
+
+        // Query job order selesai dalam periode
+        $jobOrders = PermintaanProduksi::where('status', 'selesai')
+            ->whereBetween('tanggal_mulai', [$tanggal_mulai, $tanggal_akhir])
+            ->get();
+
+        // Summary Cards
+        $total_job_order = $jobOrders->count();
+        $total_unit = $jobOrders->sum('jumlah_produksi');
+        $total_biaya = $jobOrders->sum('total_biaya_produksi');
+        $rata_hpp = $total_unit > 0 ? $total_biaya / $total_unit : 0;
+
+        // Breakdown Biaya
+        $total_biaya_bahan = $jobOrders->sum('total_biaya_bahan');
+        $total_biaya_tk = $jobOrders->sum('total_biaya_tenaga_kerja');
+        $total_biaya_overhead = $jobOrders->sum('total_biaya_overhead');
+
+        // Persediaan
+        $total_jenis_bahan = BahanBaku::count();
+        
+        // Nilai persediaan
+        $nilai_persediaan = StokBahanBaku::join('bahan_baku', 'stok_bahan_baku.id_bahan', '=', 'bahan_baku.id_bahan')
+            ->sum(DB::raw('stok_bahan_baku.sisa_stok * stok_bahan_baku.harga_per_satuan'));
+
+        // Stok alert
+        $stok_menipis = BahanBaku::whereRaw('stok_saat_ini <= stok_minimum')->count();
+        $stok_aman = BahanBaku::whereRaw('stok_saat_ini > stok_minimum')->count();
+
+        // Top 5 Produk Terlaris
+        $top_produk_raw = PermintaanProduksi::select(
+                'produk.id_produk',
+                'produk.nama_produk',
+                'produk.satuan_produk',
+                DB::raw('SUM(permintaan_produksi.jumlah_produksi) as total_qty'),
+                DB::raw('SUM(permintaan_produksi.total_biaya_produksi) as biaya_sum'),
+                DB::raw('AVG(permintaan_produksi.harga_pokok_per_unit) as hpp_avg')
+            )
+            ->join('produk', 'permintaan_produksi.id_produk', '=', 'produk.id_produk')
+            ->where('permintaan_produksi.status', 'selesai')
+            ->whereBetween('permintaan_produksi.tanggal_mulai', [$tanggal_mulai, $tanggal_akhir])
+            ->groupBy('produk.id_produk', 'produk.nama_produk', 'produk.satuan_produk')
+            ->orderBy('total_qty', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Manual mapping
+        $top_produk = $top_produk_raw->map(function($item) {
+            return (object)[
+                'id_produk' => $item->id_produk,
+                'nama_produk' => $item->nama_produk,
+                'satuan_produk' => $item->satuan_produk,
+                'total_qty' => $item->total_qty,
+                'total_biaya' => floatval($item->biaya_sum ?? 0),
+                'rata_hpp' => floatval($item->hpp_avg ?? 0),
+            ];
+        });
+
+        // Trend Bulanan
+        $trend_bulanan_raw = PermintaanProduksi::select(
+                DB::raw("DATE_FORMAT(tanggal_mulai, '%Y-%m') as bulan_raw"),
+                DB::raw("DATE_FORMAT(tanggal_mulai, '%M %Y') as bulan"),
+                DB::raw('COUNT(*) as jumlah_job'),
+                DB::raw('SUM(jumlah_produksi) as unit_sum'),
+                DB::raw('SUM(total_biaya_produksi) as biaya_sum'),
+                DB::raw('AVG(total_biaya_produksi) as biaya_avg')
+            )
+            ->where('status', 'selesai')
+            ->where('tanggal_mulai', '>=', date('Y-m-d', strtotime('-6 months')))
+            ->groupBy('bulan_raw', 'bulan')
+            ->orderBy('bulan_raw', 'asc')
+            ->get();
+
+        // Manual mapping
+        $trend_bulanan = $trend_bulanan_raw->map(function($item) {
+            return (object)[
+                'bulan_raw' => $item->bulan_raw,
+                'bulan' => $item->bulan,
+                'jumlah_job' => $item->jumlah_job,
+                'total_unit' => floatval($item->unit_sum ?? 0),
+                'total_biaya' => floatval($item->biaya_sum ?? 0),
+                'rata_biaya' => floatval($item->biaya_avg ?? 0),
+            ];
+        });
+
+        return view('laporan.summary', compact(
+            'tanggal_mulai',
+            'tanggal_akhir',
+            'total_job_order',
+            'total_unit',
+            'total_biaya',
+            'rata_hpp',
+            'total_biaya_bahan',
+            'total_biaya_tk',
+            'total_biaya_overhead',
+            'total_jenis_bahan',
+            'nilai_persediaan',
+            'stok_menipis',
+            'stok_aman',
+            'top_produk',
+            'trend_bulanan'
+        ));
+    }
+
+    /**
+     * Display variance analysis (Analisis Varians)
+     */
+    public function analisisVarians($id)
+    {
+        $jobOrder = PermintaanProduksi::with([
+            'produk',
+            'pemakaianBahanBaku.bahanBaku',
+            'biayaTenagaKerja.tenagaKerja',
+            'biayaOverheadPabrik'
+        ])->findOrFail($id);
+
+        // Hitung variance untuk bahan baku
+        $varians_bahan = [];
+        foreach ($jobOrder->pemakaianBahanBaku as $pemakaian) {
+            $estimasi = $pemakaian->bahanBaku->harga_rata_rata * $pemakaian->jumlah_pakai;
+            $aktual = $pemakaian->total_biaya;
+            $selisih = $aktual - $estimasi;
+            $persentase = $estimasi > 0 ? ($selisih / $estimasi) * 100 : 0;
+
+            $varians_bahan[] = [
+                'nama_bahan' => $pemakaian->bahanBaku->nama_bahan,
+                'qty' => $pemakaian->jumlah_pakai,
+                'estimasi' => $estimasi,
+                'aktual' => $aktual,
+                'selisih' => $selisih,
+                'persentase' => $persentase,
+                'status' => $selisih > 0 ? 'unfavorable' : 'favorable'
+            ];
+        }
+
+        // Hitung variance untuk tenaga kerja
+        $varians_tk = [];
+        foreach ($jobOrder->biayaTenagaKerja as $biaya_tk) {
+            $estimasi = $biaya_tk->tenagaKerja->upah_per_jam * $biaya_tk->jam_kerja;
+            $aktual = $biaya_tk->total_biaya;
+            $selisih = $aktual - $estimasi;
+            $persentase = $estimasi > 0 ? ($selisih / $estimasi) * 100 : 0;
+
+            $varians_tk[] = [
+                'nama_tk' => $biaya_tk->tenagaKerja->nama_tenaga,
+                'jam_kerja' => $biaya_tk->jam_kerja,
+                'estimasi' => $estimasi,
+                'aktual' => $aktual,
+                'selisih' => $selisih,
+                'persentase' => $persentase,
+                'status' => $selisih > 0 ? 'unfavorable' : 'favorable'
+            ];
+        }
+
+        // Total variance
+        $total_estimasi_bahan = collect($varians_bahan)->sum('estimasi');
+        $total_aktual_bahan = collect($varians_bahan)->sum('aktual');
+        $total_selisih_bahan = $total_aktual_bahan - $total_estimasi_bahan;
+
+        $total_estimasi_tk = collect($varians_tk)->sum('estimasi');
+        $total_aktual_tk = collect($varians_tk)->sum('aktual');
+        $total_selisih_tk = $total_aktual_tk - $total_estimasi_tk;
+
+        $total_estimasi = $total_estimasi_bahan + $total_estimasi_tk + $jobOrder->total_biaya_overhead;
+        $total_aktual = $jobOrder->total_biaya_produksi;
+        $total_selisih = $total_aktual - $total_estimasi;
+        $total_persentase = $total_estimasi > 0 ? ($total_selisih / $total_estimasi) * 100 : 0;
+
+        return view('laporan.analisis-varians', compact(
+            'jobOrder',
+            'varians_bahan',
+            'varians_tk',
+            'total_estimasi_bahan',
+            'total_aktual_bahan',
+            'total_selisih_bahan',
+            'total_estimasi_tk',
+            'total_aktual_tk',
+            'total_selisih_tk',
+            'total_estimasi',
+            'total_aktual',
+            'total_selisih',
+            'total_persentase'
+        ));
+    }
+
+    /**
+     * Display Neraca Saldo (Trial Balance) report
+     */
+    public function neracaSaldo(Request $request)
+    {
+        $akuns = Akun::where('status', 'aktif')->orderBy('kode_akun', 'asc')->get();
+        
+        $totalDebit = 0;
+        $totalKredit = 0;
+        
+        $neracaData = $akuns->map(function($akun) use (&$totalDebit, &$totalKredit) {
+            $saldo = floatval($akun->saldo);
+            $debit = 0;
+            $kredit = 0;
+            
+            if ($akun->saldo_normal === 'debit') {
+                if ($saldo >= 0) {
+                    $debit = $saldo;
+                } else {
+                    $kredit = abs($saldo); // Saldo abnormal
+                }
+            } else { // saldo normal kredit
+                if ($saldo >= 0) {
+                    $kredit = $saldo;
+                } else {
+                    $debit = abs($saldo); // Saldo abnormal
+                }
+            }
+            
+            $totalDebit += $debit;
+            $totalKredit += $kredit;
+            
+            return (object)[
+                'kode_akun' => $akun->kode_akun,
+                'nama_akun' => $akun->nama_akun,
+                'debit' => $debit,
+                'kredit' => $kredit,
+            ];
+        });
+        
+        return view('laporan.neraca-saldo', compact('neracaData', 'totalDebit', 'totalKredit'));
+    }
+
+    /**
+     * Display listing of Jurnal Umum
+     */
     public function jurnalUmum(Request $request)
     {
-        $periode = $request->get('periode', date('Y-m'));
-        $parts = explode('-', $periode);
-        $tahun = $parts[0] ?? date('Y');
-        $bulan = $parts[1] ?? date('m');
+        $query = JurnalUmum::with(['detail.akun', 'admin'])->orderBy('tanggal', 'desc')->orderBy('id_jurnal', 'desc');
 
-        $entries = \App\Models\JurnalUmum::whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->orderBy('tanggal', 'asc')
-            ->orderBy('created_at', 'asc')
-            ->get();
-        
-        $coaAccounts = \App\Models\Coa::orderBy('kode_akun', 'asc')->get();
-        return view('laporan.jurnal-umum', compact('entries', 'coaAccounts', 'periode'));
-    }
-
-    public function exportExcelJurnalUmum(Request $request)
-    {
-        $periode = $request->get('periode', date('Y-m'));
-        return Excel::download(new JurnalUmumExport($periode), 'jurnal_umum_'.date('YmdHis').'.xlsx');
-    }
-
-    public function exportPdfJurnalUmum(Request $request)
-    {
-        $periode = $request->get('periode', date('Y-m'));
-        $parts = explode('-', $periode);
-        $tahun = $parts[0] ?? date('Y');
-        $bulan = $parts[1] ?? date('m');
-
-        $entries = \App\Models\JurnalUmum::whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->orderBy('tanggal', 'asc')
-            ->orderBy('created_at', 'asc')
-            ->get();
-            
-        $pdf = Pdf::loadView('laporan.jurnal-umum-pdf', compact('entries', 'periode'));
-        return $pdf->download('jurnal_umum_'.date('YmdHis').'.pdf');
-    }
-
-    public function storeJurnalUmum(Request $request)
-    {
-        $request->validate([
-            'tanggal' => 'required|date',
-            'keterangan' => 'required|array|min:1',
-            'keterangan.*' => 'required|string|max:255',
-            'ref' => 'required|array',
-            'debit' => 'required|array',
-            'debit.*' => 'nullable|numeric|min:0',
-            'kredit' => 'required|array',
-            'kredit.*' => 'nullable|numeric|min:0',
-        ]);
-
-        foreach ($request->keterangan as $index => $ket) {
-            // Only save if either debit or kredit is > 0
-            $debit = $request->debit[$index] ?? 0;
-            $kredit = $request->kredit[$index] ?? 0;
-
-            if ($debit > 0 || $kredit > 0) {
-                \App\Models\JurnalUmum::create([
-                    'tanggal' => $request->tanggal,
-                    'keterangan' => $ket,
-                    'ref' => $request->ref[$index] ?? null,
-                    'debit' => $debit,
-                    'kredit' => $kredit,
-                ]);
-            }
+        if ($request->filled('tanggal_mulai') && $request->filled('tanggal_akhir')) {
+            $query->whereBetween('tanggal', [$request->tanggal_mulai, $request->tanggal_akhir]);
+        } elseif ($request->filled('tanggal_mulai')) {
+            $query->whereDate('tanggal', $request->tanggal_mulai);
         }
 
-        return redirect()->back()->with('success', 'Entry jurnal berhasil ditambahkan.');
+        $jurnals = $query->paginate(20)->withQueryString();
+
+        return view('laporan.jurnal-umum.index', compact('jurnals'));
     }
 
-    public function destroyJurnalUmum($id)
+    /**
+     * Display detail of a Jurnal Umum entry
+     */
+    public function jurnalUmumShow($id)
     {
-        $entry = \App\Models\JurnalUmum::findOrFail($id);
-        $entry->delete();
-
-        return redirect()->back()->with('success', 'Entry jurnal berhasil dihapus.');
+        $jurnal = JurnalUmum::with(['detail.akun', 'admin'])->findOrFail($id);
+        
+        // Cek referensi untuk link ke transaksi asal
+        $routeReferensi = '#';
+        if ($jurnal->tipe_referensi == 'penerimaan_bahan_baku') {
+            $routeReferensi = route('penerimaan-bahan-baku.show', $jurnal->id_referensi);
+        } elseif ($jurnal->tipe_referensi == 'permintaan_produksi') {
+            $routeReferensi = route('permintaan-produksi.show', $jurnal->id_referensi);
+        } elseif ($jurnal->tipe_referensi == 'pemakaian_bahan_baku') {
+            $routeReferensi = route('pemakaian-bahan-baku.index');
+        } elseif ($jurnal->tipe_referensi == 'biaya_overhead_pabrik') {
+            $routeReferensi = route('biaya-overhead-pabrik.index');
+        } elseif ($jurnal->tipe_referensi == 'pengeluaran_bop_aktual') {
+            $routeReferensi = route('pengeluaran-bop.index');
+        } elseif ($jurnal->tipe_referensi == 'biaya_tenaga_kerja') {
+            $routeReferensi = route('biaya-tenaga-kerja.index');
+        } elseif ($jurnal->tipe_referensi == 'insentif_mingguan') {
+            $routeReferensi = route('kehadiran.rekap-mingguan');
+        }
+        
+        return view('laporan.jurnal-umum.show', compact('jurnal', 'routeReferensi'));
     }
 
+    /**
+     * Display Buku Besar
+     */
     public function bukuBesar(Request $request)
     {
-        $akunJurnal = \App\Models\JurnalUmum::select('keterangan')
-            ->distinct()
-            ->orderBy('keterangan', 'asc')
-            ->get();
-        $namaAkun = $request->get('nama_akun');
-        $periode = $request->get('periode', date('Y-m'));
-        $parts = explode('-', $periode);
-        $tahun = $parts[0] ?? date('Y');
-        $bulan = $parts[1] ?? date('m');
-
-        $entries = [];
+        $akuns = Akun::where('status', 'aktif')->orderBy('kode_akun', 'asc')->get();
+        $selectedAkun = null;
+        $jurnalDetails = [];
+        $saldoAwal = 0;
         
-        if ($namaAkun) {
-            $firstDayOfMonth = \Carbon\Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
-            $coa = \App\Models\Coa::where('nama_akun', $namaAkun)->first();
-            $isCreditNormal = false;
-            if ($coa) {
-                $prefix = substr($coa->kode_akun, 0, 1);
-                // 2: Liabilities, 3: Equity, 4: Revenue are usually Credit Normal
-                if (in_array($prefix, ['2', '3', '4'])) {
-                    $isCreditNormal = true;
-                }
-            }
+        $tanggalMulai = $request->input('tanggal_mulai', now()->startOfMonth()->format('Y-m-d'));
+        $tanggalAkhir = $request->input('tanggal_akhir', now()->endOfMonth()->format('Y-m-d'));
 
-            $saldo = 0;
+        if ($request->filled('id_akun')) {
+            $selectedAkun = Akun::findOrFail($request->id_akun);
             
-            // Get previous months' balance for Saldo Awal
-            $prevDebit = \App\Models\JurnalUmum::where('keterangan', $namaAkun)
-                ->where('tanggal', '<', $firstDayOfMonth->format('Y-m-d'))
-                ->sum('debit');
-            $prevKredit = \App\Models\JurnalUmum::where('keterangan', $namaAkun)
-                ->where('tanggal', '<', $firstDayOfMonth->format('Y-m-d'))
-                ->sum('kredit');
-            
-            if ($isCreditNormal) {
-                $saldo = $prevKredit - $prevDebit;
+            // Hitung saldo awal (Sebelum tanggal mulai)
+            $saldoAwalDebit = JurnalUmumDetail::where('id_akun', $selectedAkun->id_akun)
+                                              ->whereHas('jurnalUmum', function($q) use ($tanggalMulai) {
+                                                  $q->where('tanggal', '<', $tanggalMulai);
+                                              })->sum('debit');
+                                              
+            $saldoAwalKredit = JurnalUmumDetail::where('id_akun', $selectedAkun->id_akun)
+                                              ->whereHas('jurnalUmum', function($q) use ($tanggalMulai) {
+                                                  $q->where('tanggal', '<', $tanggalMulai);
+                                              })->sum('kredit');
+                                              
+            if ($selectedAkun->saldo_normal === 'debit') {
+                $saldoAwal = $saldoAwalDebit - $saldoAwalKredit;
             } else {
-                $saldo = $prevDebit - $prevKredit;
+                $saldoAwal = $saldoAwalKredit - $saldoAwalDebit;
             }
 
-            $entries[] = [
-                'tanggal' => $firstDayOfMonth->format('Y-m-d'),
-                'keterangan' => 'Saldo Awal',
-                'debit' => 0,
-                'kredit' => 0,
-                'saldo' => $saldo,
-                'is_saldo_awal' => true,
-                'is_saldo_akhir' => false,
-            ];
-
-            $jurnalEntries = \App\Models\JurnalUmum::where('keterangan', $namaAkun)
-                ->whereMonth('tanggal', $bulan)
-                ->whereYear('tanggal', $tahun)
-                ->orderBy('tanggal', 'asc')
-                ->orderBy('created_at', 'asc')
-                ->get();
-            
-            foreach ($jurnalEntries as $entry) {
-                // Find contrary account
-                $lawan = \App\Models\JurnalUmum::where('created_at', $entry->created_at)
-                    ->where('id', '!=', $entry->id)
-                    ->first();
-                $deskripsi = $lawan ? $lawan->keterangan : $entry->keterangan;
-
-                $debit = $entry->debit;
-                $kredit = $entry->kredit;
-                
-                if ($isCreditNormal) {
-                    $saldo = $saldo + $kredit - $debit;
-                } else {
-                    $saldo = $saldo + $debit - $kredit;
-                }
-                
-                $entries[] = [
-                    'tanggal' => $entry->tanggal,
-                    'keterangan' => $deskripsi,
-                    'debit' => $debit,
-                    'kredit' => $kredit,
-                    'saldo' => $saldo,
-                    'is_saldo_awal' => false,
-                    'is_saldo_akhir' => false,
-                ];
-            }
-
-            $lastDayOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-            $entries[] = [
-                'tanggal' => $lastDayOfMonth->format('Y-m-d'),
-                'keterangan' => 'SALDO AKHIR',
-                'debit' => 0,
-                'kredit' => 0,
-                'saldo' => $saldo,
-                'is_saldo_awal' => false,
-                'is_saldo_akhir' => true,
-            ];
+            // Ambil mutasi pada periode
+            $jurnalDetails = JurnalUmumDetail::with(['jurnalUmum'])
+                                             ->where('id_akun', $selectedAkun->id_akun)
+                                             ->whereHas('jurnalUmum', function($q) use ($tanggalMulai, $tanggalAkhir) {
+                                                 $q->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
+                                             })
+                                             ->get()
+                                             ->sortBy(function($detail) {
+                                                 return $detail->jurnalUmum->tanggal->format('Y-m-d') . '-' . $detail->id_jurnal;
+                                             });
         }
 
-        return view('laporan.buku-besar', compact('entries', 'akunJurnal', 'periode', 'namaAkun'));
-    }
-
-    public function exportExcelBukuBesar(Request $request)
-    {
-        $periode = $request->get('periode', date('Y-m'));
-        $namaAkun = $request->get('nama_akun');
-        return Excel::download(new BukuBesarExport($periode, $namaAkun), 'buku_besar_'.date('YmdHis').'.xlsx');
-    }
-
-    public function exportPdfBukuBesar(Request $request)
-    {
-        $periode = $request->get('periode', date('Y-m'));
-        $namaAkun = $request->get('nama_akun');
-        $parts = explode('-', $periode);
-        $tahun = $parts[0] ?? date('Y');
-        $bulan = $parts[1] ?? date('m');
-
-        $entries = [];
-        
-        if ($namaAkun) {
-            $firstDayOfMonth = \Carbon\Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
-            $coa = \App\Models\Coa::where('nama_akun', $namaAkun)->first();
-            $isCreditNormal = false;
-            if ($coa) {
-                $prefix = substr($coa->kode_akun, 0, 1);
-                if (in_array($prefix, ['2', '3', '4'])) {
-                    $isCreditNormal = true;
-                }
-            }
-
-            $saldo = 0;
-            
-            // Get previous months' balance for Saldo Awal
-            $prevDebit = \App\Models\JurnalUmum::where('keterangan', $namaAkun)
-                ->where('tanggal', '<', $firstDayOfMonth->format('Y-m-d'))
-                ->sum('debit');
-            $prevKredit = \App\Models\JurnalUmum::where('keterangan', $namaAkun)
-                ->where('tanggal', '<', $firstDayOfMonth->format('Y-m-d'))
-                ->sum('kredit');
-            
-            if ($isCreditNormal) {
-                $saldo = $prevKredit - $prevDebit;
-            } else {
-                $saldo = $prevDebit - $prevKredit;
-            }
-            
-            $entries[] = [
-                'tanggal' => $firstDayOfMonth->format('Y-m-d'),
-                'keterangan' => 'Saldo Awal',
-                'debit' => 0,
-                'kredit' => 0,
-                'saldo' => $saldo,
-                'is_saldo_awal' => true,
-                'is_saldo_akhir' => false,
-            ];
-
-            $jurnalEntries = \App\Models\JurnalUmum::where('keterangan', $namaAkun)
-                ->whereMonth('tanggal', $bulan)
-                ->whereYear('tanggal', $tahun)
-                ->orderBy('tanggal', 'asc')
-                ->orderBy('created_at', 'asc')
-                ->get();
-            
-            foreach ($jurnalEntries as $entry) {
-                $lawan = \App\Models\JurnalUmum::where('created_at', $entry->created_at)
-                    ->where('id', '!=', $entry->id)
-                    ->first();
-                $deskripsi = $lawan ? $lawan->keterangan : $entry->keterangan;
-
-                $debit = $entry->debit;
-                $kredit = $entry->kredit;
-                
-                if ($isCreditNormal) {
-                    $saldo = $saldo + $kredit - $debit;
-                } else {
-                    $saldo = $saldo + $debit - $kredit;
-                }
-                
-                $entries[] = [
-                    'tanggal' => $entry->tanggal,
-                    'keterangan' => $deskripsi,
-                    'debit' => $debit,
-                    'kredit' => $kredit,
-                    'saldo' => $saldo,
-                    'is_saldo_awal' => false,
-                    'is_saldo_akhir' => false,
-                ];
-            }
-
-            $lastDayOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-            $entries[] = [
-                'tanggal' => $lastDayOfMonth->format('Y-m-d'),
-                'keterangan' => 'SALDO AKHIR',
-                'debit' => 0,
-                'kredit' => 0,
-                'saldo' => $saldo,
-                'is_saldo_awal' => false,
-                'is_saldo_akhir' => true,
-            ];
-        }
-            
-        $pdf = Pdf::loadView('laporan.buku-besar-pdf', compact('entries', 'periode', 'namaAkun'));
-        return $pdf->download('buku_besar_'.date('YmdHis').'.pdf');
-    }
-
-    public function labaRugi(Request $request)
-    {
-        $periode = $request->get('periode', date('Y-m'));
-        $data = $this->getLabaRugiData($periode);
-        return view('laporan.laba-rugi', $data);
-    }
-
-    public function storeLabaRugiManual(Request $request)
-    {
-        $validated = $request->validate([
-            'periode' => 'required|string',
-            'penjualan_bersih' => 'nullable|numeric',
-            'persediaan_produk_jadi_awal' => 'nullable|numeric',
-            'persediaan_bdp_awal' => 'nullable|numeric',
-            'biaya_bahan_baku' => 'nullable|numeric',
-            'biaya_tenaga_kerja_langsung' => 'nullable|numeric',
-            'biaya_overhead_pabrik' => 'nullable|numeric',
-            'persediaan_bdp_akhir' => 'nullable|numeric',
-            'harga_pokok_produksi' => 'nullable|numeric',
-            'persediaan_produk_jadi_akhir' => 'nullable|numeric',
-            'harga_pokok_penjualan' => 'nullable|numeric',
-            'biaya_pemasaran' => 'nullable|numeric',
-            'biaya_adm_umum' => 'nullable|numeric',
-        ]);
-
-        \App\Models\LabaRugiManual::updateOrCreate(
-            ['periode' => $validated['periode']],
-            $validated
-        );
-
-        return redirect()->back()->with('success', 'Laporan Laba Rugi Manual berhasil disimpan.');
-    }
-
-    private function getLabaRugiData($periode)
-    {
-        $parts = explode('-', $periode);
-        $tahun = $parts[0] ?? date('Y');
-        $bulan = $parts[1] ?? date('m');
-        
-        $startOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
-        $endOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay();
-
-        // Helper to get balance of accounts by prefix or ref within period
-        $getBalance = function($refPrefix, $start, $end) {
-             $debit = \App\Models\JurnalUmum::where('ref', 'like', $refPrefix.'%')
-                ->whereBetween('tanggal', [$start, $end])
-                ->sum('debit');
-             $kredit = \App\Models\JurnalUmum::where('ref', 'like', $refPrefix.'%')
-                ->whereBetween('tanggal', [$start, $end])
-                ->sum('kredit');
-             return [$debit, $kredit];
-        };
-
-        // Helper to get balance at a specific point in time
-        $getPointBalance = function($ref, $date, $isInclusive = false) {
-            $query = \App\Models\JurnalUmum::where('ref', $ref);
-            if ($isInclusive) {
-                $query->where('tanggal', '<=', $date);
-            } else {
-                $query->where('tanggal', '<', $date);
-            }
-            $debit = $query->sum('debit');
-            $kredit = $query->sum('kredit');
-            return $debit - $kredit;
-        };
-
-        // 1. Penjualan Bersih
-        list($penjualanD, $penjualanK) = $getBalance('4', $startOfMonth, $endOfMonth);
-        $penjualanBersih = $penjualanK - $penjualanD;
-
-        // 2. Persediaan Produk Jadi Awal (Ref 140)
-        $persediaanProdukJadiAwal = $getPointBalance('140', $startOfMonth);
-
-        // 3. Harga Pokok Produksi
-        // Persediaan BDP Awal (Ref 130)
-        $persediaanBDPAwal = $getPointBalance('130', $startOfMonth);
-
-        // Biaya Produksi (5xx)
-        // Biaya Bahan Baku (55x)
-        list($bbD, $bbK) = $getBalance('55', $startOfMonth, $endOfMonth);
-        $biayaBahanBaku = $bbD - $bbK;
-
-        // BTKL (56x)
-        list($btklD, $btklK) = $getBalance('56', $startOfMonth, $endOfMonth);
-        $biayaTenagaKerjaLangsung = $btklD - $btklK;
-
-        // Overhead Pabrik (57x, 58x, 59x)
-        list($bopD1, $bopK1) = $getBalance('57', $startOfMonth, $endOfMonth);
-        list($bopD2, $bopK2) = $getBalance('58', $startOfMonth, $endOfMonth);
-        list($bopD3, $bopK3) = $getBalance('59', $startOfMonth, $endOfMonth);
-        $biayaOverheadPabrik = ($bopD1 + $bopD2 + $bopD3) - ($bopK1 + $bopK2 + $bopK3);
-
-        $totalBiayaProduksi = $biayaBahanBaku + $biayaTenagaKerjaLangsung + $biayaOverheadPabrik;
-
-        // Persediaan BDP Akhir
-        $persediaanBDPAkhir = $getPointBalance('130', $endOfMonth, true);
-
-        // Harga Pokok Produksi Calculation
-        $hargaPokokProduksi = ($persediaanBDPAwal + $totalBiayaProduksi) - $persediaanBDPAkhir;
-
-        // 4. Persediaan Produk Jadi Akhir
-        $persediaanProdukJadiAkhir = $getPointBalance('140', $endOfMonth, true);
-
-        // Harga Pokok Penjualan Calculation
-        $hargaPokokPenjualan = ($persediaanProdukJadiAwal + $hargaPokokProduksi) - $persediaanProdukJadiAkhir;
-
-        // 5. Laba Kotor
-        $labaKotor = $penjualanBersih - $hargaPokokPenjualan;
-
-        // 6. Biaya Usaha
-        // Biaya Pemasaran (6xx or 76x)
-        list($pemD1, $pemK1) = $getBalance('6', $startOfMonth, $endOfMonth);
-        list($pemD2, $pemK2) = $getBalance('76', $startOfMonth, $endOfMonth);
-        $biayaPemasaran = ($pemD1 + $pemD2) - ($pemK1 + $pemK2);
-
-        // Biaya Adm dan Umum (7xx excluding 76x)
-        $biayaAdmUmumD = \App\Models\JurnalUmum::where('ref', 'like', '7%')
-            ->where('ref', 'not like', '76%')
-            ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-            ->sum('debit');
-        $biayaAdmUmumK = \App\Models\JurnalUmum::where('ref', 'like', '7%')
-            ->where('ref', 'not like', '76%')
-            ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-            ->sum('kredit');
-        $biayaAdmUmum = $biayaAdmUmumD - $biayaAdmUmumK;
-
-        $totalBiayaUsaha = $biayaPemasaran + $biayaAdmUmum;
-
-        // 7. Laba Bersih Usaha
-        $labaBersihUsaha = $labaKotor - $totalBiayaUsaha;
-
-        // FETCH MANUAL OVERRIDES
-        $manual = \App\Models\LabaRugiManual::where('periode', $periode)->first();
-        if ($manual) {
-            $penjualanBersih = $manual->penjualan_bersih;
-            $persediaanProdukJadiAwal = $manual->persediaan_produk_jadi_awal;
-            $persediaanBDPAwal = $manual->persediaan_bdp_awal;
-            $biayaBahanBaku = $manual->biaya_bahan_baku;
-            $biayaTenagaKerjaLangsung = $manual->biaya_tenaga_kerja_langsung;
-            $biayaOverheadPabrik = $manual->biaya_overhead_pabrik;
-            $persediaanBDPAkhir = $manual->persediaan_bdp_akhir;
-            $hargaPokokProduksi = $manual->harga_pokok_produksi;
-            $persediaanProdukJadiAkhir = $manual->persediaan_produk_jadi_akhir;
-            $hargaPokokPenjualan = $manual->harga_pokok_penjualan;
-            $biayaPemasaran = $manual->biaya_pemasaran;
-            $biayaAdmUmum = $manual->biaya_adm_umum;
-
-            // Recalculate only the final totals based on manual values
-            $totalBiayaProduksi = $biayaBahanBaku + $biayaTenagaKerjaLangsung + $biayaOverheadPabrik;
-            // Note: $hargaPokokProduksi and $hargaPokokPenjualan are now manual inputs
-            $labaKotor = $penjualanBersih - $hargaPokokPenjualan;
-            $totalBiayaUsaha = $biayaPemasaran + $biayaAdmUmum;
-            $labaBersihUsaha = $labaKotor - $totalBiayaUsaha;
-        }
-
-        return [
-            'periode' => $periode,
-            'penjualanBersih' => $penjualanBersih,
-            'persediaanProdukJadiAwal' => $persediaanProdukJadiAwal,
-            'persediaanBDPAwal' => $persediaanBDPAwal,
-            'biayaBahanBaku' => $biayaBahanBaku,
-            'biayaTenagaKerjaLangsung' => $biayaTenagaKerjaLangsung,
-            'biayaOverheadPabrik' => $biayaOverheadPabrik,
-            'totalBiayaProduksi' => $totalBiayaProduksi,
-            'persediaanBDPAkhir' => $persediaanBDPAkhir,
-            'hargaPokokProduksi' => $hargaPokokProduksi,
-            'persediaanProdukJadiAkhir' => $persediaanProdukJadiAkhir,
-            'hargaPokokPenjualan' => $hargaPokokPenjualan,
-            'labaKotor' => $labaKotor,
-            'biayaPemasaran' => $biayaPemasaran,
-            'biayaAdmUmum' => $biayaAdmUmum,
-            'totalBiayaUsaha' => $totalBiayaUsaha,
-            'labaBersihUsaha' => $labaBersihUsaha,
-        ];
-    }
-
-    public function exportExcelLabaRugi(Request $request)
-    {
-        $periode = $request->get('periode', date('Y-m'));
-        return Excel::download(new \App\Exports\LabaRugiExport($periode), 'laba_rugi_'.date('YmdHis').'.xlsx');
-    }
-
-    public function exportPdfLabaRugi(Request $request)
-    {
-        $periode = $request->get('periode', date('Y-m'));
-        $data = $this->getLabaRugiData($periode);
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('laporan.laba-rugi-pdf', $data);
-        return $pdf->download('laba_rugi_'.date('YmdHis').'.pdf');
+        return view('laporan.buku-besar.index', compact(
+            'akuns', 'selectedAkun', 'jurnalDetails', 'saldoAwal', 'tanggalMulai', 'tanggalAkhir'
+        ));
     }
 }
