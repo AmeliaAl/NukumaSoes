@@ -29,7 +29,7 @@ class PerolehanAsetResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-inbox-arrow-down';
     protected static UnitEnum|string|null $navigationGroup = 'Transaksi';
     protected static ?string $navigationLabel = 'Tambah Aset Tetap';
-    protected static ?string $pluralModelLabel = 'Aset Tetap';
+    protected static ?string $pluralModelLabel = 'Pembelian Aset Tetap';
      protected static ?int $navigationSort = 30;
 
     public static function form(Schema $schema): Schema

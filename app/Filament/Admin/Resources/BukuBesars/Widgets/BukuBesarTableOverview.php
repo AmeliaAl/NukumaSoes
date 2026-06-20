@@ -38,7 +38,7 @@ class BukuBesarTableOverview extends Widget
     {
         $this->saldoAwal = 0;
         
-        // ✅ Cari akun berdasarkan no_akun
+        // Cari akun berdasarkan no_akun
         $akun = $this->id_akun ? Akun::where('no_akun', $this->id_akun)->first() : null;
         
         if (!$akun) {
@@ -51,8 +51,6 @@ class BukuBesarTableOverview extends Widget
         $idAkun = $akun->id; // ID dari tabel akun
         
         // Tentukan saldo normal berdasarkan header_akun
-        // Header 1 (Aset), 5 (Beban), 6, 7 → Saldo Normal DEBIT
-        // Header 2 (Kewajiban), 3 (Ekuitas), 4 (Pendapatan) → Saldo Normal KREDIT
         $this->posisiSaldo = in_array($akun->header_akun, [1, 5, 6, 7]) ? 'debit' : 'credit';
         
         $jurnalsQuery = Jurnal::with(['jurnaldetail.akun'])
@@ -63,7 +61,7 @@ class BukuBesarTableOverview extends Widget
             $awal = Carbon::createFromFormat('Y-m', $this->periode_awal)->startOfMonth();
             $akhir = Carbon::createFromFormat('Y-m', $this->periode_akhir)->endOfMonth();
 
-            // ✅ Hitung saldo awal (transaksi SEBELUM periode awal)
+            // Hitung saldo awal (transaksi SEBELUM periode awal)
             $transaksiSebelum = Jurnal::where('tanggal', '<', $awal)
                 ->whereHas('jurnaldetail', function ($q) use ($idAkun) {
                     $q->where('no_akun', $idAkun);

@@ -12,4 +12,9 @@ class SaldoAwal extends Model
     {
         return $this->belongsTo(coa::class, 'coa_id');
     }
+
+     public function akun()
+    {
+        return $this->belongsTo(akun::class, 'akun_id');
+    }
 }

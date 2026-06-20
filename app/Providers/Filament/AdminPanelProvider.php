@@ -33,6 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('Nukuma Soes')
             ->maxContentWidth(Width::Full)
+            //->topNavigation()
             ->login()
             ->colors([
                 'primary' => Color::Amber,
@@ -108,7 +109,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->userMenuItems([
                 'laravel-dashboard' => MenuItem::make()
-                    ->label('Laravel Dashboard')
+                    ->label('Dashboard Persediaan')
                     ->url('/dashboard')
                     ->icon('heroicon-o-home'),
             ])
@@ -116,23 +117,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationItem::make('Dashboard Laravel')
                     ->url('/dashboard')
                     ->icon('heroicon-o-home')
-                    ->group('🚀 Laravel')
+                    ->group('Persediaan')
                     ->sort(-10),
-                NavigationItem::make('COA (Chart of Accounts)')
-                    ->url('/coa')
-                    ->icon('heroicon-o-document-text')
-                    ->group('🚀 Laravel')
-                    ->sort(-9),
-                NavigationItem::make('Kategori Produk')
-                    ->url('/kategori')
-                    ->icon('heroicon-o-tag')
-                    ->group('🚀 Laravel')
-                    ->sort(-8),
-                NavigationItem::make('Persediaan Produk')
-                    ->url('/persediaan-produk')
-                    ->icon('heroicon-o-cube')
-                    ->group('🚀 Laravel')
-                    ->sort(-7),
             ]);
     }
 
