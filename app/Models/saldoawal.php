@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SaldoAwal extends Model
 {
+    protected $table = 'saldoawal';
     protected $guarded = [];
 
     public function coa()

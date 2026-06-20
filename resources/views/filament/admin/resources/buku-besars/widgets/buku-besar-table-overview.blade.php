@@ -253,10 +253,10 @@
 {{-- HEADER --}}
 <div class="bukubesar-header">
     <div style="font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-        Buku Besar
+        NUKUMA SOES
     </div>
     <div style="font-size: 22px; font-weight: 600; margin-bottom: 4px;">
-        NUKUMA SOES
+        Buku Besar
     </div>
     <div style="font-size: 14px; opacity: 0.95;">
         Periode 

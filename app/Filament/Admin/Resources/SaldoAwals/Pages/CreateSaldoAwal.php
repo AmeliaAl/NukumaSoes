@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\SaldoAwals\Pages;
 
 use App\Filament\Admin\Resources\SaldoAwals\SaldoAwalResource;
 use Filament\Resources\Pages\CreateRecord;
+use App\Services\SaldoAwalService;
 
 class CreateSaldoAwal extends CreateRecord
 {
@@ -13,5 +14,11 @@ class CreateSaldoAwal extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function afterCreate(): void
+    {
+        // Buat jurnal setelah saldo awal dibuat
+        SaldoAwalService::buatJurnal($this->record);
     }
 }

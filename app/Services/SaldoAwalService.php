@@ -12,134 +12,106 @@ use Carbon\Carbon;
 class SaldoAwalService
 {
     /**
-     * Generate jurnal saldo awal untuk periode tertentu
-     * 
-     * @param int $bulan
-     * @param int $tahun
-     * @return Jurnal|null
+     * Buat jurnal dari saldo awal individual
+     * Mirip dengan ModalService
      */
-    public static function generateJurnalSaldoAwal(int $bulan, int $tahun): ?Jurnal
+    public static function buatJurnal($saldoAwal): void
     {
-        return DB::transaction(function () use ($bulan, $tahun) {
-            // 1. Cek apakah sudah ada jurnal saldo awal untuk periode ini
-            $existingJurnal = Jurnal::where('no_referensi', "SALDO-AWAL-{$bulan}-{$tahun}")
-                ->first();
+        DB::transaction(function () use ($saldoAwal) {
 
-            if ($existingJurnal) {
-                // Jurnal sudah ada, skip
-                return $existingJurnal;
+            // Hapus jurnal lama jika ada (untuk update)
+            if ($saldoAwal->jurnal_id) {
+                $jurnalLama = Jurnal::find($saldoAwal->jurnal_id);
+                if ($jurnalLama) {
+                    $jurnalLama->details()->delete();
+                    $jurnalLama->delete();
+                }
             }
 
-            // 2. Ambil semua saldo awal untuk periode ini
-            $saldoAwals = saldoawal::with('akun')
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->whereNull('jurnal_id') // Hanya yang belum punya jurnal
-                ->get();
-
-            if ($saldoAwals->isEmpty()) {
-                return null;
+            // Ambil akun yang dipilih user
+            $akun = Akun::find($saldoAwal->akun_id);
+            if (!$akun) {
+                throw new \Exception('Akun tidak ditemukan');
             }
 
-            // 3. Buat header jurnal
-            $tanggalAwal = Carbon::create($tahun, $bulan, 1)->startOfMonth();
-            
+            // Cek header akun (hanya 1, 2, 3 yang diperbolehkan)
+            if (!in_array($akun->header_akun, [1, 2, 3])) {
+                throw new \Exception('Hanya akun Aset, Kewajiban, dan Ekuitas yang diperbolehkan');
+            }
+
+            // Akun penyeimbang: Saldo Awal (399)
+            $akunSaldoAwal = Akun::firstOrCreate(
+                ['no_akun' => '399'],
+                [
+                    'nama_akun' => 'Saldo Awal',
+                    'header_akun' => 3
+                ]
+            );
+
+            // Tanggal: awal bulan dari periode saldo awal
+            $tanggal = Carbon::create($saldoAwal->tahun, $saldoAwal->bulan, 1);
+
+            // Buat jurnal header
             $jurnal = Jurnal::create([
-                'tanggal' => $tanggalAwal,
-                'no_referensi' => "SALDO-AWAL-{$bulan}-{$tahun}",
-                'deskripsi' => "Jurnal Saldo Awal - " . self::getNamaBulan($bulan) . " {$tahun}",
+                'tanggal'      => $tanggal,
+                'no_referensi' => "SALDO-{$saldoAwal->id}",
+                'deskripsi'    => "Saldo awal {$akun->nama_akun} - " . self::getNamaBulan($saldoAwal->bulan) . " {$saldoAwal->tahun}",
             ]);
 
-            $totalDebit = 0;
-            $totalKredit = 0;
+            $nominal = abs($saldoAwal->nominal);
 
-            // 4. Loop semua saldo awal dan buat jurnal detail
-            foreach ($saldoAwals as $saldoAwal) {
-                $akun = $saldoAwal->akun;
-                $nominal = abs($saldoAwal->nominal);
+            // Tentukan Debit/Kredit berdasarkan saldo normal akun
+            $isDebit = self::isAkunDebit($akun);
 
-                // Tentukan posisi debit/kredit berdasarkan saldo normal akun
-                $isDebit = self::isAkunDebit($akun);
+            if ($isDebit) {
+                // Akun normal Debit (Aset, Prive)
+                // D: Akun yang dipilih
+                // K: Saldo Awal
+                $jurnal->details()->create([
+                    'no_akun'   => $akun->id,
+                    'debit'     => $nominal,
+                    'credit'    => 0,
+                    'deskripsi' => "Saldo awal {$akun->nama_akun}",
+                ]);
 
-                if ($isDebit) {
-                    // Aset, Beban, Prive → Debit
-                    JurnalDetail::create([
-                        'id_jurnal' => $jurnal->id,
-                        'no_akun' => $akun->id,
-                        'deskripsi' => "Saldo Awal {$akun->nama_akun}",
-                        'debit' => $nominal,
-                        'credit' => 0,
-                    ]);
-                    $totalDebit += $nominal;
-                } else {
-                    // Kewajiban, Ekuitas, Pendapatan, Akumulasi Penyusutan → Kredit
-                    JurnalDetail::create([
-                        'id_jurnal' => $jurnal->id,
-                        'no_akun' => $akun->id,
-                        'deskripsi' => "Saldo Awal {$akun->nama_akun}",
-                        'debit' => 0,
-                        'credit' => $nominal,
-                    ]);
-                    $totalKredit += $nominal;
-                }
+                $jurnal->details()->create([
+                    'no_akun'   => $akunSaldoAwal->id,
+                    'debit'     => 0,
+                    'credit'    => $nominal,
+                    'deskripsi' => 'Penyeimbang saldo awal',
+                ]);
+            } else {
+                // Akun normal Kredit (Kewajiban, Ekuitas)
+                // D: Saldo Awal
+                // K: Akun yang dipilih
+                $jurnal->details()->create([
+                    'no_akun'   => $akunSaldoAwal->id,
+                    'debit'     => $nominal,
+                    'credit'    => 0,
+                    'deskripsi' => 'Penyeimbang saldo awal',
+                ]);
 
-                // Update saldo awal dengan jurnal_id
-                $saldoAwal->update(['jurnal_id' => $jurnal->id]);
+                $jurnal->details()->create([
+                    'no_akun'   => $akun->id,
+                    'debit'     => 0,
+                    'credit'    => $nominal,
+                    'deskripsi' => "Saldo awal {$akun->nama_akun}",
+                ]);
             }
 
-            // 5. Balance jurnal dengan akun Modal jika tidak balance
-            if ($totalDebit != $totalKredit) {
-                $selisih = abs($totalDebit - $totalKredit);
-                $akunModal = self::getAkunModal();
-
-                if (!$akunModal) {
-                    throw new \Exception('Akun Modal tidak ditemukan! Pastikan ada akun dengan header_akun = 3 dan nama mengandung "Modal"');
-                }
-
-                if ($totalDebit > $totalKredit) {
-                    // Debit lebih besar → tambahkan ke Kredit Modal
-                    JurnalDetail::create([
-                        'id_jurnal' => $jurnal->id,
-                        'no_akun' => $akunModal->id,
-                        'deskripsi' => "Penyesuaian Saldo Awal (Modal)",
-                        'debit' => 0,
-                        'credit' => $selisih,
-                    ]);
-                    $totalKredit += $selisih;
-                } else {
-                    // Kredit lebih besar → tambahkan ke Debit Modal
-                    JurnalDetail::create([
-                        'id_jurnal' => $jurnal->id,
-                        'no_akun' => $akunModal->id,
-                        'deskripsi' => "Penyesuaian Saldo Awal (Modal)",
-                        'debit' => $selisih,
-                        'credit' => 0,
-                    ]);
-                    $totalDebit += $selisih;
-                }
-            }
-
-            // 6. Validasi final balance
-            if ($totalDebit != $totalKredit) {
-                throw new \Exception("Jurnal tidak balance! Debit: {$totalDebit}, Kredit: {$totalKredit}");
-            }
-
-            return $jurnal;
+            // Simpan jurnal_id ke saldo awal
+            $saldoAwal->updateQuietly(['jurnal_id' => $jurnal->id]);
         });
     }
 
     /**
-     * Tentukan apakah akun masuk kategori debit
+     * Tentukan apakah akun masuk kategori debit normal
      * 
      * @param Akun $akun
      * @return bool
      */
     protected static function isAkunDebit(Akun $akun): bool
     {
-        // Header 1 = Aset (kecuali Akumulasi Penyusutan)
-        // Header 5, 6, 7 = Beban
-        // Prive (cek dari nama akun)
-        
         $headerAkun = $akun->header_akun;
         $namaAkun = strtolower($akun->nama_akun);
 
@@ -148,35 +120,15 @@ class SaldoAwalService
             return false;
         }
 
-        // Prive = Kontra Ekuitas (Debit, tapi dikurangi dari ekuitas)
+        // Prive = Kontra Ekuitas (tapi saldo normal Debit)
         if (stripos($namaAkun, 'prive') !== false) {
             return true;
         }
 
-        // Aset (1) dan Beban (5, 6, 7) = Debit
-        if (in_array($headerAkun, [1, 5, 6, 7])) {
-            return true;
-        }
-
-        // Kewajiban (2), Ekuitas (3), Pendapatan (4) = Kredit
-        return false;
-    }
-
-    /**
-     * Cari akun Modal untuk penyesuaian
-     * 
-     * @return Akun|null
-     */
-    protected static function getAkunModal(): ?Akun
-    {
-        // Cari akun dengan header_akun = 3 (Ekuitas) dan nama mengandung "Modal"
-        return Akun::where('header_akun', 3)
-            ->where(function($q) {
-                $q->where('nama_akun', 'like', '%Modal%')
-                  ->orWhere('nama_akun', 'like', '%Equity%')
-                  ->orWhere('nama_akun', 'like', '%Capital%');
-            })
-            ->first();
+        // Header 1 = Aset (Debit normal)
+        // Header 2 = Kewajiban (Kredit normal)
+        // Header 3 = Ekuitas (Kredit normal)
+        return $headerAkun == 1;
     }
 
     /**
@@ -197,38 +149,18 @@ class SaldoAwalService
     }
 
     /**
-     * Generate jurnal untuk saldo awal yang baru dibuat
+     * Hapus jurnal saat saldo awal dihapus
      * 
      * @param saldoawal $saldoAwal
      * @return void
      */
-    public static function generateJurnalForNewSaldoAwal(saldoawal $saldoAwal): void
+    public static function hapusJurnal(saldoawal $saldoAwal): void
     {
-        // Generate jurnal untuk periode saldo awal ini
-        self::generateJurnalSaldoAwal($saldoAwal->bulan, $saldoAwal->tahun);
-    }
-
-    /**
-     * Hapus jurnal saldo awal jika semua saldo awal dihapus
-     * 
-     * @param int $bulan
-     * @param int $tahun
-     * @return void
-     */
-    public static function deleteJurnalSaldoAwalIfEmpty(int $bulan, int $tahun): void
-    {
-        // Cek apakah masih ada saldo awal untuk periode ini
-        $count = saldoawal::where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->count();
-
-        if ($count === 0) {
-            // Hapus jurnal jika tidak ada saldo awal lagi
-            $jurnal = Jurnal::where('no_referensi', "SALDO-AWAL-{$bulan}-{$tahun}")
-                ->first();
-
+        if ($saldoAwal->jurnal_id) {
+            $jurnal = Jurnal::find($saldoAwal->jurnal_id);
             if ($jurnal) {
-                $jurnal->delete(); // Cascade delete jurnal_detail
+                $jurnal->details()->delete();
+                $jurnal->delete();
             }
         }
     }

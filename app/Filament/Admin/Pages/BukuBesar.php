@@ -80,62 +80,62 @@ class BukuBesar extends Page
             $awalKode = substr((string)$akun->kode_akun, 0, 1);
             $isDebitNormal = in_array($awalKode, ['1', '5', '6', '8', '9']);
 
+            // Hitung saldo awal dari jurnal saldo awal (deskripsi mengandung 'saldo awal')
             $querySaldoAwal = JurnalDetail::query()
-                ->where('akun_id', $akun->id)
-                ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id');
+                ->where('no_akun', $akun->id)
+                ->join('jurnal', 'jurnal_detail.id_jurnal', '=', 'jurnal.id')
+                ->where('jurnal.deskripsi', 'like', '%saldo awal%');
             
             if ($this->dari) {
                 $querySaldoAwal->where(function($q) {
-                    $q->whereDate('jurnal_umum.tanggal', '<', $this->dari)
+                    $q->whereDate('jurnal.tanggal', '<', $this->dari)
                       ->orWhere(function($subQ) {
-                          $subQ->whereDate('jurnal_umum.tanggal', '=', $this->dari)
-                               ->where('jurnal_umum.keterangan', 'like', 'Saldo awal %');
+                          $subQ->whereDate('jurnal.tanggal', '=', $this->dari);
                       });
                 });
-            } else {
-                $querySaldoAwal->where('jurnal_umum.keterangan', 'like', 'Saldo awal %');
             }
 
             $saldoAwalDebit = $querySaldoAwal->sum('jurnal_detail.debit');
-            $saldoAwalKredit = $querySaldoAwal->sum('jurnal_detail.kredit');
+            $saldoAwalKredit = $querySaldoAwal->sum('jurnal_detail.credit');
             
             $saldoAwal = $isDebitNormal 
                 ? ($saldoAwalDebit - $saldoAwalKredit) 
                 : ($saldoAwalKredit - $saldoAwalDebit);
 
+            // Ambil transaksi KECUALI jurnal saldo awal
             $queryTransaksi = JurnalDetail::query()
                 ->with('jurnal')
-                ->where('akun_id', $akun->id)
-                ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id')
-                ->where('jurnal_umum.keterangan', 'not like', 'Saldo awal %');
+                ->where('no_akun', $akun->id)
+                ->join('jurnal', 'jurnal_detail.id_jurnal', '=', 'jurnal.id')
+                ->where('jurnal.deskripsi', 'not like', '%saldo awal%');
             
             if ($this->dari) {
-                $queryTransaksi->whereDate('jurnal_umum.tanggal', '>=', $this->dari);
+                $queryTransaksi->whereDate('jurnal.tanggal', '>=', $this->dari);
             }
             if ($this->sampai) {
-                $queryTransaksi->whereDate('jurnal_umum.tanggal', '<=', $this->sampai);
+                $queryTransaksi->whereDate('jurnal.tanggal', '<=', $this->sampai);
             }
             
             $details = $queryTransaksi
-                ->orderBy('jurnal_umum.tanggal')
-                ->orderBy('jurnal_umum.id')
+                ->orderBy('jurnal.tanggal')
+                ->orderBy('jurnal.id')
                 ->select('jurnal_detail.*')
                 ->get();
 
             $saldo = $saldoAwal;
             $rows = $details->map(function ($detail) use (&$saldo, $isDebitNormal) {
                 if ($isDebitNormal) {
-                    $saldo += $detail->debit - $detail->kredit;
+                    $saldo += $detail->debit - $detail->credit;
                 } else {
-                    $saldo += $detail->kredit - $detail->debit;
+                    $saldo += $detail->credit - $detail->debit;
                 }
                 
                 return [
                     'tanggal'    => $detail->jurnal?->tanggal,
-                    'keterangan' => $detail->jurnal?->keterangan,
-                    'ref'        => $detail->jurnal?->no_jurnal,
+                    'keterangan' => $detail->jurnal?->deskripsi,
+                    'ref'        => $detail->jurnal?->no_referensi,
                     'debit'      => $detail->debit,
-                    'kredit'     => $detail->kredit,
+                    'kredit'     => $detail->credit,
                     'saldo'      => $saldo,
                 ];
             });
@@ -147,7 +147,7 @@ class BukuBesar extends Page
                 'saldo_awal'    => $saldoAwal,
                 'rows'          => $rows,
                 'total_debit'   => $details->sum('debit'),
-                'total_kredit'  => $details->sum('kredit'),
+                'total_kredit'  => $details->sum('credit'),
                 'saldo_akhir'   => $saldo,
             ];
         })->filter(function ($akun) {
