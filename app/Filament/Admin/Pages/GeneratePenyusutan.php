@@ -88,40 +88,33 @@ class GeneratePenyusutan extends Page
         // 🔒 VALIDASI URUTAN - Cek apakah bulan sebelumnya sudah di-generate
         $periodeInput = Carbon::parse($this->periode . '-01');
         
-        // Cari jurnal terakhir yang sudah di-generate
-        $jurnalTerakhir = Jurnal::where('deskripsi', 'like', 'Penyusutan%')
-            ->orderBy('tanggal', 'desc')
-            ->first();
+        // Cari penyusutan terakhir yang sudah di-generate (dari tabel penyusutan, lebih akurat)
+        $penyusutanTerakhir = Penyusutan::orderBy('periode', 'desc')->first();
 
-        if ($jurnalTerakhir) {
-            // Extract periode dari deskripsi jurnal (format: "Penyusutan Mesin 2026-05")
-            preg_match('/(\d{4}-\d{2})/', $jurnalTerakhir->deskripsi, $matches);
+        if ($penyusutanTerakhir) {
+            $periodeTerakhir = Carbon::parse($penyusutanTerakhir->periode . '-01');
+            $periodeBerikutnya = $periodeTerakhir->copy()->addMonth();
             
-            if (isset($matches[1])) {
-                $periodeTerakhir = Carbon::parse($matches[1] . '-01');
-                $periodeBerikutnya = $periodeTerakhir->copy()->addMonth();
+            // Jika user mau generate periode yang bukan bulan berikutnya
+            if (!$periodeInput->isSameMonth($periodeBerikutnya)) {
+                // Jika mau generate periode yang sudah lewat
+                if ($periodeInput->lte($periodeTerakhir)) {
+                    Notification::make()
+                        ->title('Tidak bisa generate periode yang sudah lewat!')
+                        ->body('Periode terakhir yang sudah di-generate: ' . $periodeTerakhir->translatedFormat('F Y'))
+                        ->danger()
+                        ->send();
+                    return;
+                }
                 
-                // Jika user mau generate periode yang bukan bulan berikutnya
-                if (!$periodeInput->isSameMonth($periodeBerikutnya)) {
-                    // Jika mau generate periode yang lebih lama
-                    if ($periodeInput->lt($periodeTerakhir)) {
-                        Notification::make()
-                            ->title('Tidak bisa generate periode yang sudah lewat!')
-                            ->body('Periode terakhir yang sudah di-generate: ' . $periodeTerakhir->translatedFormat('F Y'))
-                            ->danger()
-                            ->send();
-                        return;
-                    }
-                    
-                    // Jika mau loncat periode (skip bulan)
-                    if ($periodeInput->gt($periodeBerikutnya)) {
-                        Notification::make()
-                            ->title('Tidak bisa loncat periode!')
-                            ->body('Harus generate periode ' . $periodeBerikutnya->translatedFormat('F Y') . ' terlebih dahulu')
-                            ->warning()
-                            ->send();
-                        return;
-                    }
+                // Jika mau loncat periode (skip bulan)
+                if ($periodeInput->gt($periodeBerikutnya)) {
+                    Notification::make()
+                        ->title('Tidak bisa loncat periode!')
+                        ->body('Harus generate periode ' . $periodeBerikutnya->translatedFormat('F Y') . ' terlebih dahulu')
+                        ->warning()
+                        ->send();
+                    return;
                 }
             }
         }
