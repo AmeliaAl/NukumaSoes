@@ -10,11 +10,11 @@ class JurnalUmumPage extends Page
     protected string $view = 'filament.admin.pages.jurnal-umum';
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document';
-    protected static ?string $navigationLabel = 'Jurnal Umum';
+   protected static ?string $navigationLabel = 'Jurnal Umum';
     protected static ?string $title = 'Jurnal Umum';
-    protected static \UnitEnum|string|null $navigationGroup = 'Akuntansi';
+   protected static \UnitEnum|string|null $navigationGroup = 'Akuntansi';
     protected static ?int $navigationSort = 1;
-
+    protected static bool $shouldRegisterNavigation = false;
     public ?string $dari        = null;
     public ?string $sampai      = null;
     public ?string $inputDari   = null;

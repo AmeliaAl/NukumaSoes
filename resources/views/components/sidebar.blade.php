@@ -1,0 +1,216 @@
+<aside class="w-full h-full bg-gradient-to-br from-red-900 via-red-800 to-red-950 shadow-2xl text-white border-r border-red-700/30 flex flex-col relative overflow-hidden" x-data="{}">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .custom-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <!-- Fluid Overlay Pattern -->
+    <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
+    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-red-500/20 blur-3xl rounded-full pointer-events-none"></div>
+    <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-purple-500/20 blur-3xl rounded-full pointer-events-none"></div>
+    
+    <!-- Content Wrapper for Scrolling -->
+    <div class="flex-1 overflow-y-auto overflow-x-hidden relative z-10 custom-scrollbar">
+
+    <!-- Logo -->
+    <div class="p-8 text-center border-b border-red-700/30 relative z-10">
+        <h1 class="text-2xl font-serif font-bold tracking-widest text-white drop-shadow-md">
+            NUKUMA SOES
+        </h1>
+        <p class="text-sm text-red-200 mt-2 uppercase tracking-widest font-light">Admin Panel</p>
+    </div>
+
+    <nav class="mt-4 px-4 space-y-2">
+
+        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'pemilik')
+        
+        <!-- SECTION: GENERAL -->
+        <p class="px-4 text-xs font-semibold text-red-300 uppercase tracking-wider mt-2 mb-1">General</p>
+        <!-- Dashboard -->
+        <a href="{{ route('dashboard') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('dashboard') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('dashboard') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Dashboard
+            </span>
+            @if(request()->routeIs('dashboard')) <div class="absolute inset-0 bg-white/5 blur-sm"></div> @endif
+        </a>
+
+        @endif
+
+        @if(Auth::user()->role === 'admin')
+
+        <!-- SECTION: MASTER DATA -->
+        <p class="px-4 text-xs font-semibold text-red-300 uppercase tracking-wider mt-6 mb-1">Master Data</p>
+
+        <!-- COA (Daftar Akun) -->
+        <a href="{{ route('coa.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('coa.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+             <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('coa.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                COA (Daftar Akun)
+            </span>
+        </a>
+
+        <!-- Kategori Produk -->
+        <a href="{{ route('kategori.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('kategori.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('kategori.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 11h.01M7 15h.01M13 7h.01M13 11h.01M13 15h.01M17 7h.01M17 11h.01M17 15h.01M12 21a9 9 0 110-18 9 9 0 010 18z"></path>
+                </svg>
+                Kategori Produk
+            </span>
+        </a>
+
+        <!-- Produk -->
+        <a href="{{ route('persediaan-produk.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('produk.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('produk.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                Produk
+            </span>
+            @if(request()->routeIs('produk.*')) <div class="absolute inset-0 bg-white/5 blur-sm"></div> @endif
+        </a>
+
+        <!-- Harga Produk -->
+        <a href="{{ route('harga-produk.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('harga-produk.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('harga-produk.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+                Harga Produk
+            </span>
+            @if(request()->routeIs('harga-produk.*')) <div class="absolute inset-0 bg-white/5 blur-sm"></div> @endif
+        </a>
+
+
+
+        <!-- SECTION: INVENTORY CONTROL -->
+        <p class="px-4 text-xs font-semibold text-red-300 uppercase tracking-wider mt-6 mb-1">Inventory Control</p>
+
+        <!-- Monitoring Produk FEFO -->
+        <a href="{{ route('persediaan.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('monitoring.fefo') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('monitoring.fefo') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                Monitoring FEFO
+            </span>
+        </a>
+
+
+
+
+        <!-- SECTION: TRANSAKSI -->
+        <p class="px-4 text-xs font-semibold text-red-300 uppercase tracking-wider mt-6 mb-1">Transaksi</p>
+        
+        <!-- Persediaan Produk -->
+        <a href="{{ route('persediaan-produk.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('persediaan-produk.index') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('produk.index') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                Persediaan Produk
+            </span>
+        </a>
+
+        <!-- Produk Masuk -->
+        <a href="{{ route('persediaan.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('persediaan.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('persediaan.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Produk Masuk
+            </span>
+        </a>
+
+        <!-- Produk Keluar -->
+        <a href="{{ route('produk-keluar.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('produk-keluar.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('produk-keluar.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Produk Keluar
+            </span>
+        </a>
+
+
+        <!-- Daftar Pengeluaran -->
+        <a href="{{ route('pengeluaran.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('pengeluaran.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('pengeluaran.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                Daftar Pengeluaran
+            </span>
+        </a>
+
+        @endif
+
+        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'pemilik')
+
+        <!-- SECTION: LAPORAN -->
+        <p class="px-4 text-xs font-semibold text-red-300 uppercase tracking-wider mt-6 mb-1">Laporan</p>
+
+        <!-- Kartu Stok -->
+        <a href="{{ route('kartu-stok.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('kartu-stok.index') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('kartu-stok.index') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Kartu Stok
+            </span>
+        </a>
+
+        <!-- Jurnal Umum -->
+        <a href="{{ route('laporan.jurnal-umum') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('laporan.jurnal-umum') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('laporan.jurnal-umum') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Jurnal Umum
+            </span>
+        </a>
+
+        <!-- Buku Besar -->
+        <a href="{{ route('laporan.buku-besar') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('laporan.buku-besar') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('laporan.buku-besar') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                Buku Besar
+            </span>
+        </a>
+
+        <!-- Laporan Laba Rugi -->
+        <a href="{{ route('laporan.laba-rugi') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('laporan.laba-rugi') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('laporan.laba-rugi') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Laporan Laba Rugi
+            </span>
+        </a>
+
+        <!-- Logout -->
+        <!-- Logout (Hidden in Sidebar as it's now in Header, but kept optional if needed later) -->
+        <!-- <form method="POST" action="{{ route('logout') }}" class="pt-4 px-2">...</form> -->
+
+        @endif
+
+    </nav>
+    </div> <!-- End Scrolling Wrapper -->
+</aside>

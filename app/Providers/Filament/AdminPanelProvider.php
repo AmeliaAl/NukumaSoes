@@ -17,6 +17,10 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Assets\Css;
+use Filament\Navigation\MenuItem;
+use Filament\Navigation\NavigationItem;
 use Filament\Support\Enums\Width;
 
 class AdminPanelProvider extends PanelProvider
@@ -29,9 +33,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('Nukuma Soes')
             ->maxContentWidth(Width::Full)
+            //->topNavigation()
             ->login()
             ->colors([
-                'primary' => Color::Yellow,
+                'primary' => Color::Amber,
             ])
             ->renderHook(
                 'panels::head.end',
@@ -77,7 +82,17 @@ class AdminPanelProvider extends PanelProvider
                 </style>'
             )
             ->resources([
-                \App\Filament\Resources\CoaResource::class,
+                \App\Filament\Resources\Akuns\AkunResource::class,
+            ])
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
+            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
+            ->pages([
+                Dashboard::class,
+                \App\Filament\Admin\Pages\DetailSemuaPiutang::class,
+            ])
+            ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
+            ->widgets([
+                AccountWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -87,26 +102,31 @@ class AdminPanelProvider extends PanelProvider
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
+                DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
-            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
-            ->pages([
-                Dashboard::class,
-                \App\Filament\Admin\Pages\DetailSemuaPiutang::class,
+            ->userMenuItems([
+                'laravel-dashboard' => MenuItem::make()
+                    ->label('Dashboard Persediaan')
+                    ->url('/dashboard')
+                    ->icon('heroicon-o-home'),
             ])
-            // Widget didaftarkan manual — tidak pakai discoverWidgets
-            // agar Livewire tidak mencoba resolve class sebelum autoload siap
-            ->widgets([
-                AccountWidget::class,
-                \App\Filament\Admin\Widgets\StatsOverview::class,
-                \App\Filament\Admin\Widgets\GrafikPenjualan::class,
-                \App\Filament\Admin\Widgets\AgingPiutang::class,
-                \App\Filament\Admin\Widgets\KontribusiPenjualan::class,
-                \App\Filament\Admin\Widgets\TopMenunggak::class,
+            ->navigationItems([
+                NavigationItem::make('Dashboard Laravel')
+                    ->url('/dashboard')
+                    ->icon('heroicon-o-home')
+                    ->group('Persediaan')
+                    ->sort(-10),
             ]);
+    }
+
+    public function boot(): void
+    {
+        FilamentAsset::register([
+            Css::make('custom-theme', asset('css/filament/custom.css')),
+        ]);
     }
 }

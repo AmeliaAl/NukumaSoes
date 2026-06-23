@@ -152,7 +152,11 @@ return [
     |
     | This value determines the domain and subdomains the session cookie is
     | available to. By default, the cookie will be available to the root
+<<<<<<< HEAD
+    | domain and all subdomains. Typically, this shouldn't be changed.
+=======
     | domain without subdomains. Typically, this shouldn't be changed.
+>>>>>>> origin/sarah-backup-final
     |
     */
 

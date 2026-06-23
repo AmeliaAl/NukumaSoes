@@ -10,6 +10,21 @@ class PenjualanNonKonsinyasi extends Model
     use HasFactory;
 
     protected $table = 'penjualan_non_konsinyasi';
+
+    protected $fillable = [
+        'tanggal',
+        'pelanggan_id',
+        'no_invoice',
+        'total',
+        'total_hpp',
+        'total_terbayar',
+        'jenis_pembayaran',
+        'jenis_penjualan',
+        'no_pesanan',
+        'jatuh_tempo',
+        'diskon',
+        'keterangan',
+    ];
     protected $guarded = [];
 
     public function pelanggan()

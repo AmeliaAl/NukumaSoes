@@ -4,16 +4,28 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\App;
+use App\Models\FakturPembelian;
+use App\Observers\FakturPembelianObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
+    /**
+     * Register any application services.
+     */
     public function register(): void
     {
         //
     }
 
+    /**
+     * Bootstrap any application services.
+     */
     public function boot(): void
     {
+        // Set locale
         App::setLocale('id');
+        
+        // Register observers
+        FakturPembelian::observe(FakturPembelianObserver::class);
     }
 }

@@ -21,7 +21,7 @@ class BukuPembantuPiutang extends Page
 
     protected static ?string $title = 'Buku Pembantu Piutang';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Akuntansi';
+    protected static \UnitEnum|string|null $navigationGroup = 'Laporan';
 
     protected static ?int $navigationSort = 3;
 

@@ -24,12 +24,12 @@ class User extends Authenticatable
         'role',
     ];
 
-    public function isAdmin(): bool
+    public function isAdmins(): bool
     {
         return $this->role === 'admin';
     }
 
-    public function isPemilik(): bool
+    public function isPemiliks(): bool
     {
         return $this->role === 'pemilik';
     }
@@ -55,5 +55,40 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is pemilik
+     */
+    public function isPemilik(): bool
+    {
+        return $this->role === 'pemilik';
+    }
+
+    /**
+     * Check if user can access resource
+     */
+    public function canAccessResource(string $resource): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Pemilik hanya bisa akses laporan
+        $allowedForPemilik = [
+            'JurnalResource',
+            'BukuBesarResource',
+            'NeracaPage',
+        ];
+
+        return in_array($resource, $allowedForPemilik);
     }
 }

@@ -1,0 +1,281 @@
+classDiagram
+%% [ignoring loop detection]
+
+%% ==========================================
+%% MODELS (Hanya berisi Method Bisnis)
+%% ==========================================
+
+class Barang {
+    + getKodeBarang()
+    + getNamaLengkap()
+    + cekStokTersedia()
+    + ambilHargaDasar()
+}
+
+class DetailPersediaanProduk {
+    + ambilStokFEFO()
+    + kurangiStok()
+    + cekTanggalExpired()
+}
+
+class Mitra {
+    + getKodeMitra()
+    + hitungTotalPiutang()
+    + cekLimitPiutang()
+}
+
+class PenjualanNonKonsinyasi {
+    + getNoInvoice()
+    + hitungTotal()
+    + refreshStatus()
+    + validasiPiutang()
+    + buatJurnalPenjualan()
+}
+
+class Pembayaran {
+    + getKodePembayaran()
+    + hitungSisaPiutang()
+    + buatJurnalPembayaran()
+}
+
+class PenjualanKonsinyasi {
+    + generateNo()
+    + hitungTotalPenjualan()
+    + refreshStatus()
+    + buatJurnalPenjualan()
+}
+
+class LaporanKonsinyasi {
+    + generateNo()
+    + refreshTotalLaporan()
+    + validasiLaporan()
+}
+
+class TagihanKonsinyasi {
+    + generateNo()
+    + hitungSisaTagihan()
+    + updateStatusPembayaran()
+}
+
+class PembayaranTagihanKonsinyasi {
+    + getKodePembayaran()
+    + buatJurnalPembayaran()
+}
+
+class JurnalUmum {
+    + getTotal()
+    + postingJurnal()
+    + hitungSaldo()
+}
+
+class Coa {
+    + getKodeAkun()
+    + cekSaldoNormal()
+}
+
+class SaldoAwal {
+    + generateSaldoAwal()
+    + hitungSaldoPeriode()
+}
+
+%% ==========================================
+%% RESOURCES & RELATION MANAGERS (Berisi Atribut & Method UI)
+%% ==========================================
+
+class BarangResource {
+    - kode_barang : String
+    - nama_barang : String
+    - kategori_id : Int
+    - rasa : String
+    - satuan : String
+    - stok_awal : Int
+    - stok : Int
+    + form()
+    + table()
+    + getRelations()
+}
+
+class MitraResource {
+    - kode_mitra : String
+    - nama_mitra : String
+    - jenis_mitra : String
+    - alamat : String
+    - telepon : String
+    + form()
+    + table()
+}
+
+class PenjualanNonKonsinyasiResource {
+    - no_invoice : String
+    - tanggal : Date
+    - mitra_id : Int
+    - jenis_pembayaran : String
+    - jenis_penjualan : String
+    - no_pesanan : String
+    - jatuh_tempo : Date
+    - total : Int
+    - total_terbayar : Int
+    - diskon : Int
+    - status : String
+    + form()
+    + table()
+    + infolist()
+    + getRelations()
+}
+
+class DetailPenjualanNonKonsinyasi {
+    - penjualan_id : String
+    - barang_id : String
+    - qty : Int
+    - kemasan : String
+    - harga : Int
+    - diskon : Int
+    - subtotal : Int
+    + hitungSubtotal()
+    + form()
+    + table()
+}
+
+class PembayaranResource {
+    - kode_pembayaran : String
+    - penjualan_id : String
+    - mitra_id : String
+    - tanggal_bayar : Date
+    - jumlah_bayar : Int
+    - metode_bayar : String
+    - bukti_bayar : String
+    + form()
+    + table()
+}
+
+class PenjualanKonsinyasiResource {
+    - no_konsinyasi : String
+    - kode_mitra : String
+    - tanggal_kirim : Date
+    - total_konsinyasi : Int
+    - total_laporan : Int
+    - total_terbayar : Int
+    - diskon : Int
+    - status : String
+    + form()
+    + table()
+    + infolist()
+    + getRelations()
+}
+
+class DetailKonsinyasi {
+    - penjualan_konsinyasi_id : String
+    - barang_id : String
+    - qty_titip : Int
+    - harga_konsinyasi : Int
+    - diskon : Int
+    - subtotal : Int
+    + hitungSubtotal()
+    + form()
+    + table()
+}
+
+class LaporanKonsinyasiResource {
+    - no_laporan : String
+    - penjualan_konsinyasi_id : Int
+    - total_laporan : Int
+    - tanggal : Date
+    + form()
+    + table()
+    + getRelations()
+}
+
+class TagihanKonsinyasiResource {
+    - no_tagihan : String
+    - laporan_konsinyasi_id : Int
+    - no_konsinyasi : String
+    - tanggal_tagihan : Date
+    - jatuh_tempo : Date
+    - total_tagihan : Int
+    - total_terbayar : Int
+    - sisa_tagihan : Int
+    - status : String
+    + form()
+    + table()
+    + infolist()
+}
+
+class PembayaranTagihanKonsinyasiResource {
+    - tagihan_konsinyasi_id : Int
+    - tanggal_bayar : Date
+    - jumlah_bayar : Int
+    - metode_bayar : String
+    - bukti_bayar : String
+    + form()
+    + table()
+}
+
+class JurnalUmumResource {
+    - no_jurnal : String
+    - tanggal : Date
+    - keterangan : String
+    - total_debit : Decimal
+    - total_kredit : Decimal
+    + form()
+    + table()
+    + infolist()
+}
+
+class CoaResource {
+    - kode_akun : String
+    - nama_akun : String
+    - tipe : String
+    - saldo_normal : Int
+    + form()
+    + table()
+}
+
+class SaldoAwalResource {
+    - id : BigInteger
+    - coa_id : BigInteger
+    - periode : String
+    - nominal : Decimal
+    + form()
+    + table()
+}
+
+%% ==========================================
+%% RELATIONSHIPS
+%% ==========================================
+
+Mitra "1" --> "*" PenjualanNonKonsinyasi : melakukan
+PenjualanNonKonsinyasi "1" --> "1..*" DetailPenjualanNonKonsinyasi : terdiri_dari
+DetailPenjualanNonKonsinyasi "0..*" --> "1" Barang : menggunakan
+PenjualanNonKonsinyasi "1" --> "0..*" Pembayaran : dibayar via
+
+Mitra "1" --> "*" PenjualanKonsinyasi : melakukan
+PenjualanKonsinyasi "1" --> "1..*" DetailKonsinyasi : terdiri_dari
+DetailKonsinyasi "0..*" --> "1" Barang : menggunakan
+
+PenjualanKonsinyasi "1" --> "0..*" LaporanKonsinyasi : dilaporkan via
+LaporanKonsinyasi "1" --> "1" TagihanKonsinyasi : menghasilkan
+TagihanKonsinyasi "1" --> "0..*" PembayaranTagihanKonsinyasi : dibayar via
+
+DetailPersediaanProduk "*" --> "1" Barang : berasal_dari
+DetailPersediaanProduk --> DetailPenjualanNonKonsinyasi : mengurangi_stok
+DetailPersediaanProduk --> DetailKonsinyasi : mengurangi_stok
+
+PenjualanNonKonsinyasi --> JurnalUmum : membuat_jurnal
+PenjualanKonsinyasi --> JurnalUmum : membuat_jurnal
+Pembayaran --> JurnalUmum : membuat_jurnal
+PembayaranTagihanKonsinyasi --> JurnalUmum : membuat_jurnal
+SaldoAwal --> JurnalUmum : membentuk_saldo
+JurnalUmum "*" --> "1" Coa : terkait_akun
+
+%% Relasi Manajemen (Resource/RelationManager -> Model)
+BarangResource ..> Barang : kelola_data
+MitraResource ..> Mitra : kelola_data
+PenjualanNonKonsinyasiResource ..> PenjualanNonKonsinyasi : kelola_transaksi
+PembayaranResource ..> Pembayaran : kelola_pembayaran
+PenjualanKonsinyasiResource ..> PenjualanKonsinyasi : kelola_transaksi
+LaporanKonsinyasiResource ..> LaporanKonsinyasi : kelola_laporan
+TagihanKonsinyasiResource ..> TagihanKonsinyasi : kelola_tagihan
+PembayaranTagihanKonsinyasiResource ..> PembayaranTagihanKonsinyasi : kelola_pembayaran
+JurnalUmumResource ..> JurnalUmum : kelola_jurnal
+CoaResource ..> Coa : kelola_coa
+SaldoAwalResource ..> SaldoAwal : kelola_saldo

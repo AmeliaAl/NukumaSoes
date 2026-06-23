@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Coa;
-use App\Models\JurnalUmum;
+use App\Models\akun;
+use App\Models\Jurnal;
 use App\Models\JurnalDetail;
 use App\Models\LaporanKonsinyasi;
 use App\Models\PembayaranTagihanKonsinyasi;
@@ -68,7 +68,7 @@ class JurnalPerpetualService
 
         // Hapus jurnal lama (penjualan + HPP) jika ada
         foreach (['Jurnal Penjualan Non Konsinyasi ', 'Jurnal HPP Non Konsinyasi '] as $prefix) {
-            $lama = JurnalUmum::where('keterangan', $prefix . $penjualan->no_invoice)->first();
+            $lama = Jurnal::where('deskripsi', $prefix . $penjualan->no_invoice)->first();
             if ($lama) {
                 $lama->details()->delete();
                 $lama->delete();
@@ -76,42 +76,45 @@ class JurnalPerpetualService
         }
 
         $akunDebit      = self::getAkunDebitPenjualan($penjualan);
-        $akunPenjualan  = Coa::where('kode_akun', '401')->firstOrFail();
-        $akunHpp        = Coa::where('kode_akun', '500')->firstOrFail();
-        $akunPersediaan = Coa::where('kode_akun', '143')->firstOrFail();
+        $akunPenjualan  = akun::where('no_akun', '401')->firstOrFail();
+        $akunHpp        = akun::where('no_akun', '500')->firstOrFail();
+        $akunPersediaan = akun::where('no_akun', '143')->firstOrFail();
 
-        $jurnal = JurnalUmum::create([
+        $jurnal = Jurnal::create([
             'tanggal'    => $penjualan->tanggal,
-            'keterangan' => $referensi,
+            'deskripsi' => $referensi,
         ]);
 
         // ── Jurnal Penjualan ─────────────────────────────────────────────
 
         // 1. D: Kas / Piutang / Toko Online = total_bruto - total_potongan
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunDebit->id,
-            'debit'          => $kasPiutang,
-            'kredit'         => 0,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunDebit->id,
+            'deskripsi' => 'Penjualan ' . $penjualan->no_invoice,
+            'debit'     => $kasPiutang,
+            'credit'    => 0,
         ]);
 
         // 2. D: Potongan Penjualan = diskon detail + diskon header (hanya jika ada)
         if ($totalPotongan > 0) {
-            $akunPotongan = Coa::where('kode_akun', '403')->firstOrFail();
+            $akunPotongan = akun::where('no_akun', '403')->firstOrFail();
             JurnalDetail::create([
-                'jurnal_umum_id' => $jurnal->id,
-                'akun_id'        => $akunPotongan->id,
-                'debit'          => $totalPotongan,
-                'kredit'         => 0,
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunPotongan->id,
+                'deskripsi' => 'Potongan Penjualan',
+                'debit'     => $totalPotongan,
+                'credit'    => 0,
             ]);
         }
 
         // 3. K: Penjualan = total_bruto (sebelum semua diskon)
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunPenjualan->id,
-            'debit'          => 0,
-            'kredit'         => $totalBruto,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunPenjualan->id,
+            'deskripsi' => 'Penjualan',
+            'debit'     => 0,
+            'credit'    => $totalBruto,
         ]);
 
         // ── Jurnal HPP (dalam jurnal yang sama) ──────────────────────────
@@ -119,18 +122,20 @@ class JurnalPerpetualService
         if ($totalHpp > 0) {
             // 4. D: Harga Pokok Penjualan
             JurnalDetail::create([
-                'jurnal_umum_id' => $jurnal->id,
-                'akun_id'        => $akunHpp->id,
-                'debit'          => $totalHpp,
-                'kredit'         => 0,
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunHpp->id,
+                'deskripsi' => 'HPP',
+                'debit'     => $totalHpp,
+                'credit'    => 0,
             ]);
 
             // 5. K: Persediaan Barang Jadi
             JurnalDetail::create([
-                'jurnal_umum_id' => $jurnal->id,
-                'akun_id'        => $akunPersediaan->id,
-                'debit'          => 0,
-                'kredit'         => $totalHpp,
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunPersediaan->id,
+                'deskripsi' => 'Persediaan',
+                'debit'     => 0,
+                'credit'    => $totalHpp,
             ]);
         }
     }
@@ -141,17 +146,17 @@ class JurnalPerpetualService
      * - Kredit      → Piutang Usaha (130)
      * - Lainnya     → Bank (112)
      */
-    protected static function getAkunDebitPenjualan(PenjualanNonKonsinyasi $penjualan): Coa
+    protected static function getAkunDebitPenjualan(PenjualanNonKonsinyasi $penjualan): akun
     {
         if ($penjualan->jenis_penjualan === 'MARKETPLACE') {
-            return Coa::where('kode_akun', '113')->firstOrFail();
+            return akun::where('no_akun', '113')->firstOrFail();
         }
 
         if (($penjualan->jenis_pembayaran ?? null) === 'kredit') {
-            return Coa::where('kode_akun', '130')->firstOrFail();
+            return akun::where('no_akun', '130')->firstOrFail();
         }
 
-        return Coa::where('kode_akun', '112')->firstOrFail();
+        return akun::where('no_akun', '112')->firstOrFail();
     }
 
     /**
@@ -175,40 +180,42 @@ class JurnalPerpetualService
 
         $referensi = 'Jurnal Pembayaran Piutang ' . $pembayaran->kode_pembayaran;
 
-        $jurnalLama = JurnalUmum::where('keterangan', $referensi)->first();
+        $jurnalLama = Jurnal::where('deskripsi', $referensi)->first();
         if ($jurnalLama) {
             $jurnalLama->details()->delete();
             $jurnalLama->delete();
         }
 
         $akunBank    = self::getAkunDebitPembayaran($pembayaran);
-        $akunPiutang = Coa::where('kode_akun', '130')->firstOrFail();
+        $akunPiutang = akun::where('no_akun', '130')->firstOrFail();
 
-        $jurnal = JurnalUmum::create([
+        $jurnal = Jurnal::create([
             'tanggal'    => $pembayaran->tanggal_bayar ?? now(),
-            'keterangan' => $referensi,
+            'deskripsi' => $referensi,
         ]);
 
         // 1. D: Bank
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunBank->id,
-            'debit'          => $nominal,
-            'kredit'         => 0,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunBank->id,
+            'deskripsi' => 'Pembayaran Piutang',
+            'debit'     => $nominal,
+            'credit'    => 0,
         ]);
 
         // 2. K: Piutang Usaha
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunPiutang->id,
-            'debit'          => 0,
-            'kredit'         => $nominal,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunPiutang->id,
+            'deskripsi' => 'Piutang Usaha',
+            'debit'     => 0,
+            'credit'    => $nominal,
         ]);
     }
 
-    protected static function getAkunDebitPembayaran(Pembayaran $pembayaran): Coa
+    protected static function getAkunDebitPembayaran(Pembayaran $pembayaran): akun
     {
-        return Coa::where('kode_akun', '112')->firstOrFail();
+        return akun::where('no_akun', '112')->firstOrFail();
     }
 
     // ─────────────────────────────────────────────
@@ -261,64 +268,69 @@ class JurnalPerpetualService
 
         // Hapus jurnal lama (penjualan + HPP) jika ada
         foreach (['Jurnal Laporan Konsinyasi ', 'Jurnal HPP Konsinyasi '] as $prefix) {
-            $lama = JurnalUmum::where('keterangan', $prefix . $laporan->no_laporan)->first();
+            $lama = Jurnal::where('deskripsi', $prefix . $laporan->no_laporan)->first();
             if ($lama) {
                 $lama->details()->delete();
                 $lama->delete();
             }
         }
 
-        $akunPiutang    = Coa::where('kode_akun', '130')->firstOrFail();
-        $akunPenjualan  = Coa::where('kode_akun', '401')->firstOrFail();
-        $akunHpp        = Coa::where('kode_akun', '500')->firstOrFail();
-        $akunPersediaan = Coa::where('kode_akun', '143')->firstOrFail();
+        $akunPiutang    = akun::where('no_akun', '130')->firstOrFail();
+        $akunPenjualan  = akun::where('no_akun', '401')->firstOrFail();
+        $akunHpp        = akun::where('no_akun', '500')->firstOrFail();
+        $akunPersediaan = akun::where('no_akun', '143')->firstOrFail();
 
-        $jurnal = JurnalUmum::create([
+        $jurnal = Jurnal::create([
             'tanggal'    => $laporan->tanggal_laporan ?? $laporan->created_at ?? now(),
-            'keterangan' => $referensi,
+            'deskripsi' => $referensi,
         ]);
 
         // D: Piutang Usaha
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunPiutang->id,
-            'debit'          => $kasPiutang,
-            'kredit'         => 0,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunPiutang->id,
+            'deskripsi' => 'Piutang Usaha',
+            'debit'     => $kasPiutang,
+            'credit'    => 0,
         ]);
 
         // D: Potongan Penjualan (hanya jika ada diskon proporsional)
         if ($diskonProporsional > 0) {
-            $akunPotongan = Coa::where('kode_akun', '403')->firstOrFail();
+            $akunPotongan = akun::where('no_akun', '403')->firstOrFail();
             JurnalDetail::create([
-                'jurnal_umum_id' => $jurnal->id,
-                'akun_id'        => $akunPotongan->id,
-                'debit'          => $diskonProporsional,
-                'kredit'         => 0,
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunPotongan->id,
+                'deskripsi' => 'Potongan Penjualan',
+                'debit'     => $diskonProporsional,
+                'credit'    => 0,
             ]);
         }
 
         // K: Penjualan = total_bruto
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunPenjualan->id,
-            'debit'          => 0,
-            'kredit'         => $totalBruto,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunPenjualan->id,
+            'deskripsi' => 'Penjualan',
+            'debit'     => 0,
+            'credit'    => $totalBruto,
         ]);
 
         // D: HPP + K: Persediaan (hanya jika ada HPP)
         if ($totalHpp > 0) {
             JurnalDetail::create([
-                'jurnal_umum_id' => $jurnal->id,
-                'akun_id'        => $akunHpp->id,
-                'debit'          => $totalHpp,
-                'kredit'         => 0,
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunHpp->id,
+                'deskripsi' => 'HPP',
+                'debit'     => $totalHpp,
+                'credit'    => 0,
             ]);
 
             JurnalDetail::create([
-                'jurnal_umum_id' => $jurnal->id,
-                'akun_id'        => $akunPersediaan->id,
-                'debit'          => 0,
-                'kredit'         => $totalHpp,
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunPersediaan->id,
+                'deskripsi' => 'Persediaan',
+                'debit'     => 0,
+                'credit'    => $totalHpp,
             ]);
         }
 
@@ -367,38 +379,116 @@ class JurnalPerpetualService
         $noTagihan = $pembayaran->tagihanKonsinyasi?->no_tagihan ?? $pembayaran->tagihan_konsinyasi_id;
         $referensi = 'Jurnal Pembayaran Konsinyasi ' . $noTagihan . '-' . $pembayaran->id;
 
-        $jurnalLama = JurnalUmum::where('keterangan', $referensi)->first();
+        $jurnalLama = Jurnal::where('deskripsi', $referensi)->first();
         if ($jurnalLama) {
             $jurnalLama->details()->delete();
             $jurnalLama->delete();
         }
 
         $akunBank    = self::getAkunBankPembayaranKonsinyasi($pembayaran);
-        $akunPiutang = Coa::where('kode_akun', '130')->firstOrFail();
+        $akunPiutang = akun::where('no_akun', '130')->firstOrFail();
 
-        $jurnal = JurnalUmum::create([
+        $jurnal = Jurnal::create([
             'tanggal'    => $pembayaran->tanggal_bayar ?? now(),
-            'keterangan' => $referensi,
+            'deskripsi' => $referensi,
         ]);
 
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunBank->id,
-            'debit'          => $nominal,
-            'kredit'         => 0,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunBank->id,
+            'deskripsi' => 'Bank',
+            'debit'     => $nominal,
+            'credit'    => 0,
         ]);
 
         JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $akunPiutang->id,
-            'debit'          => 0,
-            'kredit'         => $nominal,
+            'id_jurnal' => $jurnal->id,
+            'no_akun'   => $akunPiutang->id,
+            'deskripsi' => 'Piutang Usaha',
+            'debit'     => 0,
+            'credit'    => $nominal,
         ]);
     }
 
-    protected static function getAkunBankPembayaranKonsinyasi(PembayaranTagihanKonsinyasi $pembayaran): Coa
+    protected static function getAkunBankPembayaranKonsinyasi(PembayaranTagihanKonsinyasi $pembayaran): akun
     {
-        return Coa::where('kode_akun', '112')->firstOrFail();
+        return akun::where('no_akun', '112')->firstOrFail();
+    }
+
+    // ─────────────────────────────────────────────
+    // SALDO AWAL
+    // ─────────────────────────────────────────────
+
+    public static function saldoAwal(\App\Models\SaldoAwal $saldoAwal): void
+    {
+        $saldoAwal->load('akun');
+        $nominal = (int) $saldoAwal->nominal;
+
+        if ($nominal <= 0) {
+            return;
+        }
+
+        $referensi = 'Saldo awal ' . $saldoAwal->akun->nama_akun . ' periode ' . $saldoAwal->bulan . '-' . $saldoAwal->tahun;
+
+        // Hapus jurnal lama (jika ada update)
+        $jurnalLama = Jurnal::where('deskripsi', $referensi)->first();
+        if ($jurnalLama) {
+            $jurnalLama->details()->delete();
+            $jurnalLama->delete();
+        }
+
+        // Cari atau buat akun "Saldo Awal" penyeimbang
+        $akunSaldoAwal = akun::firstOrCreate(
+            ['nama_akun' => 'Saldo Awal'],
+            [
+                'no_akun' => '399',
+                'header_akun' => 3
+            ]
+        );
+
+        $tanggal = \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)->format('Y-m-d');
+
+        $jurnal = Jurnal::create([
+            'tanggal'    => $tanggal,
+            'deskripsi' => $referensi,
+        ]);
+
+        $kodeAkun = $saldoAwal->akun->no_akun;
+        $awalKode = substr((string)$kodeAkun, 0, 1);
+
+        if (in_array($awalKode, ['1', '5', '6', '8', '9'])) {
+            // Normal Debit
+            JurnalDetail::create([
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $saldoAwal->akun->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => $nominal,
+                'credit'    => 0,
+            ]);
+            JurnalDetail::create([
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunSaldoAwal->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => 0,
+                'credit'    => $nominal,
+            ]);
+        } else {
+            // Normal Kredit
+            JurnalDetail::create([
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunSaldoAwal->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => $nominal,
+                'credit'    => 0,
+            ]);
+            JurnalDetail::create([
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $saldoAwal->akun->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => 0,
+                'credit'    => $nominal,
+            ]);
+        }
     }
 
     // ─────────────────────────────────────────────

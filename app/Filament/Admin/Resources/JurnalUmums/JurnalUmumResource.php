@@ -17,7 +17,8 @@ class JurnalUmumResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Akuntansi';
+   protected static \UnitEnum|string|null $navigationGroup = 'Akuntansi';
+   protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $recordTitleAttribute = 'keterangan';
 

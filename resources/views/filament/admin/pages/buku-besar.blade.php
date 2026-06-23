@@ -45,13 +45,27 @@
             <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:24px;overflow:hidden;">
 
                 {{-- Header Akun --}}
-                <div style="padding:14px 20px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px;">
-                    <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;font-family:monospace;padding:2px 8px;border-radius:6px;letter-spacing:0.05em;">
-                        {{ $akun['kode_akun'] }}
-                    </span>
-                    <span style="font-size:14px;font-weight:600;color:#111827;">
-                        {{ $akun['nama_akun'] }}
-                    </span>
+                <div style="padding:14px 20px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;font-family:monospace;padding:2px 8px;border-radius:6px;letter-spacing:0.05em;">
+                            {{ $akun['kode_akun'] }}
+                        </span>
+                        <span style="font-size:14px;font-weight:600;color:#111827;">
+                            {{ $akun['nama_akun'] }}
+                        </span>
+                    </div>
+                    {{-- Tampilkan Saldo Awal di sini --}}
+                    @if ($akun['saldo_awal'] != 0)
+                        <div style="display:flex;align-items:center;gap:8px;background:#fefce8;padding:6px 12px;border-radius:6px;border:1px solid #fde047;">
+                            <span style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Saldo Awal:</span>
+                            <span style="font-size:13px;font-weight:700;color:{{ $akun['saldo_awal'] < 0 ? '#dc2626' : '#111827' }};">
+                                {{ number_format(abs($akun['saldo_awal']), 0, ',', '.') }}
+                                @if($akun['saldo_awal'] < 0)
+                                    <span style="font-size:11px;font-weight:400;"> ({{ $akun['is_debit_normal'] ? 'K' : 'D' }})</span>
+                                @endif
+                            </span>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Tabel --}}
@@ -68,6 +82,8 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- TIDAK ADA LAGI SALDO AWAL ROW DI SINI --}}
+
                             @foreach ($akun['rows'] as $i => $row)
                                 @php $isSaldoAwal = $row['is_saldo_awal'] ?? false; @endphp
                                 <tr style="border-top:1px solid #f3f4f6;background:{{ $isSaldoAwal ? '#fefce8' : ($i % 2 === 0 ? '#fff' : '#fafafa') }};">
@@ -88,7 +104,9 @@
                                     </td>
                                     <td style="padding:10px 16px;text-align:right;font-weight:500;font-variant-numeric:tabular-nums;color:{{ $row['saldo'] < 0 ? '#dc2626' : '#111827' }};">
                                         {{ number_format(abs($row['saldo']), 0, ',', '.') }}
-                                        @if($row['saldo'] < 0)<span style="font-size:11px;font-weight:400;"> (K)</span>@endif
+                                        @if($row['saldo'] < 0)
+                                            <span style="font-size:11px;font-weight:400;"> ({{ $akun['is_debit_normal'] ? 'K' : 'D' }})</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -104,7 +122,9 @@
                                 </td>
                                 <td style="padding:10px 16px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:{{ $akun['saldo_akhir'] < 0 ? '#dc2626' : '#16a34a' }};">
                                     {{ number_format(abs($akun['saldo_akhir']), 0, ',', '.') }}
-                                    @if($akun['saldo_akhir'] < 0)<span style="font-size:11px;font-weight:400;"> (K)</span>@endif
+                                    @if($akun['saldo_akhir'] < 0)
+                                        <span style="font-size:11px;font-weight:400;"> ({{ $akun['is_debit_normal'] ? 'K' : 'D' }})</span>
+                                    @endif
                                 </td>
                             </tr>
                         </tfoot>
