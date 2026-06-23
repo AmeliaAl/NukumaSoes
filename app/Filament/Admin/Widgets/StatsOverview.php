@@ -68,21 +68,22 @@ class StatsOverview extends StatsOverviewWidget
 
         return [
             Stat::make('Total Piutang', 'Rp ' . number_format($totalPiutang, 0, ',', '.'))
-                ->description('Semua sisa piutang belum lunas')
+                ->description('Semua sisa piutang belum lunas — klik untuk detail')
                 ->descriptionIcon('heroicon-m-banknotes')
-                ->color('warning'),
+                ->color('warning')
+                ->url('/admin/detail-semua-piutang'),
 
             Stat::make('Jatuh Tempo (7 hari)', 'Rp ' . number_format($totalJatuhTempo, 0, ',', '.'))
                 ->description('Mendekati tanggal jatuh tempo — klik untuk detail')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($totalJatuhTempo > 0 ? 'warning' : 'success')
-                ->url(\App\Filament\Admin\Pages\DetailJatuhTempo::getUrl()),
+                ->url('/admin/detail-jatuh-tempo'),
 
             Stat::make('Lewat Jatuh Tempo', 'Rp ' . number_format($totalOverdue, 0, ',', '.'))
                 ->description('Sudah melewati tanggal jatuh tempo — klik untuk detail')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($totalOverdue > 0 ? 'danger' : 'success')
-                ->url(\App\Filament\Admin\Pages\DetailLewatJatuhTempo::getUrl()),
+                ->url('/admin/detail-lewat-jatuh-tempo'),
         ];
     }
 }

@@ -96,6 +96,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
             ->pages([
                 Dashboard::class,
+                \App\Filament\Admin\Pages\DetailSemuaPiutang::class,
             ])
             // Widget didaftarkan manual — tidak pakai discoverWidgets
             // agar Livewire tidak mencoba resolve class sebelum autoload siap

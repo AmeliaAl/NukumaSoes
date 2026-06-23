@@ -64,7 +64,7 @@ class EditPenjualanNonKonsinyasi extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $subtotal = (int) $this->record->detailPenjualan()->sum('subtotal');
-        $diskon = (int) ($data['diskon'] ?? 0);
+        $diskon = (int) str_replace('.', '', $data['diskon'] ?? '0');
 
         if ($diskon < 0) {
             $diskon = 0;

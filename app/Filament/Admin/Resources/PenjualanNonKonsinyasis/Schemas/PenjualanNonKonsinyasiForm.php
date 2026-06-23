@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\PenjualanNonKonsinyasis\Schemas;
 
+use App\Filament\Support\MoneyInput;
 use App\Models\PenjualanNonKonsinyasi;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -103,22 +104,16 @@ class PenjualanNonKonsinyasiForm
                             return 'Rp ' . number_format($subtotal, 0, ',', '.');
                         }),
 
-                    TextInput::make('diskon')
+                    MoneyInput::make('diskon')
                         ->label('Diskon Faktur')
-                        ->numeric()
-                        ->minValue(0)
-                        ->rule('regex:/^[0-9]+$/')
-                        ->extraInputAttributes([
-                            'oninput' => "this.value = this.value.replace(/[^0-9]/g, '')",
-                        ])
-                        ->helperText('Masukkan diskon tambahan (jika ada).')
                         ->default(0)
+                        ->helperText('Masukkan diskon tambahan (jika ada).')
                         ->live(debounce: 500),
 
                     Placeholder::make('total_diskon')
                         ->label('Total Diskon (Faktur + Barang)')
                         ->content(function (Get $get, $livewire) {
-                            $diskonFaktur = (int) ($get('diskon') ?? 0);
+                            $diskonFaktur = (int) str_replace('.', '', $get('diskon') ?? '0');
                             $diskonDetail = 0;
                             if (method_exists($livewire, 'getRecord') && $livewire->getRecord()) {
                                 $diskonDetail = (int) $livewire->getRecord()->detailPenjualan()->sum('diskon');
@@ -139,7 +134,7 @@ class PenjualanNonKonsinyasiForm
                                 return 'Total akan muncul setelah barang ditambahkan';
                             }
 
-                            $diskon = (int) ($get('diskon') ?? 0);
+                            $diskon = (int) str_replace('.', '', $get('diskon') ?? '0');
                             $total = max($subtotal - $diskon, 0);
 
                             return 'Rp ' . number_format($total, 0, ',', '.');

@@ -6,6 +6,7 @@ use App\Filament\Admin\Resources\PenjualanKonsinyasis\PenjualanKonsinyasiResourc
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Livewire\Attributes\On;
 
 class EditPenjualanKonsinyasi extends EditRecord
 {
@@ -28,13 +29,25 @@ class EditPenjualanKonsinyasi extends EditRecord
     {
         $data['diskon'] = $this->record->diskon ?? 0;
 
+        // Data lama mungkin punya term = 0 — paksa minimal 1 agar jatuh_tempo bisa dihitung
+        if (empty($data['term']) || (int) $data['term'] < 1) {
+            $data['term'] = 30;
+        }
+
+        // Hitung jatuh_tempo jika belum ada
+        if (empty($data['jatuh_tempo']) && ! empty($data['tanggal'])) {
+            $data['jatuh_tempo'] = \Carbon\Carbon::parse($data['tanggal'])
+                ->addDays((int) $data['term'])
+                ->toDateString();
+        }
+
         return $data;
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $subtotal = (int) $this->record->detailKonsinyasi()->sum('subtotal');
-        $diskon = (int) ($data['diskon'] ?? 0);
+        $diskon = (int) str_replace('.', '', $data['diskon'] ?? '0');
 
         if ($diskon < 0) {
             $diskon = 0;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\LaporanKonsinyasis\RelationManagers;
 
+use App\Filament\Support\MoneyInput;
 use App\Models\Barang;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -136,21 +137,22 @@ class DetailLaporanRelationManager extends RelationManager
                     }
 
                     // sekalian update subtotal di sini
-                    $harga = (int) $get('harga_konsinyasi');
+                    $harga = (int) str_replace('.', '', $get('harga_konsinyasi') ?? '0');
                     $set('subtotal', $harga * (int) $state);
                 }),
-            TextInput::make('harga_konsinyasi')
-    ->label('Harga')
-                ->numeric()
+            MoneyInput::make('harga_konsinyasi')
+                ->label('Harga')
                 ->required()
                 ->live()
                 ->afterStateUpdated(function ($state, callable $get, callable $set) {
                     $qty = (int) $get('qty_terjual');
-                    $set('subtotal', $qty * (int) $state);
+                    $harga = (int) str_replace('.', '', $state ?? '0');
+                    $set('subtotal', $qty * $harga);
                 }),
 
             TextInput::make('subtotal')
                 ->label('Subtotal')
+                ->prefix('Rp')
                 ->disabled()
                 ->dehydrated(),
         ]);

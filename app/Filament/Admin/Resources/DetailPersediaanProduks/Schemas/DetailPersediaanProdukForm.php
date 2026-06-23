@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\DetailPersediaanProduks\Schemas;
 
+use App\Filament\Support\MoneyInput;
 use App\Models\Barang;
 use App\Models\Kategori;
 use Filament\Forms\Components\DatePicker;
@@ -66,13 +67,10 @@ class DetailPersediaanProdukForm
                             ->minValue(0)
                             ->required(),
 
-                        TextInput::make('harga_modal_per_pack')
+                        MoneyInput::make('harga_modal_per_pack')
                             ->label('Harga Modal / HPP per Pack (Rp)')
-                            ->numeric()
                             ->default(0)
-                            ->minValue(0)
                             ->required()
-                            ->prefix('Rp')
                             ->helperText('Harga pokok produksi per pack — bukan harga jual.'),
 
                         // ── Baris 5: Tanggal Expired ──────────────────────

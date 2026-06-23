@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\PenjualanKonsinyasis\RelationManagers;
 
+use App\Filament\Support\MoneyInput;
 use App\Models\Barang;
 use App\Models\DetailKonsinyasi;
 use App\Models\DetailPersediaanProduk;
@@ -34,7 +35,22 @@ class DetailKonsinyasiRelationManager extends RelationManager
                     Grid::make(2)->schema([
                         Select::make('kategori_filter')
                             ->label('Kategori')
-                            ->options(fn () => \App\Models\Kategori::orderBy('nama_kategori')->pluck('nama_kategori', 'id'))
+                            ->options(function () {
+                                // Hanya kategori yang barangnya punya stok tersedia & belum expired
+                                $barangIdTersedia = \App\Models\DetailPersediaanProduk::where('stok_saat_ini', '>', 0)
+                                    ->where(function ($q) {
+                                        $q->whereNull('tanggal_expired')
+                                            ->orWhere('tanggal_expired', '>=', now()->toDateString());
+                                    })
+                                    ->pluck('barang_id')
+                                    ->unique();
+
+                                return \App\Models\Kategori::whereHas('barang', function ($q) use ($barangIdTersedia) {
+                                    $q->whereIn('id', $barangIdTersedia);
+                                })
+                                    ->orderBy('nama_kategori')
+                                    ->pluck('nama_kategori', 'id');
+                            })
                             ->searchable()
                             ->live()
                             ->dehydrated(false)
@@ -44,11 +60,26 @@ class DetailKonsinyasiRelationManager extends RelationManager
                         Select::make('barang_id')
                             ->label('Barang')
                             ->options(function ($get) {
-                                $query = \App\Models\Barang::orderBy('nama_barang');
+                                // Ambil barang_id yang punya stok tersedia & belum expired
+                                $barangIdTersedia = \App\Models\DetailPersediaanProduk::where('stok_saat_ini', '>', 0)
+                                    ->where(function ($q) {
+                                        $q->whereNull('tanggal_expired')
+                                            ->orWhere('tanggal_expired', '>=', now()->toDateString());
+                                    })
+                                    ->pluck('barang_id')
+                                    ->unique();
+
+                                $query = \App\Models\Barang::whereIn('id', $barangIdTersedia)
+                                    ->orderBy('nama_barang');
+
                                 if ($get('kategori_filter')) {
                                     $query->where('kategori_id', $get('kategori_filter'));
                                 }
-                                return $query->pluck('nama_barang', 'id');
+
+                                return $query->get()->mapWithKeys(function ($barang) {
+                                    $stok = $barang->getStokTersedia();
+                                    return [$barang->id => "{$barang->nama_barang} (Stok: {$stok})"];
+                                });
                             })
                             ->searchable()
                             ->required()
@@ -97,43 +128,32 @@ class DetailKonsinyasiRelationManager extends RelationManager
                                 $set('subtotal', max(($harga * (int) $state) - $diskon, 0));
                             }),
 
-                        TextInput::make('harga_konsinyasi')
+                        MoneyInput::make('harga_konsinyasi')
                             ->label('Harga')
-                            ->numeric()
-                            ->minValue(0)
-                            ->rule('regex:/^[0-9]+$/')
-                            ->extraInputAttributes([
-                                'oninput' => "this.value = this.value.replace(/[^0-9]/g, '')",
-                            ])
                             ->required()
                             ->dehydrated()
                             ->live()
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
                                 $qty    = (int) ($get('qty_titip') ?? 0);
-                                $diskon = (int) ($get('diskon') ?? 0);
-                                $set('subtotal', max(((int) $state * $qty) - $diskon, 0));
+                                $diskon = (int) str_replace('.', '', $get('diskon') ?? '0');
+                                $harga  = (int) str_replace('.', '', $state ?? '0');
+                                $set('subtotal', max(($harga * $qty) - $diskon, 0));
                             }),
 
-                        TextInput::make('diskon')
+                        MoneyInput::make('diskon')
                             ->label('Diskon')
-                            ->numeric()
-                            ->minValue(0)
-                            ->rule('regex:/^[0-9]+$/')
-                            ->extraInputAttributes([
-                                'oninput' => "this.value = this.value.replace(/[^0-9]/g, '')",
-                            ])
                             ->default(0)
-                            ->nullable()
                             ->live()
                             ->afterStateUpdated(function ($state, callable $get, callable $set) {
-                                $harga = (int) ($get('harga_konsinyasi') ?? 0);
-                                $qty   = (int) ($get('qty_titip') ?? 0);
-                                $set('subtotal', max(($harga * $qty) - (int) $state, 0));
+                                $harga  = (int) str_replace('.', '', $get('harga_konsinyasi') ?? '0');
+                                $qty    = (int) ($get('qty_titip') ?? 0);
+                                $diskon = (int) str_replace('.', '', $state ?? '0');
+                                $set('subtotal', max(($harga * $qty) - $diskon, 0));
                             }),
 
                         TextInput::make('subtotal')
                             ->label('Subtotal')
-                            ->numeric()
+                            ->prefix('Rp')
                             ->disabled()
                             ->dehydrated(),
                     ]),
@@ -161,65 +181,90 @@ class DetailKonsinyasiRelationManager extends RelationManager
                     ->modalWidth('lg')
                     ->form(fn (Schema $schema) => $this->form($schema))
                     ->action(function (array $data) {
-                        $barang = Barang::findOrFail($data['barang_id']);
+                        try {
+                            $barang = Barang::findOrFail($data['barang_id']);
 
-                        $stokTersedia = $barang->getStokTersedia();
-                        if ((int) $data['qty_titip'] > $stokTersedia) {
-                            throw ValidationException::withMessages([
-                                'qty_titip' => "Stok {$barang->nama_lengkap} tidak mencukupi. Stok tersedia: {$stokTersedia}",
-                            ]);
-                        }
-
-                        $subtotalItem = ((int) $data['qty_titip'] * (int) $data['harga_konsinyasi']) - (int) ($data['diskon'] ?? 0);
-
-                        if ($subtotalItem < 0) {
-                            throw ValidationException::withMessages([
-                                'diskon' => 'Diskon item tidak boleh melebihi subtotal barang.',
-                            ]);
-                        }
-
-                        $mitra = $this->ownerRecord->mitra;
-                        if ($mitra && $mitra->limit_piutang > 0) {
-                            $limit        = (float) $mitra->limit_piutang;
-                            $aktif        = (float) $mitra->piutang_aktif_konsinyasi;
-                            $totalSaatIni = (float) $this->ownerRecord->total_barang;
-
-                            if (($aktif + $totalSaatIni + $subtotalItem) > $limit) {
-                                $sisaLimit = max($limit - $aktif - $totalSaatIni, 0);
-                                throw ValidationException::withMessages([
-                                    'qty_titip' => 'Limit piutang terlampaui. Sisa kuota untuk transaksi ini: Rp ' . number_format($sisaLimit, 0, ',', '.'),
-                                ]);
+                            $stokTersedia = $barang->getStokTersedia();
+                            if ((int) $data['qty_titip'] > $stokTersedia) {
+                                \Filament\Notifications\Notification::make()
+                                    ->danger()
+                                    ->title('Stok Tidak Mencukupi')
+                                    ->body("Stok {$barang->nama_barang} tidak mencukupi. Stok tersedia: {$stokTersedia}")
+                                    ->send();
+                                throw new \Filament\Support\Exceptions\Halt();
                             }
-                        }
 
-                        $data['subtotal'] = $subtotalItem;
+                            $subtotalItem = ((int) $data['qty_titip'] * (int) str_replace('.', '', $data['harga_konsinyasi'] ?? '0')) - (int) str_replace('.', '', $data['diskon'] ?? '0');
 
-                        DB::transaction(function () use ($data) {
-                            // Kurangi stok FEFO — return nilai HPP dari batch yang keluar
-                            $hpp = DetailPersediaanProduk::kurangiStokFefo(
-                                (int) $data['barang_id'],
-                                (int) $data['qty_titip']
-                            );
-
-                            // Simpan HPP ke detail transaksi
-                            $data['harga_modal_per_pack'] = $hpp['harga_modal_per_pack'];
-                            $data['subtotal_hpp']         = $hpp['subtotal_hpp'];
-
-                            $this->getRelationship()->create($data);
-                        });
-
-                        $this->ownerRecord->hitungTotalKonsinyasi();
-                        $this->ownerRecord->refresh();
-
-                        if (! $this->ownerRecord->salesOrder) {
-                            try {
-                                \App\Models\SalesOrder::createFromPenjualanKonsinyasi($this->ownerRecord);
-                            } catch (\Exception $e) {
-                                \Illuminate\Support\Facades\Log::error("Failed to create Sales Order: {$e->getMessage()}");
+                            if ($subtotalItem < 0) {
+                                \Filament\Notifications\Notification::make()
+                                    ->danger()
+                                    ->title('Diskon Tidak Valid')
+                                    ->body('Diskon item tidak boleh melebihi subtotal barang.')
+                                    ->send();
+                                throw new \Filament\Support\Exceptions\Halt();
                             }
-                        }
 
-                        $this->dispatch('refreshPenjualanKonsinyasiSummary');
+                            $mitra = $this->ownerRecord->mitra;
+                            if ($mitra && $mitra->limit_piutang > 0) {
+                                $limit        = (float) $mitra->limit_piutang;
+                                $aktif        = (float) $mitra->piutang_aktif_konsinyasi;
+                                $totalSaatIni = (float) $this->ownerRecord->total_barang;
+
+                                if (($aktif + $totalSaatIni + $subtotalItem) > $limit) {
+                                    $sisaLimit = max($limit - $aktif - $totalSaatIni, 0);
+                                    \Filament\Notifications\Notification::make()
+                                        ->danger()
+                                        ->title('Limit Piutang Terlampaui')
+                                        ->body('Limit piutang terlampaui. Sisa kuota untuk transaksi ini: Rp ' . number_format($sisaLimit, 0, ',', '.'))
+                                        ->send();
+                                    throw new \Filament\Support\Exceptions\Halt();
+                                }
+                            }
+
+                            $data['subtotal'] = $subtotalItem;
+
+                            DB::transaction(function () use (&$data) {
+                                $hpp = DetailPersediaanProduk::kurangiStokFefo(
+                                    (int) $data['barang_id'],
+                                    (int) $data['qty_titip']
+                                );
+                                $data['harga_modal_per_pack'] = $hpp['harga_modal_per_pack'];
+                                $data['subtotal_hpp']         = $hpp['subtotal_hpp'];
+                                $this->getRelationship()->create($data);
+                            });
+
+                            $this->ownerRecord->hitungTotalKonsinyasi();
+                            $this->ownerRecord->refresh();
+
+                            if (! $this->ownerRecord->salesOrder) {
+                                try {
+                                    \App\Models\SalesOrder::createFromPenjualanKonsinyasi($this->ownerRecord);
+                                } catch (\Exception $e) {
+                                    \Illuminate\Support\Facades\Log::error("Failed to create Sales Order: {$e->getMessage()}");
+                                }
+                            }
+
+                            $this->dispatch('refreshPenjualanKonsinyasiSummary');
+
+                        } catch (\Filament\Support\Exceptions\Halt $e) {
+                            throw $e;
+                        } catch (\RuntimeException $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->danger()
+                                ->title('Gagal Mengurangi Stok')
+                                ->body($e->getMessage())
+                                ->send();
+                            throw new \Filament\Support\Exceptions\Halt();
+                        } catch (\Throwable $e) {
+                            \Illuminate\Support\Facades\Log::error('DetailKonsinyasi tambah error: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
+                            \Filament\Notifications\Notification::make()
+                                ->danger()
+                                ->title('Terjadi Kesalahan')
+                                ->body($e->getMessage())
+                                ->send();
+                            throw new \Filament\Support\Exceptions\Halt();
+                        }
                     }),
             ])
             ->actions([
@@ -231,6 +276,44 @@ class DetailKonsinyasiRelationManager extends RelationManager
 
                         $qtyBaru = (int) $data['qty_titip'];
                         $selisih = $qtyBaru - $qtyLama;
+
+                        if ($selisih > 0) {
+                            $barang = Barang::find($record->barang_id);
+                            $stokTersedia = $barang ? $barang->getStokTersedia() : 0;
+                            if ($selisih > $stokTersedia) {
+                                \Filament\Notifications\Notification::make()
+                                    ->danger()
+                                    ->title('Stok Tidak Mencukupi')
+                                    ->body("Stok {$barang->nama_barang} tidak mencukupi untuk penambahan. Stok tersedia: {$stokTersedia}")
+                                    ->send();
+                                throw new \Filament\Support\Exceptions\Halt();
+                            }
+                        }
+
+                        $subtotalItemLama = (int) $record->subtotal;
+                        $subtotalItemBaru = ((int) $data['qty_titip'] * (int) str_replace('.', '', $data['harga_konsinyasi'] ?? '0')) - (int) str_replace('.', '', $data['diskon'] ?? '0');
+                        $selisihSubtotal = $subtotalItemBaru - $subtotalItemLama;
+
+                        if ($selisihSubtotal > 0 && $this->ownerRecord->mitra) {
+                            $mitra = $this->ownerRecord->mitra;
+                            if ($mitra->limit_piutang > 0) {
+                                $limit        = (float) $mitra->limit_piutang;
+                                $aktif        = (float) $mitra->piutang_aktif_konsinyasi;
+                                $totalSaatIni = (float) $this->ownerRecord->total_barang;
+
+                                if (($aktif + $totalSaatIni + $selisihSubtotal) > $limit) {
+                                    $sisaLimit = max($limit - $aktif - $totalSaatIni, 0);
+                                    \Filament\Notifications\Notification::make()
+                                        ->danger()
+                                        ->title('Limit Piutang Terlampaui')
+                                        ->body('Limit piutang terlampaui dengan penambahan qty/harga ini. Sisa kuota: Rp ' . number_format($sisaLimit, 0, ',', '.'))
+                                        ->send();
+                                    throw new \Filament\Support\Exceptions\Halt();
+                                }
+                            }
+                        }
+
+                        $data['subtotal'] = $subtotalItemBaru;
 
                         DB::transaction(function () use ($record, $data, $selisih, $qtyBaru, $qtyLama) {
                             if ($selisih > 0) {

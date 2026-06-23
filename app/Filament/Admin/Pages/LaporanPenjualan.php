@@ -68,9 +68,16 @@ class LaporanPenjualan extends Page
             ->join('pelanggan as p', 'pnk.pelanggan_id', '=', 'p.id')
             ->whereBetween('pnk.tanggal', [$tanggalDari, $tanggalSampai])
             ->select([
-                'b.kode_barang', 'b.nama_barang', 'dpnk.harga', 'dpnk.qty as kuantitas',
-                \DB::raw('(dpnk.harga * dpnk.qty) as subtotal'), 'dpnk.diskon', 'dpnk.subtotal as total',
-                'pnk.no_invoice as ref', 'pnk.tanggal as tanggal', 'p.namaPelanggan as pelanggan_mitra',
+                'b.kode_barang', 
+                'b.nama_barang', 
+                'dpnk.harga', 
+                'dpnk.qty as kuantitas',
+                \DB::raw('(dpnk.harga * dpnk.qty) as subtotal'), 
+                \DB::raw('dpnk.diskon + ROUND(IFNULL(pnk.diskon, 0) * (dpnk.subtotal / NULLIF((SELECT SUM(subtotal) FROM detail_penjualan_non_konsinyasi WHERE penjualan_id = pnk.id), 0))) as diskon'), 
+                \DB::raw('dpnk.subtotal - ROUND(IFNULL(pnk.diskon, 0) * (dpnk.subtotal / NULLIF((SELECT SUM(subtotal) FROM detail_penjualan_non_konsinyasi WHERE penjualan_id = pnk.id), 0))) as total'),
+                'pnk.no_invoice as ref', 
+                'pnk.tanggal as tanggal', 
+                'p.namaPelanggan as pelanggan_mitra',
                 \DB::raw("CASE WHEN pnk.total_terbayar >= pnk.total THEN 'LUNAS' ELSE 'BELUM LUNAS' END as status_pembayaran"),
                 \DB::raw("'Non Konsinyasi' as jenis")
             ]);

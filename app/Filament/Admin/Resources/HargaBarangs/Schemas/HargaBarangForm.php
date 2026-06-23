@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\HargaBarangs\Schemas;
 
+use App\Filament\Support\MoneyInput;
 use App\Models\Barang;
 use App\Models\Kategori;
 use Filament\Forms\Components\Select;
@@ -48,11 +49,8 @@ class HargaBarangForm
                 ])
                 ->required(),
 
-            TextInput::make('harga')
+            MoneyInput::make('harga')
                 ->label('Harga')
-                ->numeric()
-                ->minValue(0)
-                ->prefix('Rp')
                 ->required(),
 
         ]);

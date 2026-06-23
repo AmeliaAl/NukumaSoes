@@ -69,11 +69,12 @@
                         </thead>
                         <tbody>
                             @foreach ($akun['rows'] as $i => $row)
-                                <tr style="border-top:1px solid #f3f4f6;background:{{ $i % 2 === 0 ? '#fff' : '#fafafa' }};">
+                                @php $isSaldoAwal = $row['is_saldo_awal'] ?? false; @endphp
+                                <tr style="border-top:1px solid #f3f4f6;background:{{ $isSaldoAwal ? '#fefce8' : ($i % 2 === 0 ? '#fff' : '#fafafa') }};">
                                     <td style="padding:10px 16px;color:#6b7280;font-family:monospace;font-size:12px;white-space:nowrap;">
                                         {{ $row['tanggal'] ? \Carbon\Carbon::parse($row['tanggal'])->format('d/m/Y') : '-' }}
                                     </td>
-                                    <td style="padding:10px 16px;color:#374151;">
+                                    <td style="padding:10px 16px;color:{{ $isSaldoAwal ? '#92400e' : '#374151' }};font-weight:{{ $isSaldoAwal ? '600' : 'normal' }};">
                                         {{ $row['keterangan'] ?? '-' }}
                                     </td>
                                     <td style="padding:10px 16px;color:#9ca3af;font-family:monospace;font-size:12px;white-space:nowrap;">

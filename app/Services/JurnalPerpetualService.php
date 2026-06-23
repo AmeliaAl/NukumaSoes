@@ -400,4 +400,85 @@ class JurnalPerpetualService
     {
         return Coa::where('kode_akun', '112')->firstOrFail();
     }
+
+    // ─────────────────────────────────────────────
+    // SALDO AWAL
+    // ─────────────────────────────────────────────
+
+    /**
+     * Jurnal saldo awal: D akun bersangkutan / K Modal (311)
+     * Tanggal jurnal = tanggal 1 bulan/tahun yang diinput.
+     *
+     * Dipanggil saat SaldoAwal disimpan (create/update).
+     */
+    public static function saldoAwal(\App\Models\SaldoAwal $saldoAwal): void
+    {
+        $coa = $saldoAwal->coa;
+        if (! $coa) {
+            return;
+        }
+
+        $keterangan = 'Saldo Awal ' . $coa->nama_akun
+            . ' ' . \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)
+                ->translatedFormat('F Y');
+
+        // Hapus jurnal lama jika ada
+        $jurnalLama = JurnalUmum::where('keterangan', $keterangan)->first();
+        if ($jurnalLama) {
+            $jurnalLama->details()->delete();
+            $jurnalLama->delete();
+        }
+
+        if ((float) $saldoAwal->nominal <= 0) {
+            return;
+        }
+
+        $akunModal = Coa::where('kode_akun', '311')->first();
+
+        $jurnal = JurnalUmum::create([
+            'tanggal'    => \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)->toDateString(),
+            'keterangan' => $keterangan,
+            'ref_type'   => 'saldo_awal',
+            'ref_id'     => $saldoAwal->id,
+        ]);
+
+        // D: akun bersangkutan
+        JurnalDetail::create([
+            'jurnal_umum_id' => $jurnal->id,
+            'akun_id'        => $coa->id,
+            'debit'          => $saldoAwal->nominal,
+            'kredit'         => 0,
+        ]);
+
+        // K: Modal (311)
+        if ($akunModal) {
+            JurnalDetail::create([
+                'jurnal_umum_id' => $jurnal->id,
+                'akun_id'        => $akunModal->id,
+                'debit'          => 0,
+                'kredit'         => $saldoAwal->nominal,
+            ]);
+        }
+    }
+
+    /**
+     * Hapus jurnal saldo awal — dipanggil saat SaldoAwal dihapus.
+     */
+    public static function hapusSaldoAwal(\App\Models\SaldoAwal $saldoAwal): void
+    {
+        $coa = $saldoAwal->coa;
+        if (! $coa) {
+            return;
+        }
+
+        $keterangan = 'Saldo Awal ' . $coa->nama_akun
+            . ' ' . \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)
+                ->translatedFormat('F Y');
+
+        $jurnal = JurnalUmum::where('keterangan', $keterangan)->first();
+        if ($jurnal) {
+            $jurnal->details()->delete();
+            $jurnal->delete();
+        }
+    }
 }

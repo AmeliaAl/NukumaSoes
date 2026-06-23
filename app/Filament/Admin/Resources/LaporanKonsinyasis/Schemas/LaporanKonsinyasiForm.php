@@ -49,7 +49,7 @@ class LaporanKonsinyasiForm
                                     return $penjualan?->mitra?->namaMitra ?? '-';
                                 }),
                             \Filament\Forms\Components\Placeholder::make('tanggal_kirim')
-                                ->label('Tanggal Kirim / Tanggal Konsinyasi')
+                                ->label('Tanggal Kirim')
                                 ->content(function (Get $get) {
                                     $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
                                     return $penjualan?->tanggal_kirim ? \Carbon\Carbon::parse($penjualan->tanggal_kirim)->translatedFormat('d F Y') : '-';
@@ -75,28 +75,50 @@ class LaporanKonsinyasiForm
             TextInput::make('no_po_mitra')
                 ->label('No PO Mitra'),
 
-            // 1. Tanggal laporan: minimal tanggal_kirim, tanpa batas atas
+            // 1. Tanggal laporan: min=tanggal_kirim (fallback tanggal), max=min(jatuh_tempo, now)
             DatePicker::make('tanggal_laporan')
                 ->label('Tanggal Laporan')
                 ->default(now())
                 ->required()
                 ->live()
-                ->maxDate(now())
                 ->minDate(function (Get $get) {
                     $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
-                    return $penjualan?->tanggal_kirim;
+                    if (! $penjualan) return null;
+                    return $penjualan->tanggal_kirim ?? $penjualan->tanggal;
+                })
+                ->maxDate(function (Get $get) {
+                    $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
+                    $jatuhTempo = $penjualan?->jatuh_tempo;
+                    if ($jatuhTempo) {
+                        // Ambil yang lebih awal: jatuh_tempo atau hari ini
+                        $jt = \Carbon\Carbon::parse($jatuhTempo);
+                        return $jt->isPast() ? $jt->toDateString() : now()->toDateString();
+                    }
+                    return now()->toDateString();
+                })
+                ->helperText(function (Get $get) {
+                    $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
+                    if (! $penjualan) return null;
+                    $min = $penjualan->tanggal_kirim ?? $penjualan->tanggal;
+                    $max = $penjualan->jatuh_tempo;
+                    if ($min && $max) {
+                        return 'Rentang: ' . \Carbon\Carbon::parse($min)->translatedFormat('d M Y')
+                            . ' s/d ' . \Carbon\Carbon::parse($max)->translatedFormat('d M Y');
+                    }
+                    return null;
                 }),
 
-            // 2. Periode awal: min tanggal_kirim, max tanggal_laporan
+            // 2. Periode awal: min=tanggal_kirim (fallback tanggal), max=tanggal_laporan
             DatePicker::make('periode_awal')
                 ->label('Periode Awal')
                 ->required()
                 ->live()
                 ->minDate(function (Get $get) {
                     $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
-                    return $penjualan?->tanggal_kirim;
+                    if (! $penjualan) return null;
+                    return $penjualan->tanggal_kirim ?? $penjualan->tanggal;
                 })
-                ->maxDate(fn (Get $get) => $get('tanggal_laporan'))
+                ->maxDate(fn (Get $get) => $get('tanggal_laporan') ?? now()->toDateString())
                 ->beforeOrEqual(fn (Get $get) => $get('tanggal_laporan') ?? now()->toDateString())
                 ->validationMessages([
                     'before_or_equal' => 'Periode awal harus sebelum atau sama dengan tanggal laporan.',
@@ -104,24 +126,32 @@ class LaporanKonsinyasiForm
                 ])
                 ->helperText(function (Get $get) {
                     $penjualan = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
-                    if (! $penjualan?->tanggal_kirim) return null;
-
-                    $min = \Carbon\Carbon::parse($penjualan->tanggal_kirim)->translatedFormat('d M Y');
-                    $max = $get('tanggal_laporan')
-                        ? \Carbon\Carbon::parse($get('tanggal_laporan'))->translatedFormat('d M Y')
-                        : null;
-
-                    return $max
-                        ? "Rentang: {$min} s/d {$max}"
-                        : "Minimal: {$min}";
+                    if (! $penjualan) return null;
+                    $min = $penjualan->tanggal_kirim ?? $penjualan->tanggal;
+                    $max = $get('tanggal_laporan');
+                    if (! $min) return null;
+                    $minStr = \Carbon\Carbon::parse($min)->translatedFormat('d M Y');
+                    $maxStr = $max ? \Carbon\Carbon::parse($max)->translatedFormat('d M Y') : null;
+                    return $maxStr ? "Rentang: {$minStr} s/d {$maxStr}" : "Minimal: {$minStr}";
                 }),
 
-            // 3. Periode akhir: min periode_awal, max tanggal_laporan
+            // 3. Periode akhir: min=periode_awal, max=min(jatuh_tempo, tanggal_laporan)
             DatePicker::make('periode_akhir')
                 ->label('Periode Akhir')
                 ->required()
                 ->minDate(fn (Get $get) => $get('periode_awal'))
-                ->maxDate(fn (Get $get) => $get('tanggal_laporan'))
+                ->maxDate(function (Get $get) {
+                    $tanggalLaporan = $get('tanggal_laporan');
+                    $penjualan      = PenjualanKonsinyasi::find($get('penjualan_konsinyasi_id'));
+                    $jatuhTempo     = $penjualan?->jatuh_tempo;
+
+                    if ($tanggalLaporan && $jatuhTempo) {
+                        $tl = \Carbon\Carbon::parse($tanggalLaporan);
+                        $jt = \Carbon\Carbon::parse($jatuhTempo);
+                        return $tl->lt($jt) ? $tl->toDateString() : $jt->toDateString();
+                    }
+                    return $tanggalLaporan ?? ($jatuhTempo ? \Carbon\Carbon::parse($jatuhTempo)->toDateString() : now()->toDateString());
+                })
                 ->afterOrEqual(fn (Get $get) => $get('periode_awal') ?? now()->toDateString())
                 ->beforeOrEqual(fn (Get $get) => $get('tanggal_laporan') ?? now()->toDateString())
                 ->validationMessages([
@@ -131,21 +161,14 @@ class LaporanKonsinyasiForm
                     'max_date'        => 'Periode akhir harus sebelum atau sama dengan tanggal laporan.',
                 ])
                 ->helperText(function (Get $get) {
-                    $periodeAwal     = $get('periode_awal');
-                    $tanggalLaporan  = $get('tanggal_laporan');
-
+                    $periodeAwal    = $get('periode_awal');
+                    $tanggalLaporan = $get('tanggal_laporan');
                     if (! $periodeAwal && ! $tanggalLaporan) return null;
-
-                    $min = $periodeAwal
-                        ? \Carbon\Carbon::parse($periodeAwal)->translatedFormat('d M Y')
-                        : null;
-                    $max = $tanggalLaporan
-                        ? \Carbon\Carbon::parse($tanggalLaporan)->translatedFormat('d M Y')
-                        : null;
-
+                    $min = $periodeAwal    ? \Carbon\Carbon::parse($periodeAwal)->translatedFormat('d M Y')    : null;
+                    $max = $tanggalLaporan ? \Carbon\Carbon::parse($tanggalLaporan)->translatedFormat('d M Y') : null;
                     if ($min && $max) return "Rentang: {$min} s/d {$max}";
                     if ($max) return "Maksimal: {$max}";
-                    return "Minimal: {$min}";
+                    return $min ? "Minimal: {$min}" : null;
                 }),
 
             TextInput::make('total_laporan')
