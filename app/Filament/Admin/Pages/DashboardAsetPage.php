@@ -2,32 +2,27 @@
 
 namespace App\Filament\Admin\Pages;
 
-use Filament\Pages\Page;
-use App\Models\Aset;
-use App\Models\KategoriAset;
-use App\Models\LokasiAset;
-use BackedEnum;
-use UnitEnum;
-use App\Models\Penyusutan;
+use Filament\Pages\Dashboard as BaseDashboard;
 
-class DashboardAsetPage extends Page
+class DashboardAsetPage extends BaseDashboard
 {
-   protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-home';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-building-office-2';
     protected static ?string $title = 'Dasbor Aset';
-    protected static ?string $navigationLabel = 'Dasbor';
-    protected static UnitEnum|string|null $navigationGroup = 'Transaksi';
+    protected static ?string $navigationLabel = 'Dasbor Aset';
+    protected static \UnitEnum|string|null $navigationGroup = 'Aset';
+    
+    protected static string $routePath = 'dasbor-aset';
 
     public function getWidgets(): array
     {
         return [
-            \App\Filament\Widgets\AsetStatsOverview::class,
-            \App\Filament\Admin\Widgets\DetailPenyusutanAsetWidget::class,
-            \App\Filament\Widgets\NilaiAsetChart::class,
-            \App\Filament\Widgets\StatusAsetChart::class,
-\App\Filament\Admin\Widgets\PerolehanTerbaruWidget::class, 
-            \App\Filament\Widgets\PenyusutanWidget::class,
-            \App\Filament\Widgets\NotifikasiWidget::class,
+            \App\Filament\Admin\Widgets\AsetStatsOverview::class,
+            \App\Filament\Admin\Widgets\DetailPenyusutanAset::class,
+            \App\Filament\Admin\Widgets\NilaiAsetChart::class,
+            \App\Filament\Admin\Widgets\PerolehanTerbaruTable::class, 
+            \App\Filament\Admin\Widgets\PenyusutanWidget::class,
+            \App\Filament\Admin\Widgets\NotifikasiWidget::class,
+            \App\Filament\Admin\Widgets\ReminderPemeliharaanWidget::class,
         ];
     }
-
 }
