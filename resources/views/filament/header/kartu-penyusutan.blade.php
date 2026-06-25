@@ -69,6 +69,34 @@
         letter-spacing: .05em;
     }
 
+    .kartu-btn-yearly {
+        margin-left: 12px;
+        padding: 8px 16px;
+        background: rgba(234,179,8,.15);
+        border: 1px solid rgba(234,179,8,.3);
+        border-radius: 8px;
+        color: #fbbf24;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+
+    .kartu-btn-yearly:hover {
+        background: rgba(234,179,8,.25);
+        border-color: rgba(234,179,8,.5);
+        transform: translateY(-1px);
+    }
+
+    .kartu-btn-yearly svg {
+        width: 14px;
+        height: 14px;
+    }
+
     .kartu-col {
         padding: 20px 28px 24px;
     }
@@ -138,6 +166,18 @@
                 </div>
                 <span class="kartu-title">Kartu Penyusutan Aset Tetap</span>
                 <span class="kartu-kode">{{ $aset->kode_aset }}</span>
+                
+                {{-- Button Lihat Per Tahun --}}
+                <button 
+                    wire:click="$dispatch('openYearlyModal', { asetId: {{ $aset->id }} })"
+                    class="kartu-btn-yearly"
+                    type="button"
+                >
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Lihat Per Tahun
+                </button>
             </div>
 
             {{-- Kolom kiri --}}
@@ -160,10 +200,29 @@
                             : '-' }}
                     </span>
                 </div>
-                <div class="kartu-row">
-                    <span class="kartu-key">Masa Manfaat</span>
-                    <span class="kartu-val">{{ $aset->masa_manfaat }} Tahun</span>
-                </div>
+
+                @php
+    $totalTambahBulan = $aset->pemeliharaan()
+        ->where('jenis_perbaikan', 'peningkatan')
+        ->whereNotNull('tambah_umur')
+        ->sum('tambah_umur');
+
+    $totalBulan = ($aset->masa_manfaat * 12) + $totalTambahBulan;
+    $tahunManfaat = floor($totalBulan / 12);
+    $bulanSisa = $totalBulan % 12;
+
+    $labelMasaManfaat = $tahunManfaat . ' Thn' . ($bulanSisa > 0 ? ' ' . $bulanSisa . ' Bln' : '');
+
+    $masaManfaatDesimal = $totalBulan / 12;
+    $bebanTahunan = $masaManfaatDesimal > 0
+        ? ($aset->nilai_perolehan - ($aset->nilai_residu ?? 0)) / $masaManfaatDesimal
+        : 0;
+@endphp
+
+<div class="kartu-row">
+    <span class="kartu-key">Masa Manfaat</span>
+    <span class="kartu-val">{{ $labelMasaManfaat }}</span>
+</div>
             </div>
 
             {{-- Kolom kanan --}}
@@ -187,14 +246,11 @@
                     </span>
                 </div>
                 <div class="kartu-row">
-                    <span class="kartu-key">Beban/Tahun</span>
-                    <span class="kartu-val kartu-val-money">
-                        @php
-                            $bebanTahunan = ($aset->nilai_perolehan - ($aset->nilai_residu ?? 0)) / $aset->masa_manfaat;
-                        @endphp
-                        Rp {{ number_format($bebanTahunan, 0, ',', '.') }}
-                    </span>
-                </div>
+    <span class="kartu-key">Beban/Tahun</span>
+    <span class="kartu-val kartu-val-money">
+        Rp {{ number_format($bebanTahunan, 0, ',', '.') }}
+    </span>
+</div>
             </div>
 
         </div>

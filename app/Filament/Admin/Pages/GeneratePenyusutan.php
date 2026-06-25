@@ -71,171 +71,266 @@ class GeneratePenyusutan extends Page
             return;
         }
 
-        $akhirPeriode = Carbon::parse($this->periode . '-01')->endOfMonth();
-        $awalPeriode = Carbon::parse($this->periode . '-01')->startOfMonth();
+        // ❗ CEGAH DOUBLE - Cek apakah periode ini sudah pernah di-generate
+        $sudahAdaJurnal = Jurnal::whereDate('tanggal', Carbon::parse($this->periode . '-01')->endOfMonth())
+            ->where('deskripsi', 'like', 'Penyusutan%' . $this->periode)
+            ->exists();
 
-        // 🔒 LOCK PERIODE (WAJIB URUT) — cek gap
-        $lastGlobal = Penyusutan::orderBy('periode', 'desc')->first();
-
-        if ($lastGlobal) {
-            $lastPeriode = Carbon::parse($lastGlobal->periode . '-01');
-            $inputPeriode = Carbon::parse($this->periode . '-01');
-
-            // Cek apakah ada gap (loncat lebih dari 1 bulan)
-            $diffMonths = $lastPeriode->diffInMonths($inputPeriode);
-
-            if ($diffMonths > 1) {
-                $nextPeriode = $lastPeriode->addMonth()->format('Y-m');
-                Notification::make()
-                    ->title('Tidak bisa loncat periode!')
-                    ->body("Harus generate bulan $nextPeriode dulu")
-                    ->danger()
-                    ->send();
-                return;
-            }
-
-            // Cek kalau mau generate periode yang lebih lama dari terakhir
-            if ($inputPeriode->lt($lastPeriode)) {
-                Notification::make()
-                    ->title('Tidak bisa generate periode yang sudah lewat!')
-                    ->body("Periode terakhir sudah {$lastGlobal->periode}")
-                    ->danger()
-                    ->send();
-                return;
-            }
-        }
-
-        // ❗ CEGAH DOUBLE
-        if (Penyusutan::where('periode', $this->periode)->exists()) {
+        if ($sudahAdaJurnal) {
             Notification::make()
                 ->title('Periode ini sudah disusutkan')
+                ->body('Periode ' . Carbon::parse($this->periode)->translatedFormat('F Y') . ' sudah pernah di-generate sebelumnya')
                 ->danger()
                 ->send();
             return;
         }
 
+        // 🔒 VALIDASI URUTAN - Cek apakah bulan sebelumnya sudah di-generate
+        $periodeInput = Carbon::parse($this->periode . '-01');
+        
+        // Cari penyusutan terakhir yang sudah di-generate (dari tabel penyusutan, lebih akurat)
+        $penyusutanTerakhir = Penyusutan::orderBy('periode', 'desc')->first();
+
+        if ($penyusutanTerakhir) {
+            $periodeTerakhir = Carbon::parse($penyusutanTerakhir->periode . '-01');
+            $periodeBerikutnya = $periodeTerakhir->copy()->addMonth();
+            
+            // Jika user mau generate periode yang bukan bulan berikutnya
+            if (!$periodeInput->isSameMonth($periodeBerikutnya)) {
+                // Jika mau generate periode yang sudah lewat
+                if ($periodeInput->lte($periodeTerakhir)) {
+                    Notification::make()
+                        ->title('Tidak bisa generate periode yang sudah lewat!')
+                        ->body('Periode terakhir yang sudah di-generate: ' . $periodeTerakhir->translatedFormat('F Y'))
+                        ->danger()
+                        ->send();
+                    return;
+                }
+                
+                // Jika mau loncat periode (skip bulan)
+                if ($periodeInput->gt($periodeBerikutnya)) {
+                    Notification::make()
+                        ->title('Tidak bisa loncat periode!')
+                        ->body('Harus generate periode ' . $periodeBerikutnya->translatedFormat('F Y') . ' terlebih dahulu')
+                        ->warning()
+                        ->send();
+                    return;
+                }
+            }
+        }
+
+        $akhirPeriode = Carbon::parse($this->periode . '-01')->endOfMonth();
+        $awalPeriode = Carbon::parse($this->periode . '-01')->startOfMonth();
+
+        // 🔥 GENERATE OTOMATIS DARI TANGGAL PEROLEHAN SAMPAI PERIODE INI
+        $this->generateHistoris($this->periode);
+
+        Notification::make()
+            ->title('Penyusutan berhasil dibuat')
+            ->body('Data penyusutan telah di-generate dari tanggal perolehan sampai ' . Carbon::parse($this->periode)->translatedFormat('F Y'))
+            ->success()
+            ->send();
+            
+        // Refresh data periode
+        $this->mount();
+    }
+
+    /**
+     * Generate penyusutan historis sampai periode tertentu
+     */
+    protected function generateHistoris($sampaiPeriode)
+    {
+        $sampai = Carbon::parse($sampaiPeriode . '-01');
+        
         // Load aset beserta relasi kategori sekaligus (eager load)
         $asets = Aset::with('kategori_aset')
             ->whereNotNull('tanggal_perolehan')
-            ->whereDate('tanggal_perolehan', '<=', $akhirPeriode)
+            ->whereDate('tanggal_perolehan', '<=', $sampai)
             ->get();
 
-        // Tampung beban per kategori:
-        // [
-        //   'Mesin'      => ['total' => 500000, 'nama' => 'Mesin'],
-        //   'Peralatan'  => ['total' => 300000, 'nama' => 'Peralatan'],
-        // ]
-        $totalPerKategori = [];
+        $periodeYangDiGenerate = []; // Track periode yang di-generate untuk buat jurnal
 
         foreach ($asets as $aset) {
-
             $tanggalPerolehan = Carbon::parse($aset->tanggal_perolehan)->startOfMonth();
-
-            // ❌ kalau periode sebelum bulan beli → skip
-            if (Carbon::parse($this->periode . '-01')->lt($tanggalPerolehan)) {
-                continue;
+            $masaManfaatBulan = $aset->masa_manfaat * 12;
+            
+            // Hitung sampai bulan mana (yang lebih kecil antara sampai atau masa manfaat)
+            $bulanMulai = $tanggalPerolehan->copy();
+            $bulanAkhir = $sampai->copy();
+            $bulanAkhirMasaManfaat = $tanggalPerolehan->copy()->addMonths($masaManfaatBulan - 1);
+            
+            // Gunakan yang lebih kecil
+            if ($bulanAkhir->gt($bulanAkhirMasaManfaat)) {
+                $bulanAkhir = $bulanAkhirMasaManfaat;
             }
 
-            $nilaiResidu = $aset->nilai_residu ?? 0;
-
-            // 🔥 AMBIL PENINGKATAN SAMPAI PERIODE INI
-            $peningkatan = \App\Models\Pemeliharaan::where('aset_id', $aset->id)
-                ->where('jenis_perbaikan', 'peningkatan')
-                ->whereDate('tanggal', '<=', $akhirPeriode)
-                ->sum('biaya');
-
-            // 🔥 NILAI PEROLEHAN + PENINGKATAN
-            $nilaiPerolehan = $aset->nilai_perolehan + $peningkatan;
-
-            // 🔥 MASA MANFAAT (bulan)
-            $masaManfaat = $aset->masa_manfaat * 12;
-
-            // 🔥 TAMBAH UMUR dari peningkatan s/d periode ini
-            $tambahUmur = \App\Models\Pemeliharaan::where('aset_id', $aset->id)
-                ->where('jenis_perbaikan', 'peningkatan')
-                ->whereDate('tanggal', '<=', $akhirPeriode)
-                ->sum('tambah_umur'); // dalam bulan
-
-            $masaManfaat += $tambahUmur;
-
-            // 🔥 AMBIL STATE TERAKHIR SEBELUM PERIODE INI
-            $last = Penyusutan::where('aset_id', $aset->id)
-                ->where('periode', '<', $this->periode)
+            // Ambil akumulasi terakhir sebelum periode yang akan di-generate
+            $penyusutanTerakhir = Penyusutan::where('aset_id', $aset->id)
+                ->where('periode', '<', $bulanMulai->format('Y-m'))
                 ->orderBy('periode', 'desc')
                 ->first();
+            
+            $akumulasiSebelumnya = $penyusutanTerakhir ? $penyusutanTerakhir->akumulasi_penyusutan : 0;
+            $currentMonth = $bulanMulai->copy();
 
-            // ✅ Ambil nilai perolehan yang dipakai di periode sebelumnya
-            // supaya perubahan peningkatan tidak merusak akumulasi lama
-            $nilaiPerolehanSebelumnya = $last
-                ? ($last->nilai_buku + $last->akumulasi_penyusutan)
-                : $aset->nilai_perolehan;
+            while ($currentMonth->lte($bulanAkhir)) {
+                $periode = $currentMonth->format('Y-m');
 
-            $akumulasiSebelumnya = $last ? $last->akumulasi_penyusutan : 0;
+                // Skip jika sudah ada
+                $penyusutanExisting = Penyusutan::where('aset_id', $aset->id)
+                    ->where('periode', $periode)
+                    ->first();
 
-            // 🔥 Kalau ada peningkatan baru sejak periode lalu,
-            // recalculate beban berdasarkan sisa masa manfaat
-            $periodePerolehan = Carbon::parse($aset->tanggal_perolehan)->startOfMonth();
-            $periodeSaat = Carbon::parse($this->periode . '-01');
-            $bulanTerpakai = $periodePerolehan->diffInMonths($periodeSaat); // sudah berapa bulan
+                if ($penyusutanExisting) {
+                    $akumulasiSebelumnya = $penyusutanExisting->akumulasi_penyusutan;
+                    $currentMonth->addMonth();
+                    continue;
+                }
 
-            $sisaMasaManfaat = $masaManfaat - $bulanTerpakai;
+                // Generate penyusutan untuk bulan ini
+                $this->generatePenyusutanBulan($aset, $periode, $akumulasiSebelumnya);
 
-            if ($sisaMasaManfaat <= 0) {
-                continue; // aset sudah habis masa manfaatnya
+                // Track periode yang baru di-generate
+                if (!in_array($periode, $periodeYangDiGenerate)) {
+                    $periodeYangDiGenerate[] = $periode;
+                }
+
+                // Update akumulasi untuk bulan berikutnya
+                $penyusutanBaru = Penyusutan::where('aset_id', $aset->id)
+                    ->where('periode', $periode)
+                    ->first();
+                if ($penyusutanBaru) {
+                    $akumulasiSebelumnya = $penyusutanBaru->akumulasi_penyusutan;
+                }
+
+                $currentMonth->addMonth();
             }
+        }
+        
+        // Generate jurnal untuk SEMUA periode yang baru di-generate
+        foreach ($periodeYangDiGenerate as $periode) {
+            $this->generateJurnalPeriode($periode);
+        }
+    }
 
-            $nilaiBukuSebelumnya = $last
-            ? $last->nilai_buku
-            : $aset->nilai_perolehan;
+    /**
+     * Generate penyusutan untuk 1 bulan
+     */
+    protected function generatePenyusutanBulan(Aset $aset, string $periode, float $akumulasiSebelumnya)
+    {
+        $akhirPeriode = Carbon::parse($periode . '-01')->endOfMonth();
+        $awalPeriode = Carbon::parse($periode . '-01')->startOfMonth();
+        
+        $nilaiResidu = $aset->nilai_residu ?? 0;
 
-            $peningkatanBaru = \App\Models\Pemeliharaan::where('aset_id', $aset->id)
-                ->where('jenis_perbaikan', 'peningkatan')
-                ->whereDate('tanggal', '>=', $awalPeriode)
-                ->whereDate('tanggal', '<=', $akhirPeriode)
-                ->sum('biaya');
+        // AMBIL PENINGKATAN SAMPAI PERIODE INI
+        $peningkatan = \App\Models\Pemeliharaan::where('aset_id', $aset->id)
+            ->where('jenis_perbaikan', 'peningkatan')
+            ->whereDate('tanggal', '<=', $akhirPeriode)
+            ->sum('biaya');
 
-            $nilaiBukuSebelumnya += $peningkatanBaru;
+        // NILAI PEROLEHAN + PENINGKATAN
+        $nilaiPerolehan = $aset->nilai_perolehan + $peningkatan;
 
-            // 🔥 Beban bulan ini = (nilai buku sebelumnya - residu) / sisa masa manfaat
-            $beban = ($nilaiBukuSebelumnya - $nilaiResidu) / $sisaMasaManfaat;
+        // MASA MANFAAT (bulan)
+        $masaManfaat = $aset->masa_manfaat * 12;
 
-            // 🔴 Pastikan beban tidak negatif dan tidak melebihi sisa
-            $sisaYangBisaDisusut = $nilaiPerolehan - $nilaiResidu - $akumulasiSebelumnya;
+        // TAMBAH UMUR dari peningkatan s/d periode ini
+        $tambahUmur = \App\Models\Pemeliharaan::where('aset_id', $aset->id)
+            ->where('jenis_perbaikan', 'peningkatan')
+            ->whereDate('tanggal', '<=', $akhirPeriode)
+            ->sum('tambah_umur');
 
-            if ($beban > $sisaYangBisaDisusut) {
-                $beban = $sisaYangBisaDisusut;
-            }
+        $masaManfaat += $tambahUmur;
 
-            if ($beban <= 0) {
-                continue;
-            }
+        // Hitung bulan terpakai
+        $periodePerolehan = Carbon::parse($aset->tanggal_perolehan)->startOfMonth();
+        $periodeSaat = Carbon::parse($periode . '-01');
+        $bulanTerpakai = $periodePerolehan->diffInMonths($periodeSaat);
 
-            $akumulasi = $akumulasiSebelumnya + $beban;
-            $nilai_buku = $nilaiBukuSebelumnya - $beban;
+        $sisaMasaManfaat = $masaManfaat - $bulanTerpakai;
 
-            Penyusutan::create([
-                'aset_id'              => $aset->id,
-                'periode'              => $this->periode,
-                'beban_penyusutan'     => round($beban, 2),
-                'akumulasi_penyusutan' => round($akumulasi, 2),
-                'nilai_buku'           => round($nilai_buku, 2),
-            ]);
+        if ($sisaMasaManfaat <= 0) {
+            return; // aset sudah habis masa manfaatnya
+        }
 
-            // 📂 Akumulasi beban per kategori
-            $namaKategori = $aset->kategori_aset?->nama_kategori ?? 'Lainnya';
+        // Ambil nilai buku sebelumnya
+        $last = Penyusutan::where('aset_id', $aset->id)
+            ->where('periode', '<', $periode)
+            ->orderBy('periode', 'desc')
+            ->first();
 
+        $nilaiBukuSebelumnya = $last ? $last->nilai_buku : $aset->nilai_perolehan;
+
+        // Cek peningkatan baru di periode ini
+        $peningkatanBaru = \App\Models\Pemeliharaan::where('aset_id', $aset->id)
+            ->where('jenis_perbaikan', 'peningkatan')
+            ->whereDate('tanggal', '>=', $awalPeriode)
+            ->whereDate('tanggal', '<=', $akhirPeriode)
+            ->sum('biaya');
+
+        $nilaiBukuSebelumnya += $peningkatanBaru;
+
+        // Beban bulan ini = (nilai buku sebelumnya - residu) / sisa masa manfaat
+        $beban = ($nilaiBukuSebelumnya - $nilaiResidu) / $sisaMasaManfaat;
+
+        // Pastikan beban tidak negatif dan tidak melebihi sisa
+        $sisaYangBisaDisusut = $nilaiPerolehan - $nilaiResidu - $akumulasiSebelumnya;
+
+        if ($beban > $sisaYangBisaDisusut) {
+            $beban = $sisaYangBisaDisusut;
+        }
+
+        if ($beban <= 0) {
+            return;
+        }
+
+        $akumulasi = $akumulasiSebelumnya + $beban;
+        $nilai_buku = $nilaiBukuSebelumnya - $beban;
+
+        Penyusutan::create([
+            'aset_id'              => $aset->id,
+            'periode'              => $periode,
+            'beban_penyusutan'     => round($beban, 2),
+            'akumulasi_penyusutan' => round($akumulasi, 2),
+            'nilai_buku'           => round($nilai_buku, 2),
+        ]);
+    }
+
+    /**
+     * Generate jurnal untuk periode tertentu
+     */
+    protected function generateJurnalPeriode($periode)
+    {
+        $akhirPeriode = Carbon::parse($periode . '-01')->endOfMonth();
+        
+        // Cek apakah sudah ada jurnal untuk periode ini
+        $jurnalExist = Jurnal::whereDate('tanggal', $akhirPeriode)
+            ->where('deskripsi', 'like', 'Penyusutan%' . $periode)
+            ->exists();
+            
+        if ($jurnalExist) {
+            return; // Skip jika sudah ada jurnal
+        }
+        
+        // Ambil semua penyusutan di periode ini dan group by kategori
+        $penyusutans = Penyusutan::where('periode', $periode)
+            ->with('aset.kategori_aset')
+            ->get();
+            
+        $totalPerKategori = [];
+        
+        foreach ($penyusutans as $p) {
+            $namaKategori = $p->aset->kategori_aset?->nama_kategori ?? 'Lainnya';
+            
             if (!isset($totalPerKategori[$namaKategori])) {
                 $totalPerKategori[$namaKategori] = 0;
             }
-
-            $totalPerKategori[$namaKategori] += $beban;
+            
+            $totalPerKategori[$namaKategori] += $p->beban_penyusutan;
         }
-
+        
         if (empty($totalPerKategori)) {
-            Notification::make()
-                ->title('Tidak ada beban penyusutan di periode ini')
-                ->danger()
-                ->send();
             return;
         }
 
@@ -247,19 +342,11 @@ class GeneratePenyusutan extends Page
             'Kendaraan'  => ['beban' => 756, 'akumulasi' => 177],
         ];
 
-        // Mapping kategori ke akun aset (untuk konsistensi dengan FakturPembelianService)
-        $mappingAkunAset = [
-            'Mesin'      => 172,
-            'Peralatan'  => 171,
-            'Bangunan'   => 179,
-            'Kendaraan'  => 178,
-        ];
-
         // Fallback kalau kategori tidak ada di mapping
         $akunBebanDefault     = Akun::where('no_akun', 752)->firstOrFail();
         $akunAkumulasiDefault = Akun::where('no_akun', 173)->firstOrFail();
 
-        // 🔵 JURNAL PER KATEGORI
+        // JURNAL PER KATEGORI
         foreach ($totalPerKategori as $namaKategori => $totalBeban) {
             if (isset($mappingAkun[$namaKategori])) {
                 $akunBeban     = Akun::where('no_akun', $mappingAkun[$namaKategori]['beban'])->firstOrFail();
@@ -271,7 +358,7 @@ class GeneratePenyusutan extends Page
 
             $jurnal = Jurnal::create([
                 'tanggal'    => $akhirPeriode,
-                'keterangan' => 'Penyusutan ' . $namaKategori . ' ' . $this->periode,
+                'deskripsi' => 'Penyusutan ' . $namaKategori . ' ' . $periode,
             ]);
 
             JurnalDetail::create([
@@ -290,10 +377,5 @@ class GeneratePenyusutan extends Page
                 'deskripsi' => 'Akumulasi Penyusutan ' . $namaKategori,
             ]);
         }
-
-        Notification::make()
-            ->title('Penyusutan bulanan berhasil dibuat')
-            ->success()
-            ->send();
     }
 }
