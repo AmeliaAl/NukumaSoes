@@ -20,6 +20,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Assets\Css;
+use Filament\Navigation\MenuItem;
+use Filament\Navigation\NavigationItem;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -61,6 +63,19 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->userMenuItems([
+                'laravel-dashboard' => MenuItem::make()
+                    ->label('Laravel Dashboard')
+                    ->url('/dashboard')
+                    ->icon('heroicon-o-home'),
+            ])
+            ->navigationItems([
+                NavigationItem::make('Dashboard Persediaan')
+                    ->url('/dashboard')
+                    ->icon('heroicon-o-home')
+                    ->group('Halaman Operasional')
+                    ->sort(-10),
             ]);
     }
 

@@ -24,8 +24,8 @@ class PersediaanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-archive-box';
     protected static UnitEnum|string|null $navigationGroup = 'Transaksi';
-    protected static ?string $navigationLabel = 'Persediaan';
-    protected static ?string $pluralModelLabel = 'Perolehan Bahan Habis Pakai';
+    protected static ?string $navigationLabel = 'Tambah Persediaan';
+    protected static ?string $pluralModelLabel = 'Pembelian Bahan Habis Pakai';
     protected static ?int $navigationSort = 40;
 
     public static function form(Schema $schema): Schema

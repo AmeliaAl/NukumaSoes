@@ -138,6 +138,9 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
 <script>
     document.addEventListener('turbo:load', function () {
         console.log('Dashboard Blade Script: Turbo load detected');

@@ -49,7 +49,7 @@ class KategoriAsetResource extends Resource
         return [
             'index' => ListKategoriAsets::route('/'),
             'create' => CreateKategoriAset::route('/create'),
-            'edit' => EditKategoriAset::route('/{record}/edit'),
+           // 'edit' => EditKategoriAset::route('/{record}/edit'),
         ];
     }
 }

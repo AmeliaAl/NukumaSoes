@@ -71,7 +71,7 @@
         </a>
 
         <!-- Produk -->
-        <a href="{{ route('persediaan-produk.index') }}"
+        <a href="{{ route('produk.index') }}"
            class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
            {{ request()->routeIs('produk.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
             <span class="relative z-10 flex items-center w-full">
@@ -83,8 +83,18 @@
             @if(request()->routeIs('produk.*')) <div class="absolute inset-0 bg-white/5 blur-sm"></div> @endif
         </a>
 
-
-
+        <!-- Harga Produk -->
+        <a href="{{ route('harga-produk.index') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('harga-produk.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('harga-produk.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+                Harga Produk
+            </span>
+            @if(request()->routeIs('harga-produk.*')) <div class="absolute inset-0 bg-white/5 blur-sm"></div> @endif
+        </a>
 
 
 
@@ -92,7 +102,7 @@
         <p class="px-4 text-xs font-semibold text-red-300 uppercase tracking-wider mt-6 mb-1">Inventory Control</p>
 
         <!-- Monitoring Produk FEFO -->
-        <a href="{{ route('persediaan.index') }}"
+        <a href="{{ route('monitoring.fefo') }}"
            class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
            {{ request()->routeIs('monitoring.fefo') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
             <span class="relative z-10 flex items-center w-full">
@@ -138,13 +148,13 @@
         </a>
 
 
-        <!-- Produk Expired -->
+        <!-- Daftar Pengeluaran -->
         <a href="{{ route('pengeluaran.index') }}"
            class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
            {{ request()->routeIs('pengeluaran.*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
             <span class="relative z-10 flex items-center w-full">
                 <svg class="w-5 h-5 mr-3 {{ request()->routeIs('pengeluaran.*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                Produk Expired
+                Daftar Pengeluaran
             </span>
         </a>
 
@@ -185,6 +195,15 @@
             </span>
         </a>
 
+        <!-- Laporan Laba Rugi -->
+        <a href="{{ route('laporan.laba-rugi') }}"
+           class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
+           {{ request()->routeIs('laporan.laba-rugi') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+            <span class="relative z-10 flex items-center w-full">
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('laporan.laba-rugi') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Laporan Laba Rugi
+            </span>
+        </a>
 
         <!-- Logout -->
         <!-- Logout (Hidden in Sidebar as it's now in Header, but kept optional if needed later) -->
