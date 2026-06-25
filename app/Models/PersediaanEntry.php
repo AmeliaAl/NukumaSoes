@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Category;
-use App\Models\HargaProduk;
 
 class PersediaanEntry extends Model
 {
@@ -24,6 +23,8 @@ class PersediaanEntry extends Model
         'bbb',
         'btkl',
         'bop',
+        'harga_dasar_jual',
+        'margin',
     ];
     public function inventory()
     {
@@ -32,13 +33,7 @@ class PersediaanEntry extends Model
 
     public function getCategoryPriceAttribute()
     {
-        $kategoriName = $this->inventory->kategori ?? null;
-        if (!$kategoriName) return $this->harga;
-
-        $category = Category::where('nama_kategori', $kategoriName)->first();
-        if (!$category) return $this->harga;
-
-        $hargaProduk = HargaProduk::where('kategori_id', $category->id)->first();
-        return $hargaProduk ? $hargaProduk->harga : $this->harga;
+        $product = \App\Models\Product::where('kode_produk', $this->kode_produk)->first();
+        return $product ? $product->harga : $this->harga;
     }
 }

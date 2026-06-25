@@ -14,6 +14,7 @@ class ExpiredProductHistory extends Model
         'jumlah_per_batch',
         'jumlah',
         'harga',
+        'hpp',
         'total',
         'tgl_masuk',
         'tgl_expired',

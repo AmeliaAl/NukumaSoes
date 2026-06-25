@@ -1,35 +1,43 @@
 <x-app-layout>
-    <div class="py-8 w-full">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mb-8">
-                <a href="{{ route('kategori.index') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                    Kembali ke Daftar Kategori
-                </a>
-                <h1 class="text-3xl font-serif font-bold text-gray-900 mt-4">Tambah Varian Rasa</h1>
-                <p class="text-sm text-gray-500 mt-1">Tambahkan varian rasa baru untuk produk Anda</p>
-            </div>
+    <div class="py-12 min-h-screen bg-[url('/images/background_fluid.png')] bg-cover bg-center bg-fixed relative flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/30 pointer-events-none"></div>
+        
+        <div class="w-full max-w-4xl px-6 relative z-10">
+            <!-- Glassmorphism Card -->
+            <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[40px] shadow-[0_30px_60px_rgba(0,0,0,0.4)] p-10">
+                <div class="mb-10 text-center">
+                    <h2 class="text-3xl font-serif font-black text-[#d4af37] drop-shadow-lg uppercase tracking-widest">Tambah Varian Rasa</h2>
+                    <p class="text-white/60 text-xs font-bold mt-2 tracking-[0.2em]">PENGELOMPOKKAN VARIAN RASA PRODUK</p>
+                </div>
 
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                <form action="{{ route('rasa.store') }}" method="POST" class="p-8">
+                <form action="{{ route('rasa.store') }}" method="POST" class="space-y-8">
                     @csrf
                     
-                    <div class="mb-6">
-                        <label for="nama_rasa" class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Nama Rasa</label>
-                        <input type="text" name="nama_rasa" id="nama_rasa" value="{{ old('nama_rasa') }}" 
-                            class="block w-full px-4 py-3 rounded-xl border-gray-200 focus:border-red-500 focus:ring focus:ring-red-200 transition-all shadow-sm"
-                            placeholder="Contoh: Manis, Coklat, Keju..." required>
+                    <div class="group">
+                        <label for="nama_rasa" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">
+                            Nama Rasa <span class="text-red-500 font-black">*</span>
+                        </label>
+                        <input type="text" name="nama_rasa" id="nama_rasa" value="{{ old('nama_rasa') }}"
+                            class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 shadow-sm" 
+                            placeholder="Contoh: Manis, Coklat, Keju..."
+                            required>
                         @error('nama_rasa')
-                            <p class="mt-2 text-sm text-red-600 font-medium">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-400 font-bold">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <div class="flex justify-end pt-4">
-                        <button type="submit" class="inline-flex items-center px-8 py-3 bg-red-800 border border-transparent rounded-xl font-semibold text-sm text-white uppercase tracking-widest hover:bg-red-900 active:bg-red-950 transition ease-in-out duration-150 shadow-lg shadow-red-900/20">
-                            Simpan Rasa
+                    <!-- Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-6 pt-6">
+                        <button type="submit" 
+                                class="flex-1 bg-[#5a0f12] hover:bg-[#4a080c] text-[#d4af37] font-black py-6 rounded-2xl border-2 border-[#8b6e22] shadow-[0_10px_20px_rgba(90,15,18,0.3)] transition-all flex flex-col items-center justify-center gap-1 uppercase tracking-widest text-sm text-center min-h-[100px]">
+                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <span>Simpan Rasa</span>
                         </button>
+                        
+                        <a href="{{ route('kategori.index') }}" 
+                           class="flex-1 bg-[#5c677d] hover:bg-[#4a5568] text-white font-black py-6 rounded-2xl border-2 border-[#4a5568] shadow-[0_10px_20px_rgba(92,103,125,0.3)] transition-all flex items-center justify-center uppercase tracking-widest text-sm min-h-[100px]">
+                            Batal
+                        </a>
                     </div>
                 </form>
             </div>

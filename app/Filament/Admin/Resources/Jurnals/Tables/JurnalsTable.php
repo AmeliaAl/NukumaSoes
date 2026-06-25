@@ -32,17 +32,14 @@ class JurnalsTable
                 ->getStateUsing(function ($record) {
                     return $record->jurnaldetail()->sum('debit');
                 })
-                ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.'))
-                ->money('IDR', true) // opsional, biar format Rp
-    ,
+                ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 0, ',', '.')),
             TextColumn::make('total_kredit')
                 ->label('Total Kredit')
                 ->alignEnd()
                 ->getStateUsing(function ($record) {
                     return $record->jurnaldetail()->sum('credit');
                 })
-                ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.'))
-                ->money('IDR', true), // opsional, biar format Rp
+                ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 0, ',', '.')),
             ])
             ->filters([
                 Filter::make('tanggal')

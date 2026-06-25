@@ -100,17 +100,10 @@ class ProductResource extends Resource
                         'mau_expired' => 'Mau Expired',
                         'expired' => 'Expired',
                     ]),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
+
     }
+
 
     public static function getRelations(): array
     {

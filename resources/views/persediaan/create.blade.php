@@ -36,7 +36,7 @@
                                                 data-nama="{{ $product->nama_produk }}" 
                                                 data-harga="{{ $product->harga_fefo }}" 
                                                 data-stok="{{ $product->jumlah }}">
-                                            {{ $product->kode_produk }} - {{ $product->nama_produk }} ({{ $product->kategori }})
+                                            {{ $product->kode_produk }} - {{ $product->nama_produk }} - {{ $product->no_batch }} ({{ $product->kategori }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -81,11 +81,36 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- JUMLAH MASUK -->
                         <div>
-                            <label for="jumlah_masuk" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">JUMLAH MASUK <span class="text-red-500 font-black">*</span></label>
+                            <label for="jumlah_masuk" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">JUMLAH PACK MASUK <span class="text-red-500 font-black">*</span></label>
                             <input id="jumlah_masuk" type="number" name="jumlah_masuk" value="{{ old('jumlah_masuk') }}" 
                                    class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-400" 
                                    min="1" required />
                             <x-input-error :messages="$errors->get('jumlah_masuk')" class="mt-2" />
+                        </div>
+
+                        <!-- JUMLAH PACK MASUK -->
+                        <div>
+                            <label for="jumlah_pack" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">JUMLAH PACK MASUK</label>
+                            <input id="jumlah_pack" type="number" name="jumlah_pack" value="{{ old('jumlah_pack') }}" 
+                                   class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-400" 
+                                   min="0" placeholder="Jumlah pack masuk" />
+                            <x-input-error :messages="$errors->get('jumlah_pack')" class="mt-2" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- HARGA POKOK PRODUKSI -->
+                        <div>
+                            <label for="harga_pokok_produksi" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HARGA POKOK PRODUKSI</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                    <span class="text-[#d4af37] font-bold">Rp</span>
+                                </div>
+                                <input id="harga_pokok_produksi" type="number" name="harga_pokok_produksi" value="{{ old('harga_pokok_produksi') }}" 
+                                       class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-400" 
+                                       min="0" placeholder="0" />
+                            </div>
+                            <x-input-error :messages="$errors->get('harga_pokok_produksi')" class="mt-2" />
                         </div>
                     </div>
 

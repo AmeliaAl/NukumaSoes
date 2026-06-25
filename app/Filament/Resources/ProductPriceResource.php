@@ -80,13 +80,8 @@ class ProductPriceResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('kategori')
                     ->options(Category::all()->pluck('nama_kategori', 'nama_kategori')),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                //
             ]);
+
     }
 
     public static function getRelations(): array

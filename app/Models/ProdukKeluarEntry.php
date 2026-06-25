@@ -38,6 +38,7 @@ class ProdukKeluarEntry extends Model
         'jumlah_pack_keluar',
         'harga_pokok_per_pack',
         'harga_persediaan_produk_jadi',
+        'harga_pokok_produksi',
         'jumlah_pack',
     ];
     public function inventory()

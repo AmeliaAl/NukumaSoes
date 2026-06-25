@@ -21,11 +21,10 @@ class InventoryEntryController extends Controller
      */
     public function create()
     {
-        $products = Product::all();
+        $products = Product::orderBy('kode_produk', 'asc')->get();
         $categories = Category::all();
         $flavors = Flavor::all();
-        $prices = \App\Models\HargaProduk::all();
-        return view('inventory.create', compact('products', 'categories', 'flavors', 'prices'));
+        return view('inventory.create', compact('products', 'categories', 'flavors'));
     }
 
     /**
@@ -34,7 +33,7 @@ class InventoryEntryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'kode_produk' => 'required|string|max:255',
+            'kode_produk' => 'nullable|string|max:255',
             'no_batch' => 'nullable|string|max:255',
             'nama_produk' => 'required|string|max:255',
             'rasa_produk' => 'nullable|string|max:255',
@@ -48,6 +47,9 @@ class InventoryEntryController extends Controller
         ]);
 
         $data = $request->all();
+        // Get jenis_produk from the selected product
+        $selectedProduct = Product::where('kode_produk', $request->kode_produk)->first();
+        $data['jenis_produk'] = $selectedProduct ? ($selectedProduct->jenis_produk ?? 'Brand Sendiri') : 'Brand Sendiri';
         $tglMasuk = Carbon::parse($data['tgl_masuk']);
         $masaSimpan = (int) $data['masa_simpan'];
         $unit = $data['satuan_masa_simpan'] ?? 'hari';
@@ -86,24 +88,8 @@ class InventoryEntryController extends Controller
         // Sync Product Quantity
         Product::syncQuantity($data['kode_produk']);
 
-        // Create Jurnal Umum
-        $id_transaksi = 'TXN-' . time();
-        \App\Models\JurnalUmum::create([
-            'tanggal' => $data['tgl_masuk'],
-            'keterangan' => 'Persediaan Produk Jadi',
-            'ref' => '140',
-            'debit' => $totalHarga,
-            'kredit' => 0,
-            'id_transaksi' => $id_transaksi,
-        ]);
-        \App\Models\JurnalUmum::create([
-            'tanggal' => $data['tgl_masuk'],
-            'keterangan' => 'Produk Dalam Proses',
-            'ref' => '143',
-            'debit' => 0,
-            'kredit' => $totalHarga,
-            'id_transaksi' => $id_transaksi,
-        ]);
+        // Jurnal Umum TIDAK dibuat di sini.
+        // Jurnal hanya dibuat saat transaksi: Produk Masuk, Produk Keluar, atau Produk Expired.
 
         return redirect()->route('persediaan-produk.index')->with('success', 'Persediaan produk berhasil ditambahkan.');
     }
@@ -111,22 +97,23 @@ class InventoryEntryController extends Controller
     /**
      * Show the form for editing the specified inventory entry.
      */
-    public function edit(Inventory $inventory)
+    public function edit(Inventory $inventory_entry)
     {
-        $products = Product::all();
+        $inventory = $inventory_entry;
+        $products = Product::orderBy('kode_produk', 'asc')->get();
         $categories = Category::all();
         $flavors = Flavor::all();
-        $prices = \App\Models\HargaProduk::all();
-        return view('inventory.edit', compact('inventory', 'products', 'categories', 'flavors', 'prices'));
+        return view('inventory.edit', compact('inventory', 'products', 'categories', 'flavors'));
     }
 
     /**
      * Update the specified inventory entry in storage.
      */
-    public function update(Request $request, Inventory $inventory)
+    public function update(Request $request, Inventory $inventory_entry)
     {
+        $inventory = $inventory_entry;
         $request->validate([
-            'kode_produk' => 'required|string|max:255',
+            'kode_produk' => 'nullable|string|max:255',
             'no_batch' => 'nullable|string|max:255',
             'nama_produk' => 'required|string|max:255',
             'rasa_produk' => 'nullable|string|max:255',
@@ -140,6 +127,9 @@ class InventoryEntryController extends Controller
         ]);
 
         $data = $request->all();
+        // Get jenis_produk from the selected product
+        $selectedProduct = Product::where('kode_produk', $request->kode_produk)->first();
+        $data['jenis_produk'] = $selectedProduct ? ($selectedProduct->jenis_produk ?? 'Brand Sendiri') : 'Brand Sendiri';
         $tglMasuk = Carbon::parse($data['tgl_masuk']);
         $masaSimpan = (int) $data['masa_simpan'];
         $unit = $data['satuan_masa_simpan'] ?? 'hari';
@@ -182,36 +172,41 @@ class InventoryEntryController extends Controller
     /**
      * Remove the specified inventory entry from storage.
      */
-    public function destroy(Inventory $inventory)
+    public function destroy(Inventory $inventory_entry)
     {
+        $inventory = $inventory_entry;
         $kode_produk = $inventory->kode_produk;
 
-        // Always move to history and create journal entries upon deletion (treat as loss/expired)
-        // Force the HPP to 87.68 as requested for accurate nominal calculation
-        $hargaPokok = 87.68;
-        $nominal = $inventory->jumlah * $hargaPokok;
-        
-        $history = \App\Models\ExpiredProductHistory::create([
-            'no_batch' => $inventory->no_batch,
-            'nama_produk' => $inventory->nama_produk,
-            'rasa_produk' => $inventory->rasa_produk,
-            'kategori' => $inventory->kategori,
-            'jumlah_per_batch' => $inventory->jumlah_per_batch,
-            'jumlah' => $inventory->jumlah,
-            'harga' => $hargaPokok,
-            'total' => $nominal,
-            'tgl_masuk' => $inventory->tgl_masuk,
-            'tgl_expired' => $inventory->tgl_expired,
-            'status' => $inventory->status,
-            'sisa_hari' => $inventory->sisa_hari,
-        ]);
+        if ($inventory->status === 'Expired') {
+            \App\Models\ExpiredProductHistory::create([
+                'no_batch'         => $inventory->no_batch ?? '-',
+                'nama_produk'      => $inventory->nama_produk ?? 'Tidak Diketahui',
+                'rasa_produk'      => $inventory->rasa_produk ?? null,
+                'kategori'         => $inventory->kategori ?? '-',
+                'jumlah_per_batch' => $inventory->jumlah_per_batch ?? 0,
+                'jumlah'           => $inventory->jumlah ?? 0,
+                'harga'            => $inventory->harga ?? 0,
+                'hpp'              => $inventory->hpp ?? 0,
+                'total'            => ($inventory->jumlah ?? 0) * ($inventory->hpp ?? 0),
+                'tgl_masuk'        => $inventory->tgl_masuk ?? now(),
+                'tgl_expired'      => $inventory->tgl_expired ?? now(),
+                'status'           => $inventory->status ?? 'Expired',
+                'sisa_hari'        => $inventory->sisa_hari ?? 0,
+                'is_journaled'     => false,
+            ]);
+        }
 
         $inventory->delete();
 
         // Sync Product Quantity
         Product::syncQuantity($kode_produk);
 
-        return redirect()->back()->with('success', 'Persediaan produk berhasil dihapus.');
+        $message = 'Persediaan produk berhasil dihapus.';
+        if ($inventory->status === 'Expired') {
+            $message .= ' Data masuk ke Riwayat Produk Expired.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**

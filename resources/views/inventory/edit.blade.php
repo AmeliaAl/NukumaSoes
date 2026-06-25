@@ -17,18 +17,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- PRODUK ID -->
                         <div>
-                            <label for="kode_produk" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">PRODUK ID <span class="text-red-500 font-black">*</span></label>
+                            <label for="kode_produk" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">PRODUK ID</label>
                             <div class="relative group">
                                 <select id="kode_produk" name="kode_produk" 
                                         class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none @error('kode_produk') border-red-400 @enderror" 
-                                        required autofocus>
-                                    <option value="">Pilih Produk ID</option>
+                                        autofocus>
+                                    <option value="">Pilih Produk ID (Opsional)</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->kode_produk }}" 
                                                 data-nama="{{ $product->nama_produk }}" 
                                                 data-rasa="{{ $product->rasa_produk }}" 
                                                 data-kategori="{{ $product->kategori }}"
-                                                data-harga="{{ $product->harga_jual ?? $product->harga }}"
+                                                data-harga="{{ $product->harga }}"
+                                                data-hpp="{{ $product->hpp ?? 0 }}"
                                                 {{ old('kode_produk', $inventory->kode_produk) == $product->kode_produk ? 'selected' : '' }}>
                                             {{ $product->kode_produk }} - {{ $product->nama_produk }}
                                         </option>
@@ -51,14 +52,18 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div id="jenis_produk_row" class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <!-- VARIAN RASA -->
                         <div>
-                            <label for="rasa_produk" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">VARIAN RASA</label>
-                            <div class="relative">
+                            <label class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">VARIAN RASA</label>
+                            <input type="text" id="rasa_produk_display" readonly
+                                   class="w-full bg-gray-100/90 border-2 border-gray-200/50 rounded-2xl px-5 py-4 text-gray-700 font-bold select-none cursor-not-allowed outline-none" 
+                                   value="" />
+                            
+                            <div id="rasa_produk_select_wrapper" style="display: none;" class="relative">
                                 <select id="rasa_produk" name="rasa_produk" 
                                         class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none">
-                                    <option value="">Pilih Rasa (Opsional)</option>
+                                    <option value="">Pilih Varian Rasa</option>
                                     @foreach($flavors as $flavor)
                                         <option value="{{ $flavor->nama_rasa }}" {{ old('rasa_produk', $inventory->rasa_produk) == $flavor->nama_rasa ? 'selected' : '' }}>
                                             {{ $flavor->nama_rasa }}
@@ -73,11 +78,14 @@
 
                         <!-- KATEGORI -->
                         <div>
-                            <label for="kategori" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">KATEGORI <span class="text-red-500 font-black">*</span></label>
-                            <div class="relative">
+                            <label class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">KATEGORI <span class="text-red-500 font-black">*</span></label>
+                            <input type="text" id="kategori_display" readonly
+                                   class="w-full bg-gray-100/90 border-2 border-gray-200/50 rounded-2xl px-5 py-4 text-gray-700 font-bold select-none cursor-not-allowed outline-none" 
+                                   value="" />
+
+                            <div id="kategori_select_wrapper" style="display: none;" class="relative">
                                 <select id="kategori" name="kategori" 
-                                        class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none" 
-                                        required>
+                                        class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none" required>
                                     <option value="">Pilih Kategori</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->nama_kategori }}" 
@@ -141,16 +149,17 @@
                             </div>
                         </div>
 
-                        <!-- TOTAL -->
+                        <!-- HPP (Harga Pokok Produksi) -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">TOTAL ESTIMASI</label>
+                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">HPP (Harga Pokok Produksi)</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-gray-400 font-bold">Rp</span>
                                 </div>
-                                <input id="total_estimasi" type="text" readonly
-                                       class="w-full bg-black/20 border-2 border-[#d4af37]/30 rounded-2xl pl-12 pr-5 py-4 text-[#d4af37] font-black text-2xl focus:ring-0 transition-all cursor-not-allowed" 
-                                       value="{{ number_format($inventory->jumlah_per_batch * $inventory->harga, 0, ',', '.') }}" />
+                                <input id="hpp_display" type="text" readonly
+                                       class="w-full bg-black/10 border-2 border-[#d4af37]/20 rounded-2xl pl-12 pr-5 py-4 text-[#d4af37] font-black text-xl focus:ring-0 transition-all cursor-not-allowed" 
+                                       value="{{ $inventory->hpp ? number_format($inventory->hpp, 2, ',', '.') : '-' }}"
+                                       placeholder="Otomatis dari Produk ID" />
                             </div>
                         </div>
                     </div>
@@ -188,6 +197,7 @@
                     <input type="hidden" name="satuan_masa_simpan" id="satuan_masa_simpan" value="{{ old('satuan_masa_simpan', $inventory->satuan_masa_simpan) }}">
                     <input type="hidden" name="satuan" value="{{ $inventory->satuan ?? 'Pcs' }}">
                     <input type="hidden" name="stok_minimum" value="{{ $inventory->stok_minimum ?? 0 }}">
+                    <input type="hidden" name="hpp" id="hpp_hidden" value="{{ old('hpp', $inventory->hpp ?? 0) }}">
 
                     <!-- Buttons -->
                     <div class="flex flex-col sm:flex-row gap-6 pt-6">
@@ -207,9 +217,7 @@
         </div>
 
         <script>
-            // Master prices from controller
-            const masterPrices = @json($prices);
-
+            // Master prices removed
             // Function to calculate and display total
             function calculateTotal() {
                 const jumlahInput = document.getElementById('jumlah_per_batch');
@@ -259,35 +267,140 @@
                 }
             }
 
+            function updateFieldModes() {
+                const kodeProdukSelect = document.getElementById('kode_produk');
+                const isProductSelected = kodeProdukSelect && kodeProdukSelect.value !== '';
+
+                const rasaDisplay = document.getElementById('rasa_produk_display');
+                const rasaWrapper = document.getElementById('rasa_produk_select_wrapper');
+                const rasaSelect = document.getElementById('rasa_produk');
+
+                const kategoriDisplay = document.getElementById('kategori_display');
+                const kategoriWrapper = document.getElementById('kategori_select_wrapper');
+                const kategoriSelect = document.getElementById('kategori');
+
+                if (isProductSelected) {
+                    if (rasaDisplay) rasaDisplay.style.display = 'block';
+                    if (rasaWrapper) rasaWrapper.style.display = 'none';
+                    if (kategoriDisplay) kategoriDisplay.style.display = 'block';
+                    if (kategoriWrapper) kategoriWrapper.style.display = 'none';
+                } else {
+                    if (rasaDisplay) rasaDisplay.style.display = 'none';
+                    if (rasaWrapper) rasaWrapper.style.display = 'block';
+                    if (kategoriDisplay) kategoriDisplay.style.display = 'none';
+                    if (kategoriWrapper) kategoriWrapper.style.display = 'block';
+                }
+            }
+
             // Product selection trigger
             document.getElementById('kode_produk').addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                if (!selectedOption || !selectedOption.value) return;
+                updateFieldModes();
+                if (!selectedOption || !selectedOption.value) {
+                    // Reset fields if cleared
+                    document.getElementById('nama_produk').value = '';
+                    document.getElementById('harga_jual').value = 0;
+                    document.getElementById('masa_simpan').value = 0;
+                    document.getElementById('masa_simpan_display').value = 0;
+                    document.getElementById('tgl_expired_display').value = '-';
+                    document.getElementById('hpp_display').value = '-';
+                    document.getElementById('hpp_hidden').value = 0;
+                    calculateTotal();
+                    return;
+                }
 
                 const nama = selectedOption.getAttribute('data-nama');
                 const rasa = selectedOption.getAttribute('data-rasa');
                 const kategori = selectedOption.getAttribute('data-kategori');
                 const harga = selectedOption.getAttribute('data-harga');
+                const hpp = selectedOption.getAttribute('data-hpp');
 
                 // Set hidden product name
                 document.getElementById('nama_produk').value = nama || '';
-                
-                // Set flavor
-                const rasaSelect = document.getElementById('rasa_produk');
-                if (rasaSelect && rasa) rasaSelect.value = rasa;
-                
-                // Set price directly from Product data as requested
+
+                // Set harga_jual explicitly from product if available
                 const hargaInput = document.getElementById('harga_jual');
                 if (hargaInput && harga) {
                     hargaInput.value = harga;
                 }
 
-                // Set category and trigger automatic shelf-life fill (but we'll keep the price from product)
+                // Set HPP auto-fill
+                const hppDisplay = document.getElementById('hpp_display');
+                const hppHidden = document.getElementById('hpp_hidden');
+                const hppVal = parseFloat(hpp) || 0;
+                if (hppDisplay) {
+                    hppDisplay.value = hppVal > 0 ? hppVal.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-';
+                }
+                if (hppHidden) {
+                    hppHidden.value = hppVal;
+                }
+                
+                // Set flavor robustly
+                const rasaSelect = document.getElementById('rasa_produk');
+                const rasaDisplay = document.getElementById('rasa_produk_display');
+                if (rasaSelect && rasa) {
+                    const normalizedRasa = rasa.trim().toLowerCase();
+                    let matched = false;
+                    for (let i = 0; i < rasaSelect.options.length; i++) {
+                        const opt = rasaSelect.options[i];
+                        if (opt.value.trim().toLowerCase() === normalizedRasa) {
+                            rasaSelect.selectedIndex = i;
+                            if (rasaDisplay) rasaDisplay.value = opt.text;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        for (let i = 0; i < rasaSelect.options.length; i++) {
+                            const opt = rasaSelect.options[i];
+                            if (opt.value.trim().toLowerCase().includes(normalizedRasa) || normalizedRasa.includes(opt.value.trim().toLowerCase())) {
+                                rasaSelect.selectedIndex = i;
+                                if (rasaDisplay) rasaDisplay.value = opt.text;
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!matched && rasaDisplay) {
+                        rasaDisplay.value = '';
+                    }
+                } else if (rasaDisplay) {
+                    rasaDisplay.value = '';
+                }
+                // Set category robustly and trigger automatic shelf-life fill and price auto-fill
                 const kategoriSelect = document.getElementById('kategori');
+                const kategoriDisplay = document.getElementById('kategori_display');
                 if (kategoriSelect && kategori) {
-                    kategoriSelect.value = kategori;
-                    // Trigger change event to fetch data from the selected category
-                    kategoriSelect.dispatchEvent(new Event('change'));
+                    const normalizedKategori = kategori.trim().toLowerCase();
+                    let matched = false;
+                    for (let i = 0; i < kategoriSelect.options.length; i++) {
+                        const opt = kategoriSelect.options[i];
+                        if (opt.value.trim().toLowerCase() === normalizedKategori) {
+                            kategoriSelect.selectedIndex = i;
+                            if (kategoriDisplay) kategoriDisplay.value = opt.text;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        for (let i = 0; i < kategoriSelect.options.length; i++) {
+                            const opt = kategoriSelect.options[i];
+                            if (opt.value.trim().toLowerCase().includes(normalizedKategori) || normalizedKategori.includes(opt.value.trim().toLowerCase())) {
+                                kategoriSelect.selectedIndex = i;
+                                if (kategoriDisplay) kategoriDisplay.value = opt.text;
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!matched && kategoriDisplay) {
+                        kategoriDisplay.value = '';
+                    }
+                    if (matched) {
+                        kategoriSelect.dispatchEvent(new Event('change'));
+                    }
+                } else if (kategoriDisplay) {
+                    kategoriDisplay.value = '';
                 }
             });
 
@@ -306,23 +419,6 @@
                 const masaSimpan = selectedOption.getAttribute('data-masasimpan');
                 const satuan = selectedOption.getAttribute('data-satuan');
 
-                // 1. AUTO-FILL HARGA PER PCS (Taken from Harga Produk list - Default to 'Umum')
-                const hargaInput = document.getElementById('harga_jual');
-                
-                if (masterPrices && categoryId) {
-                    // Search in Master Data Harga based on Category
-                    const categoryPrices = masterPrices.filter(p => p.kategori_id == categoryId);
-                    if (categoryPrices.length > 0) {
-                        // Find 'Umum' price or just the first available price for this category
-                        const targetPrice = categoryPrices.find(p => p.jenis_mitra === 'Umum') || 
-                                           categoryPrices[0];
-                        hargaInput.value = targetPrice.harga;
-                    } else if (fallbackHarga) {
-                        hargaInput.value = fallbackHarga;
-                    }
-                } else if (fallbackHarga) {
-                    hargaInput.value = fallbackHarga;
-                }
                 // 2. AUTO-FILL MASA SIMPAN
                 let finalMasaSimpan = masaSimpan || 0;
                 let finalSatuan = satuan || 'hari';
@@ -361,6 +457,22 @@
 
             // Initial calculation on page load
             window.addEventListener('DOMContentLoaded', () => {
+                const kategoriSelect = document.getElementById('kategori');
+                const kategoriDisplay = document.getElementById('kategori_display');
+                const rasaSelect = document.getElementById('rasa_produk');
+                const rasaDisplay = document.getElementById('rasa_produk_display');
+
+                updateFieldModes();
+
+                if (kategoriSelect && kategoriSelect.value) {
+                    kategoriSelect.dispatchEvent(new Event('change'));
+                    if (kategoriDisplay && kategoriSelect.selectedIndex >= 0) {
+                        kategoriDisplay.value = kategoriSelect.options[kategoriSelect.selectedIndex].text;
+                    }
+                }
+                if (rasaSelect && rasaSelect.value && rasaDisplay && rasaSelect.selectedIndex >= 0) {
+                    rasaDisplay.value = rasaSelect.options[rasaSelect.selectedIndex].text;
+                }
                 calculateExpiry();
                 calculateTotal();
             });

@@ -50,6 +50,14 @@
                     </div>
                 </div>
 
+                <div class="flex flex-col gap-4">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="hapus_lama" value="1" class="h-4 w-4 text-[#28a745] border-gray-300 rounded focus:ring-[#28a745]">
+                        Hapus COA lama sebelum import
+                    </label>
+                    <p class="text-xs text-gray-500">Centang jika Anda ingin mengganti semua data COA saat ini dengan isi file Excel baru.</p>
+                </div>
+
                 @error('file')
                     <div class="p-4 bg-red-50 border-2 border-red-200 rounded-2xl text-red-700 text-sm">
                         {{ $message }}

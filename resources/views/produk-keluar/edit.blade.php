@@ -52,26 +52,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 bg-[#fdf9eb] p-8 rounded-[30px] border border-[#d4af37]/20">
-                        <!-- JUMLAH PACK (MANUAL) -->
-                        <div>
-                            <label for="jumlah_pack" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">JUMLAH PACK (MANUAL)</label>
-                            <input id="jumlah_pack" type="number" name="jumlah_pack" value="{{ old('jumlah_pack', $entry->jumlah_pack) }}" 
-                                   class="w-full bg-white border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all" />
-                        </div>
 
-                        <!-- PERSEDIAAN PRODUK JADI -->
-                        <div>
-                            <label for="harga_persediaan_produk_jadi_display" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">PERSEDIAAN PRODUK JADI</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <span class="text-[#d4af37] font-bold">Rp</span>
-                                </div>
-                                <input id="harga_persediaan_produk_jadi_display" type="text" 
-                                       value="{{ number_format($entry->harga_persediaan_produk_jadi, 0, ',', '.') }}"
-                                       class="w-full bg-white border-2 border-[#d4af37]/30 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all" />
-                                <input id="harga_persediaan_produk_jadi" type="hidden" name="harga_persediaan_produk_jadi" value="{{ $entry->harga_persediaan_produk_jadi }}" />
-                            </div>
-                        </div>
 
                         <!-- Spacer -->
                         <div class="hidden md:block"></div>
@@ -86,9 +67,9 @@
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-[#d4af37] font-bold">Rp</span>
                                 </div>
-                                <input id="harga_pokok_per_pack_display" type="text" readonly
+                                <input id="harga_pokok_per_pack_display" type="text"
                                        value="{{ number_format($entry->harga_pokok_per_pack, 2, ',', '.') }}"
-                                       class="w-full bg-[#f4ebd0] border-2 border-[#d4af37]/20 rounded-2xl pl-12 pr-5 py-4 text-[#7a0e14] font-black shadow-inner" />
+                                       class="w-full bg-white border-2 border-[#d4af37]/30 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all" />
                                 <input id="harga_pokok_per_pack" type="hidden" name="harga_pokok_per_pack" value="{{ $entry->harga_pokok_per_pack }}" />
                             </div>
                         </div>
@@ -131,28 +112,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const jumlahPackManual = document.getElementById('jumlah_pack');
-            const hargaPersediaanDisplay = document.getElementById('harga_persediaan_produk_jadi_display');
-            const hargaPersediaanInput = document.getElementById('harga_persediaan_produk_jadi');
             const hargaPokokDisplay = document.getElementById('harga_pokok_per_pack_display');
             const hargaPokokInput = document.getElementById('harga_pokok_per_pack');
             const totalHargaDisplay = document.getElementById('total_harga_display');
             const totalHargaInput = document.getElementById('total_harga');
-
-            function updateHargaPokok() {
-                const totalInventory = parseFloat(hargaPersediaanInput.value) || 0;
-                const qtyPack = parseInt(jumlahPackManual.value) || 0;
-                
-                if (qtyPack > 0) {
-                    const costPerPack = totalInventory / qtyPack;
-                    hargaPokokInput.value = costPerPack.toFixed(2);
-                    hargaPokokDisplay.value = parseFloat(costPerPack.toFixed(2)).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                } else {
-                    hargaPokokInput.value = 0;
-                    hargaPokokDisplay.value = '0,00';
-                }
-                updatePersediaanKeluar();
-            }
 
             function updatePersediaanKeluar() {
                 const qtyKeluar = document.getElementById('jumlah_keluar');
@@ -171,14 +134,13 @@
                     if (value) {
                         this.value = parseInt(value).toLocaleString('id-ID');
                     }
-                    if (input === hargaPersediaanDisplay) updateHargaPokok();
+                    if (input === hargaPokokDisplay) updatePersediaanKeluar();
                 });
             }
 
-            formatCurrencyInput(hargaPersediaanDisplay, hargaPersediaanInput);
+            formatCurrencyInput(hargaPokokDisplay, hargaPokokInput);
             formatCurrencyInput(totalHargaDisplay, totalHargaInput);
             
-            jumlahPackManual.addEventListener('input', updateHargaPokok);
             document.getElementById('jumlah_keluar').addEventListener('input', updatePersediaanKeluar);
             
             // Initial calculation

@@ -4,7 +4,6 @@ namespace App\Imports;
 
 use App\Models\Coa;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Illuminate\Support\Collection;
 
 class CoaImport implements ToCollection
@@ -14,41 +13,81 @@ class CoaImport implements ToCollection
         $insertedCount = 0;
 
         foreach ($rows as $row) {
-            // Karena seringkali ada kolom "Nomor" (No), maka kita asumsikan:
-            // Jika ada 3 kolom (atau lebih): Kolom 1 (No), Kolom 2 (Kode), Kolom 3 (Nama)
-            // Jika ada 2 kolom: Kolom 1 (Kode), Kolom 2 (Nama)
-            
-            $hasThreeColumns = isset($row[2]) && trim((string)$row[2]) !== '';
+            $values = array_map(function ($value) {
+                return trim((string)$value);
+            }, array_values($row->toArray()));
 
-            $kodeAkun = $hasThreeColumns ? trim((string)$row[1]) : trim((string)($row[0] ?? ''));
-            $namaAkun = $hasThreeColumns ? trim((string)$row[2]) : trim((string)($row[1] ?? ''));
-
-            // Pastikan sel tidak kosong
-            if (!empty($kodeAkun) && !empty($namaAkun)) {
-                
-                // Abaikan jika baris tersebut ternyata adalah baris judul tabel / header
-                // Misalnya baris yang isinya kata "kode" atau "rek" atau "nama"
-                $isHeader = str_contains(strtolower($kodeAkun), 'kode') || 
-                            str_contains(strtolower($kodeAkun), 'rek') ||
-                            str_contains(strtolower($namaAkun), 'nama') ||
-                            str_contains(strtolower($namaAkun), 'akun');
-
-                if (!$isHeader) {
-                    Coa::updateOrCreate(
-                        ['kode_akun' => $kodeAkun],
-                        [
-                            'nama_akun' => $namaAkun,
-                        ]
-                    );
-                    $insertedCount++;
-                }
+            while (count($values) > 0 && $values[0] === '') {
+                array_shift($values);
             }
+
+            $kodeAkun = null;
+            $headerAkun = null;
+            $namaAkun = null;
+
+            if (count($values) >= 3) {
+                $first = strtolower($values[0]);
+                $second = strtolower($values[1]);
+                $third = strtolower($values[2]);
+
+                if ($this->isHeaderRow($first, $second, $third)) {
+                    continue;
+                }
+
+                if (str_contains($first, 'no') || str_contains($first, 'nomor') || (is_numeric($values[0]) && !preg_match('/(header|kode|nama|akun)/i', $values[1]))) {
+                    $kodeAkun = $values[1];
+                    $namaAkun = $values[2];
+                } elseif (str_contains($second, 'header')) {
+                    $kodeAkun = $values[0];
+                    $headerAkun = $values[1];
+                    $namaAkun = $values[2];
+                } else {
+                    $kodeAkun = $values[0];
+                    $headerAkun = $values[1];
+                    $namaAkun = $values[2];
+                }
+            } elseif (count($values) >= 2) {
+                if ($this->isHeaderRow(strtolower($values[0]), strtolower($values[1]), '')) {
+                    continue;
+                }
+
+                $kodeAkun = $values[0];
+                $namaAkun = $values[1];
+            }
+
+            if (empty($kodeAkun) || empty($namaAkun)) {
+                continue;
+            }
+
+            if ($this->isHeaderRow(strtolower($kodeAkun), strtolower($headerAkun), strtolower($namaAkun))) {
+                continue;
+            }
+
+            Coa::updateOrCreate(
+                ['kode_akun' => $kodeAkun],
+                [
+                    'header_akun' => $headerAkun,
+                    'nama_akun' => $namaAkun,
+                ]
+            );
+            $insertedCount++;
         }
 
-        // Tampilkan error jika sama sekali tidak ada satupun baris data yang valid yang masuk
         if ($insertedCount === 0) {
-            throw new \Exception("Gagal menemukan data akun. Pastikan urutan kolom sesuai (contoh: No | Kode Akun | Nama Akun).");
+            throw new \Exception("Gagal menemukan data akun. Pastikan urutan kolom sesuai (contoh: kode_akun | header_akun | nama_akun atau kode_akun | nama_akun).");
         }
+    }
+
+    private function isHeaderRow(string $first, string $second, string $third): bool
+    {
+        return str_contains($first, 'kode') ||
+               str_contains($first, 'rek') ||
+               str_contains($first, 'no') ||
+               str_contains($second, 'header') ||
+               str_contains($second, 'kode') ||
+               str_contains($second, 'nama') ||
+               str_contains($third, 'nama') ||
+               str_contains($third, 'akun');
     }
 }
 

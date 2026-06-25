@@ -86,6 +86,7 @@
                                             data-jumlah="{{ $inventory->total_jumlah }}" 
                                             data-harga="{{ $inventory->selling_price }}"
                                             data-cost="{{ $inventory->cost_price }}"
+                                            data-hpp="{{ $inventory->hpp }}"
                                             data-kategori="{{ $inventory->kategori }}"
                                             data-rasa="{{ $inventory->rasa_produk }}"
                                             data-batch="{{ $inventory->oldest_batch }}"
@@ -127,38 +128,19 @@
                         <!-- Spacer Row 1 -->
                         <div class="hidden md:block"></div>
 
-                        <!-- PERSEDIAAN PRODUK JADI -->
+
+
+                        <!-- HARGA POKOK PRODUKSI -->
                         <div>
-                            <label for="harga_persediaan_produk_jadi_display" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">PERSEDIAAN PRODUK JADI</label>
+                            <label for="harga_pokok_per_pack_display" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HARGA POKOK PRODUKSI</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-[#d4af37] font-bold">Rp</span>
                                 </div>
-                                <input id="harga_persediaan_produk_jadi_display" type="text" placeholder="0" 
-                                       class="w-full bg-white border-2 border-[#d4af37]/30 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all" />
-                                <input id="harga_persediaan_produk_jadi" type="hidden" name="harga_persediaan_produk_jadi" value="0" />
-                            </div>
-                        </div>
-
-                        <!-- JUMLAH PACK (MANUAL) -->
-                        <div>
-                            <label for="jumlah_pack" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">JUMLAH PACK <span class="text-red-500 font-black">*</span></label>
-                            <input id="jumlah_pack" type="number" name="jumlah_pack" value="{{ old('jumlah_pack') }}" 
-                                   class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-400" 
-                                   min="0" placeholder="0" required />
-                        </div>
-
-                        <!-- HARGA POKOK PER PACK -->
-                        <div>
-                            <label for="harga_pokok_per_pack_display" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HARGA POKOK PER PACK</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <span class="text-[#d4af37] font-bold">Rp</span>
-                                </div>
-                                <input id="harga_pokok_per_pack_display" type="text" readonly
-                                       class="w-full bg-[#f4ebd0] border-2 border-[#d4af37]/20 rounded-2xl pl-12 pr-5 py-4 text-[#7a0e14] font-black shadow-inner" 
+                                <input id="harga_pokok_per_pack_display" type="text"
+                                       class="w-full bg-white border-2 border-[#d4af37]/30 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all" 
                                        placeholder="0" />
-                                <input id="harga_pokok_per_pack" type="hidden" name="harga_pokok_per_pack" />
+                                <input id="harga_pokok_per_pack" type="hidden" name="harga_pokok_per_pack" value="0" />
                             </div>
                         </div>
 
@@ -227,7 +209,6 @@
                                     <th class="py-6 px-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Kategori</th>
 
                                     <th class="py-6 px-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Jumlah Pack Keluar</th>
-                                    <th class="py-6 px-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Persediaan Produk Jadi</th>
                                     <th class="py-6 px-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Harga Pokok Per Pack</th>
                                     <th class="py-6 px-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Persediaan Produk Keluar</th>
                                     <th class="py-6 px-6 text-center text-[13px] font-black text-black uppercase tracking-wider whitespace-nowrap">Aksi</th>
@@ -245,7 +226,6 @@
                                         <td class="py-5 px-6 text-sm text-[#7a0e14] font-black border-r border-[#d4af37]/10 uppercase tracking-tighter">{{ $entry->kategori ?? '-' }}</td>
 
                                         <td class="py-5 px-6 text-base font-black text-blue-600 border-r border-[#d4af37]/10 text-center">{{ $entry->jumlah_pack_keluar ?? $entry->jumlah_keluar }}</td>
-                                        <td class="py-5 px-6 text-base font-black text-[#7a0e14] border-r border-[#d4af37]/10 text-right font-mono">Rp {{ number_format($entry->harga_persediaan_produk_jadi, 0, ',', '.') }}</td>
                                         <td class="py-5 px-6 text-base font-black text-[#7a0e14] border-r border-[#d4af37]/10 text-right font-mono">Rp {{ number_format($entry->harga_pokok_per_pack, 2, ',', '.') }}</td>
                                         <td class="py-5 px-6 text-base font-black text-[#7a0e14] border-r border-[#d4af37]/10 text-right font-mono text-orange-600">Rp {{ number_format(($entry->jumlah_pack_keluar ?? $entry->jumlah_keluar) * $entry->harga_pokok_per_pack, 2, ',', '.') }}</td>
                                         <td class="py-5 px-6 text-sm">
@@ -288,6 +268,8 @@
         </div>
 
         <script>
+            const allProductsData = {!! isset($allProductsData) ? $allProductsData->toJson() : '[]' !!};
+            
             const flavorStockData = {!! $inventoriesForSelect->mapWithKeys(function($item) {
                 return [$item->kategori . '|' . $item->rasa_produk => $item->total_jumlah];
             })->toJson() !!};
@@ -307,8 +289,6 @@
                 const hargaDisplay = document.getElementById('harga_display');
                 const hargaPokokInput = document.getElementById('harga_pokok_per_pack');
                 const hargaPokokDisplay = document.getElementById('harga_pokok_per_pack_display');
-                const hargaPersediaanInput = document.getElementById('harga_persediaan_produk_jadi');
-                const hargaPersediaanDisplay = document.getElementById('harga_persediaan_produk_jadi_display');
                 const totalHargaInput = document.getElementById('total_harga');
 
 
@@ -360,14 +340,30 @@
                         const batch = foundProduct.getAttribute('data-batch');
                         
                         infoBox.classList.add('bg-green-50', 'border-green-200');
-                        infoBox.classList.remove('bg-[#f4ebd0]/50', 'border-[#d4af37]/30');
+                        infoBox.classList.remove('bg-[#f4ebd0]/50', 'border-[#d4af37]/30', 'bg-red-50', 'border-red-200', 'bg-gray-100', 'border-gray-300');
                         infoText.innerHTML = `<div class="flex flex-col">
                             <span class="text-[#7a0e14] font-black uppercase text-sm">${nama} (Batch: ${batch})</span>
                             <span class="text-xs font-bold text-gray-600 uppercase tracking-tighter">Stok Tersedia: <b class="text-green-600">${stok}</b> | Exp Terdekat: <b class="text-red-500">${exp}</b></span>
                         </div>`;
+                    } else if (selectedKategori && selectedRasa) {
+                        const masterProd = allProductsData.find(p => p.kategori === selectedKategori && p.rasa_produk === selectedRasa);
+                        
+                        idProdukSelect.value = "";
+                        if (masterProd) {
+                            infoBox.classList.remove('bg-green-50', 'border-green-200', 'bg-[#f4ebd0]/50', 'border-[#d4af37]/30', 'bg-gray-100', 'border-gray-300');
+                            infoBox.classList.add('bg-red-50', 'border-red-200');
+                            infoText.innerHTML = `<div class="flex flex-col">
+                                <span class="text-[#7a0e14] font-black uppercase text-sm">${masterProd.nama_produk}</span>
+                                <span class="text-xs font-bold text-gray-600 uppercase tracking-tighter">Stok Tersedia: <b class="text-red-600">0</b> | Tidak dapat diproses</span>
+                            </div>`;
+                        } else {
+                            infoBox.classList.remove('bg-green-50', 'border-green-200', 'bg-red-50', 'border-red-200', 'bg-[#f4ebd0]/50', 'border-[#d4af37]/30');
+                            infoBox.classList.add('bg-gray-100', 'border-gray-300');
+                            infoText.innerHTML = `<span class="text-gray-500 font-bold text-sm">Varian produk tidak ditemukan di sistem.</span>`;
+                        }
                     } else {
                         idProdukSelect.value = "";
-                        infoBox.classList.remove('bg-green-50', 'border-green-200');
+                        infoBox.classList.remove('bg-green-50', 'border-green-200', 'bg-red-50', 'border-red-200', 'bg-gray-100', 'border-gray-300');
                         infoBox.classList.add('bg-[#f4ebd0]/50', 'border-[#d4af37]/30');
                         infoText.innerText = "Pilih Kategori dan Rasa untuk melihat stok...";
                     }
@@ -397,6 +393,7 @@
                     const jumlah = selectedOption.getAttribute('data-jumlah');
                     const productHarga = selectedOption.getAttribute('data-harga');
                     const productCost = selectedOption.getAttribute('data-cost');
+                    const hpp = selectedOption.getAttribute('data-hpp');
                     const kategori = selectedOption.getAttribute('data-kategori');
                     
                     if (id) {
@@ -405,15 +402,26 @@
                         hargaInput.value = productHarga;
                         hargaDisplay.value = parseFloat(productHarga).toLocaleString('id-ID');
                         
+                        if (hpp) {
+                            hargaPokokInput.value = hpp;
+                            hargaPokokDisplay.value = parseFloat(hpp).toLocaleString('id-ID');
+                        } else {
+                            hargaPokokInput.value = '0';
+                            hargaPokokDisplay.value = '';
+                        }
+                        
                         jumlahKeluarInput.max = jumlah;
                         jumlahKeluarInput.placeholder = 'Maks: ' + jumlah;
                         calculateTotal();
+                        updatePersediaanKeluar();
                     } else {
                         inventoryIdHidden.value = '';
                         namaProdukHidden.value = '';
                         
                         // Keep category price if category is selected, even if product is not
                         const selectedKategori = kategoriFilter.value;
+                        const selectedRasa = document.getElementById('rasa_filter').value;
+                        
                         if (selectedKategori) {
                             const masterPrice = masterCategoryPrices[selectedKategori] || 0;
                             hargaInput.value = masterPrice;
@@ -423,32 +431,30 @@
                             hargaDisplay.value = '';
                         }
                         
+                        if (selectedKategori && selectedRasa) {
+                            const masterProd = allProductsData.find(p => p.kategori === selectedKategori && p.rasa_produk === selectedRasa);
+                            if (masterProd && masterProd.hpp) {
+                                hargaPokokInput.value = masterProd.hpp;
+                                hargaPokokDisplay.value = parseFloat(masterProd.hpp).toLocaleString('id-ID');
+                            } else {
+                                hargaPokokInput.value = '0';
+                                hargaPokokDisplay.value = '';
+                            }
+                        } else {
+                            hargaPokokInput.value = '0';
+                            hargaPokokDisplay.value = '';
+                        }
+                        
                         jumlahKeluarInput.max = 0;
                         jumlahKeluarInput.placeholder = '0';
                         totalHargaInput.value = '0';
+                        updatePersediaanKeluar();
                     }
                 });
 
 
 
                 jumlahKeluarInput.addEventListener('input', calculateTotal);
-
-                const jumlahPackManual = document.getElementById('jumlah_pack');
-
-                function updateHargaPokok() {
-                    const totalInventory = parseFloat(hargaPersediaanInput.value) || 0;
-                    const qtyPack = parseInt(jumlahPackManual.value) || 0;
-                    
-                    if (qtyPack > 0) {
-                        const costPerPack = totalInventory / qtyPack;
-                        hargaPokokInput.value = costPerPack.toFixed(2);
-                        hargaPokokDisplay.value = parseFloat(costPerPack.toFixed(2)).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    } else {
-                        hargaPokokInput.value = 0;
-                        hargaPokokDisplay.value = '0,00';
-                    }
-                    updatePersediaanKeluar();
-                }
 
                 function updatePersediaanKeluar() {
                     const qtyKeluar = document.getElementById('jumlah_keluar');
@@ -460,16 +466,14 @@
                     persediaanKeluarDisplay.value = totalPersediaanKeluar.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 }
 
-                hargaPersediaanDisplay.addEventListener('input', function() {
+                hargaPokokDisplay.addEventListener('input', function() {
                     const value = this.value.replace(/[^0-9]/g, '');
-                    hargaPersediaanInput.value = value;
+                    hargaPokokInput.value = value;
                     if (value) {
                         this.value = parseInt(value).toLocaleString('id-ID');
                     }
-                    updateHargaPokok();
+                    updatePersediaanKeluar();
                 });
-
-                jumlahPackManual.addEventListener('input', updateHargaPokok);
             });
         </script>
     </div>

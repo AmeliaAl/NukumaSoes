@@ -17,7 +17,6 @@ return new class extends Migration
             $table->enum('jenis', ['setoran', 'prive', 'penyesuaian']);
             $table->decimal('jumlah', 15, 2);
             $table->foreignId('id_akun')
-            ->after('jumlah')
             ->constrained('akun')
             ->cascadeOnDelete();
             $table->timestamps();

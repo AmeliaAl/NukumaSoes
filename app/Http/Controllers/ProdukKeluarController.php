@@ -40,31 +40,29 @@ class ProdukKeluarController extends Controller
                     ->orderByRaw('tgl_expired IS NULL, tgl_expired ASC')
                     ->first();
                 
-                // Get selling price from master HargaProduk based on category
-                $category = \App\Models\Category::where('nama_kategori', $item->kategori)->first();
-                $sellingPrice = 0;
-                if ($category) {
-                    $hargaMaster = \App\Models\HargaProduk::where('kategori_id', $category->id)->first();
-                    $sellingPrice = $hargaMaster ? $hargaMaster->harga : 0;
-                }
+                // Get selling price and HPP from product master
+                $mainProduct = \App\Models\Product::where('kode_produk', $item->kode_produk)->first();
+                $sellingPrice = $mainProduct ? $mainProduct->harga : 0;
+                $hpp = $mainProduct ? $mainProduct->hpp : 0;
 
                 $item->oldest_id = $oldestBatch->id;
                 $item->oldest_batch = $oldestBatch->no_batch;
                 $item->selling_price = $sellingPrice;
                 $item->cost_price = $oldestBatch->harga;
                 $item->oldest_exp = $oldestBatch->tgl_expired;
+                $item->hpp = $hpp;
                 return $item;
             });
 
         $categories = \App\Models\Category::all();
         
-        $categoryPrices = $categories->mapWithKeys(function($cat) {
-            $hargaMaster = \App\Models\HargaProduk::where('kategori_id', $cat->id)->first();
-            return [$cat->nama_kategori => $hargaMaster ? $hargaMaster->harga : 0];
-        });
+        $categoryPrices = collect([]); // No longer used, handled by JS from inventories data
 
         $flavors = \App\Models\Flavor::all();
-        return view('produk-keluar.index', compact('entries', 'search', 'inventoriesForSelect', 'categories', 'flavors', 'categoryPrices'));
+        
+        $allProductsData = \App\Models\Product::select('kategori', 'rasa_produk', 'nama_produk', 'kode_produk', 'hpp')->get();
+        
+        return view('produk-keluar.index', compact('entries', 'search', 'inventoriesForSelect', 'categories', 'flavors', 'categoryPrices', 'allProductsData'));
     }
 
     /**

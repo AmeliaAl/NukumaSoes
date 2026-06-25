@@ -56,7 +56,7 @@
                                     <tr class="bg-gray-200 text-black font-bold">
                                         <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm border-r border-gray-400 uppercase">SALDO AKHIR</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm border-r border-gray-400">
-                                            {{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                            {{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
                                         </td>
                                     </tr>
                                 @else
@@ -64,13 +64,13 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-black border-r border-gray-400">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d M Y') }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-black border-r border-gray-400">{{ $entry['keterangan'] }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-black border-r border-gray-400">
-                                            {{ $entry['debit'] > 0 ? 'Rp' . number_format($entry['debit'], 0, ',', '.') : '-' }}
+                                            {{ $entry['debit'] > 0 ? 'Rp ' . number_format($entry['debit'], 0, ',', '.') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-black border-r border-gray-400">
-                                            {{ $entry['kredit'] > 0 ? 'Rp' . number_format($entry['kredit'], 0, ',', '.') : '-' }}
+                                            {{ $entry['kredit'] > 0 ? 'Rp ' . number_format($entry['kredit'], 0, ',', '.') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-black border-r border-gray-400">
-                                            {{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                            {{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
                                         </td>
                                     </tr>
                                 @endif

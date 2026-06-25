@@ -31,51 +31,28 @@ class PersediaanController extends Controller
             \App\Models\Product::syncQuantity($code);
         }
 
-        // Fetch product codes from available/near-expiry inventory, ordered by earliest expiry date (FEFO)
-        $inventoryCodesWithExpiry = \App\Models\Inventory::where('status', '!=', 'Expired')
-            ->select('kode_produk', \DB::raw('MIN(tgl_expired) as earliest_expiry'))
-            ->groupBy('kode_produk')
-            ->orderBy('earliest_expiry', 'asc')
-            ->get();
-            
-        $inventoryCodes = $inventoryCodesWithExpiry->pluck('kode_produk');
-        
-        // Fetch master products and preserve the FEFO order
-        $masterProducts = \App\Models\Product::whereIn('kode_produk', $inventoryCodes)
+        // Fetch all inventories for the dropdown (keyed by inventory id), including expired
+        $inventories = \App\Models\Inventory::orderBy('tgl_expired', 'asc')
             ->get()
-            ->sortBy(function($model) use ($inventoryCodes) {
-                return array_search($model->kode_produk, $inventoryCodes->toArray());
-            });
+            ->unique('kode_produk');
 
-        $products = $masterProducts->map(function($masterProduct) {
-            $kode = $masterProduct->kode_produk;
-            
-            // Get all batches for this product from the inventory table (excluding expired)
-            $batches = \App\Models\Inventory::where('kode_produk', $kode)
-                ->where('status', '!=', 'Expired')
-                ->orderBy('tgl_expired', 'asc')
-                ->get();
-            
+        // Build $products from those inventories (for JS productsData compatibility)
+        $products = $inventories->map(function($inv) {
             $pObj = new \stdClass();
-            $pObj->kode_produk = $kode;
-            $pObj->nama_produk = $masterProduct->nama_produk;
-            $pObj->kategori = $masterProduct->kategori;
-            $pObj->inventories = $batches;
-            $pObj->jumlah = $masterProduct->jumlah;
+            $pObj->kode_produk = $inv->id; // use inventory id as the value
+            $pObj->nama_produk = $inv->nama_produk;
+            $pObj->kategori = $inv->kategori;
+            $pObj->no_batch = $inv->no_batch;
+            $pObj->jumlah = $inv->jumlah;
+            $pObj->inventories = collect([$inv]);
 
-            // Price logic: Get price from HargaProduk based on category
-            $category = \App\Models\Category::where('nama_kategori', $pObj->kategori)->first();
-            if ($category) {
-                $hargaProduk = \App\Models\HargaProduk::where('kategori_id', $category->id)->first();
-                $pObj->harga_fefo = $hargaProduk ? $hargaProduk->harga : 0;
-            } else {
-                $pObj->harga_fefo = 0;
-            }
+            // Price logic
+            $pObj->harga_fefo = $inv->harga ?? 0;
 
             return $pObj;
         });
 
-        return view('persediaan.index', compact('entries', 'products', 'search'));
+        return view('persediaan.index', compact('entries', 'products', 'search', 'inventories'));
     }
 
     /**
@@ -83,55 +60,38 @@ class PersediaanController extends Controller
      */
     public function create()
     {
+        // Sync all inventory statuses based on today's date
+        \App\Models\Inventory::syncAllStatus();
+
         // Sync all product quantities to ensure accuracy
         $allCodes = \App\Models\Product::pluck('kode_produk');
         foreach ($allCodes as $code) {
             \App\Models\Product::syncQuantity($code);
         }
 
-        // Fetch product codes from available/near-expiry inventory, ordered by earliest expiry date (FEFO)
-        $inventoryCodesWithExpiry = \App\Models\Inventory::where('status', '!=', 'Expired')
-            ->select('kode_produk', \DB::raw('MIN(tgl_expired) as earliest_expiry'))
-            ->groupBy('kode_produk')
-            ->orderBy('earliest_expiry', 'asc')
+        // Fetch active inventories (Aman or Hampir Expired)
+        // This explicitly excludes expired ones and nulls (which UI treats as expired)
+        $inventories = \App\Models\Inventory::whereNotNull('tgl_expired')
+            ->whereDate('tgl_expired', '>', now())
+            ->orderBy('tgl_expired', 'asc')
             ->get();
-            
-        $inventoryCodes = $inventoryCodesWithExpiry->pluck('kode_produk');
-        
-        // Fetch master products and preserve the FEFO order
-        $masterProducts = \App\Models\Product::whereIn('kode_produk', $inventoryCodes)
-            ->get()
-            ->sortBy(function($model) use ($inventoryCodes) {
-                return array_search($model->kode_produk, $inventoryCodes->toArray());
-            });
 
-        $products = $masterProducts->map(function($masterProduct) {
-            $kode = $masterProduct->kode_produk;
-            
-            // Get all batches for this product from the inventory table (excluding expired)
-            $batches = \App\Models\Inventory::where('kode_produk', $kode)
-                ->where('status', '!=', 'Expired')
-                ->orderBy('tgl_expired', 'asc')
-                ->get();
+        $products = $inventories->map(function($inv) {
+            $kode = $inv->kode_produk;
+            $masterProduct = \App\Models\Product::where('kode_produk', $kode)->first();
             
             $pObj = new \stdClass();
             $pObj->kode_produk = $kode;
-            $pObj->nama_produk = $masterProduct->nama_produk;
-            $pObj->kategori = $masterProduct->kategori;
-            $pObj->inventories = $batches;
-            $pObj->jumlah = $masterProduct->jumlah;
+            $pObj->nama_produk = $inv->nama_produk;
+            $pObj->no_batch = $inv->no_batch;
+            $pObj->kategori = $inv->kategori;
+            $pObj->jumlah = $inv->jumlah;
 
-            // Price logic: Get price from HargaProduk based on category
-            $category = \App\Models\Category::where('nama_kategori', $pObj->kategori)->first();
-            if ($category) {
-                $hargaProduk = \App\Models\HargaProduk::where('kategori_id', $category->id)->first();
-                $pObj->harga_fefo = $hargaProduk ? $hargaProduk->harga : 0;
-            } else {
-                $pObj->harga_fefo = 0;
-            }
+            // Price logic
+            $pObj->harga_fefo = $masterProduct ? ($masterProduct->harga ?? 0) : ($inv->harga ?? 0);
 
             return $pObj;
-        });
+        })->values();
 
         return view('persediaan.create', compact('products'));
     }
@@ -152,28 +112,55 @@ class PersediaanController extends Controller
             'harga' => 'nullable|numeric|min:0',
             'total_harga' => 'nullable|numeric|min:0',
             'jumlah_pack' => 'nullable|integer|min:0',
+            'harga_pokok_produksi' => 'nullable|numeric|min:0',
             'bbb' => 'nullable|numeric|min:0',
             'btkl' => 'nullable|numeric|min:0',
             'bop' => 'nullable|numeric|min:0',
+            'harga_dasar_jual' => 'nullable|numeric|min:0',
+            'margin' => 'nullable|numeric|min:0',
         ]);
 
-        // Strip 'Rp ' from harga and total_harga if present
-        $harga = str_replace(['Rp ', '.', ','], '', $request->harga ?? '0');
-        $total_harga = str_replace(['Rp ', '.', ','], '', $request->total_harga ?? '0');
-        $request->merge(['harga' => $harga, 'total_harga' => $total_harga]);
+        // Calculate Persediaan Produk Jadi (Total Harga) and HPP
+        // Strip Indonesian number formatting (e.g. "73.202,70" -> 73202.70)
+        $parseNum = fn($val) => (float) str_replace(['.', ','], ['', '.'], preg_replace('/[^0-9.,]/', '', $val ?? '0'));
 
-        DB::transaction(function () use ($request, $harga, $total_harga) {
+        $bbb  = $parseNum($request->bbb);
+        $btkl = $parseNum($request->btkl);
+        $bop  = $parseNum($request->bop);
+        $jumlah = (int) ($request->jumlah_masuk ?? 0);
+        
+        // Gunakan HPP manual jika diisi
+        $hpp = $request->filled('harga_pokok_produksi') ? $parseNum($request->harga_pokok_produksi) : 0;
+        
+        // Total Harga dihitung dari (BBB + BTKL + BOP) * Jumlah Pack Masuk
+        $total_harga = ($bbb + $btkl + $bop) * $jumlah;
+
+        // Strip 'Rp ' from harga if present
+        $harga = str_replace(['Rp ', '.', ','], '', $request->harga ?? '0');
+        $request->merge([
+            'harga' => $harga, 
+            'total_harga' => $total_harga,
+            'harga_pokok_produksi' => $hpp
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $harga, $total_harga) {
             $product = Product::where('kode_produk', $request->kode_produk)->first();
             $stok_awal = null;
             
-            // Find or create the inventory batch based on kode_produk and no_batch
+            // FEFO: pilih batch paling awal expired untuk produk yang dipilih
+            // Jika user isi no_batch manual, sistem tetap mengikuti FEFO sesuai permintaan.
             $inventory = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
-                ->where('no_batch', $request->no_batch)
+                ->where('status', '!=', 'Expired')
+                ->orderBy('tgl_expired', 'asc')
                 ->first();
 
             if ($inventory) {
                 // If batch exists, increment ONLY the current quantity (jumlah)
                 $inventory->jumlah += (int)$request->jumlah_masuk;
+                // Update hpp, margin, harga_dasar_jual
+                $inventory->hpp = $request->harga_pokok_produksi ?? null;
+                $inventory->margin = $request->margin ?? null;
+                $inventory->harga_dasar_jual = $request->harga_dasar_jual ?? null;
                 $inventory->save();
             } else {
                 // If batch doesn't exist, create a new inventory record
@@ -189,6 +176,9 @@ class PersediaanController extends Controller
                     'status' => 'Tersedia',
                     'kategori' => $product->kategori ?? null,
                     'harga' => $request->harga,
+                    'hpp' => $request->harga_pokok_produksi ?? null,
+                    'margin' => $request->margin ?? null,
+                    'harga_dasar_jual' => $request->harga_dasar_jual ?? null,
                     'stok_awal' => $stok_awal,
                 ]);
             }
@@ -258,7 +248,11 @@ class PersediaanController extends Controller
     public function edit(string $id)
     {
         $entry = PersediaanEntry::findOrFail($id);
-        return view('persediaan.edit', compact('entry'));
+        $inventories = \App\Models\Inventory::with('product')
+            ->whereDate('tgl_expired', '>', now())
+            ->orderBy('tgl_expired', 'asc')
+            ->get();
+        return view('persediaan.edit', compact('entry', 'inventories'));
     }
 
     /**
@@ -279,9 +273,12 @@ class PersediaanController extends Controller
             'total_harga' => 'nullable|numeric|min:0',
             'no_batch' => 'nullable|string|max:255',
             'jumlah_pack' => 'nullable|integer|min:0',
+            'harga_pokok_produksi' => 'nullable|numeric|min:0',
             'bbb' => 'nullable|numeric|min:0',
             'btkl' => 'nullable|numeric|min:0',
             'bop' => 'nullable|numeric|min:0',
+            'harga_dasar_jual' => 'nullable|numeric|min:0',
+            'margin' => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $entry) {
@@ -295,9 +292,25 @@ class PersediaanController extends Controller
                 }
             }
 
-            // Clean currency strings for database
-            $total_harga = str_replace(['Rp ', '.', ','], '', $request->total_harga ?? '0');
-            $request->merge(['total_harga' => $total_harga]);
+            // Calculate Persediaan Produk Jadi (Total Harga) and HPP
+            // Strip Indonesian number formatting (e.g. "73.202,70" -> 73202.70)
+            $parseNum = fn($val) => (float) str_replace(['.', ','], ['', '.'], preg_replace('/[^0-9.,]/', '', $val ?? '0'));
+
+            $bbb  = $parseNum($request->bbb);
+            $btkl = $parseNum($request->btkl);
+            $bop  = $parseNum($request->bop);
+            $jumlah = (int) ($request->jumlah_masuk ?? 0);
+            
+            // Gunakan HPP manual jika diisi
+            $hpp = $request->filled('harga_pokok_produksi') ? $parseNum($request->harga_pokok_produksi) : 0;
+            
+            // Total Harga dihitung dari (BBB + BTKL + BOP) * Jumlah Pack Masuk
+            $total_harga = ($bbb + $btkl + $bop) * $jumlah;
+
+            $request->merge([
+                'total_harga' => $total_harga,
+                'harga_pokok_produksi' => $hpp
+            ]);
 
             // Fill with request data
             $entry->update($request->all());

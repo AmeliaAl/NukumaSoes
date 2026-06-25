@@ -5,6 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProductOutResource\Pages;
 use App\Models\ProdukKeluarEntry;
 use App\Models\Product;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
@@ -79,6 +83,11 @@ class ProductOutResource extends Resource
                     ->readonly()
                     ->numeric()
                     ->prefix('Rp'),
+                Forms\Components\TextInput::make('harga_pokok_produksi')
+                    ->label('Harga Pokok Produksi (HPP)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->helperText('Diisi manual oleh user'),
                 Forms\Components\Textarea::make('keterangan')
                     ->columnSpanFull(),
             ]);
@@ -101,6 +110,11 @@ class ProductOutResource extends Resource
                 Tables\Columns\TextColumn::make('total_harga')
                     ->money('IDR')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('harga_pokok_produksi')
+                    ->label('HPP')
+                    ->money('IDR')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -109,12 +123,12 @@ class ProductOutResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

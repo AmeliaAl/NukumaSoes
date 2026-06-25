@@ -113,11 +113,23 @@ class CoaController extends Controller
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls|max:2048', // 2MB max
+            'hapus_lama' => 'nullable|boolean',
         ]);
 
+        $removeOld = $request->boolean('hapus_lama');
+
         try {
+            if ($removeOld) {
+                Coa::truncate();
+            }
+
             Excel::import(new CoaImport, $request->file('file'));
-            return redirect()->route('coa.index')->with('success', 'COA berhasil diimpor dari Excel!');
+
+            $message = $removeOld
+                ? 'COA lama berhasil dihapus dan data baru berhasil diimpor dari Excel!'
+                : 'COA berhasil diimpor dari Excel!';
+
+            return redirect()->route('coa.index')->with('success', $message);
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             $failures = $e->failures();
             $errors = collect($failures)->map(function ($failure) {

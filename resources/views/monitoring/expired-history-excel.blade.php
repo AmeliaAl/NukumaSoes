@@ -7,7 +7,7 @@
             <th>RASA</th>
             <th>KATEGORI</th>
             <th>STOK</th>
-            <th>NOMINAL</th>
+            <th>KERUGIAN PRODUK EXPIRED</th>
             <th>KEMAS</th>
             <th>EXP</th>
             <th>STATUS</th>
@@ -23,7 +23,7 @@
                 <td>{{ $history->rasa_produk ?? '-' }}</td>
                 <td>{{ $history->kategori }}</td>
                 <td>{{ $history->jumlah }}</td>
-                <td>{{ $history->dynamic_nominal }}</td>
+                <td>{{ number_format($history->jumlah * ($history->hpp ?? 0), 0, ',', '.') }}</td>
                 <td>{{ $history->tgl_masuk ? $history->tgl_masuk->format('d/m/Y') : '-' }}</td>
                 <td>{{ $history->tgl_expired ? $history->tgl_expired->format('d/m/Y') : '-' }}</td>
                 <td>Expired</td>

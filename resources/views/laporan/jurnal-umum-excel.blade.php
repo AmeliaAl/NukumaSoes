@@ -47,8 +47,8 @@
             </td>
             <td>{{ $entry->kredit > 0 ? '     ' . $entry->keterangan : $entry->keterangan }}</td>
             <td style="text-align: center;">{{ $entry->ref }}</td>
-            <td>{{ $entry->debit > 0 ? number_format($entry->debit, 2, ',', '.') : '' }}</td>
-            <td>{{ $entry->kredit > 0 ? number_format($entry->kredit, 2, ',', '.') : '' }}</td>
+            <td>{{ $entry->debit > 0 ? 'Rp ' . number_format($entry->debit, 2, ',', '.') : '' }}</td>
+            <td>{{ $entry->kredit > 0 ? 'Rp ' . number_format($entry->kredit, 2, ',', '.') : '' }}</td>
         </tr>
         @empty
         <tr>
@@ -59,8 +59,8 @@
     <tfoot>
         <tr>
             <th colspan="3" style="text-align: right; font-weight: bold; background-color: #e5e7eb;">TOTAL</th>
-            <th style="font-weight: bold; background-color: #e5e7eb;">{{ number_format($totalDebit, 2, ',', '.') }}</th>
-            <th style="font-weight: bold; background-color: #e5e7eb;">{{ number_format($totalKredit, 2, ',', '.') }}</th>
+            <th style="font-weight: bold; background-color: #e5e7eb;">Rp {{ number_format($totalDebit, 2, ',', '.') }}</th>
+            <th style="font-weight: bold; background-color: #e5e7eb;">Rp {{ number_format($totalKredit, 2, ',', '.') }}</th>
         </tr>
     </tfoot>
 </table>

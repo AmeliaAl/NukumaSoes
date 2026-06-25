@@ -55,7 +55,7 @@
                                 <tr class="{{ $index % 2 == 0 ? 'bg-[#fdf9eb]' : 'bg-[#f4ebd0]' }} hover:bg-[#ffeec2] transition-colors group">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="w-8 h-8 rounded-full bg-[#7a0e14] border-2 border-[#d4af37] flex items-center justify-center text-white font-bold text-sm shadow-md">
-                                            {{ $category->id }}
+                                            {{ $loop->iteration }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-base text-gray-800 font-bold border-l border-[#d4af37]/10">{{ $category->nama_kategori }}</td>

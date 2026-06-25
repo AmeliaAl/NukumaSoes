@@ -6,18 +6,11 @@
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
                 <div class="text-center md:text-left">
-                    <h1 class="text-4xl font-serif font-bold text-[#d4af37] drop-shadow-md">Daftar Pengeluaran</h1>
+                    <h1 class="text-4xl font-serif font-bold text-[#d4af37] drop-shadow-md">Produk Expired</h1>
                     <p class="text-sm text-gray-300 mt-2 uppercase tracking-widest font-medium">Manajemen Arus Kas & Biaya Operasional</p>
                 </div>
 
                 <div class="flex flex-wrap items-center justify-center md:justify-end gap-4">
-                    <a href="{{ route('pengeluaran.create') }}" 
-                       class="inline-flex items-center px-8 py-3 bg-gradient-to-b from-[#7a0e14] to-[#4a080c] border-2 border-[#d4af37] rounded-2xl font-black text-sm text-[#d4af37] uppercase tracking-widest hover:from-[#8b1117] hover:to-[#5c0a0f] transition-all shadow-[0_0_20px_rgba(212,175,55,0.3)]">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Tambah Pengeluaran
-                    </a>
                 </div>
             </div>
 
@@ -35,10 +28,7 @@
                     <p class="text-gray-500 text-xs font-bold mt-2 tracking-[0.2em] uppercase">Daftar produk yang sudah kedaluwarsa dan dihapus dari persediaan aktif</p>
                     
                     <div class="flex justify-center gap-4 mt-6">
-                        <a href="{{ route('monitoring.expired-history.export.excel') }}" class="flex items-center gap-2 px-6 py-3 bg-[#1D6F42] hover:bg-[#155231] text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg transform hover:scale-105">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14.78 3.58l-8.31 1.45c-1.12.2-1.97 1.18-1.97 2.32v9.3c0 1.14.85 2.12 1.97 2.32l8.31 1.45c1.3.23 2.47-.77 2.47-2.09V5.67c0-1.32-1.17-2.32-2.47-2.09zM13 14h-2v2H9v-2H7v-2h2v-2h2v2h2v2z"/></svg>
-                            Excel
-                        </a>
+
                         <a href="{{ route('monitoring.expired-history.export.pdf') }}" class="flex items-center gap-2 px-6 py-3 bg-[#E02424] hover:bg-[#B91C1C] text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg transform hover:scale-105">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             PDF
@@ -56,7 +46,7 @@
                                 <th class="px-6 py-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">RASA</th>
                                 <th class="px-6 py-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">KATEGORI</th>
                                 <th class="px-6 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">STOK SAAT INI</th>
-                                <th class="px-6 py-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">NOMINAL</th>
+                                <th class="px-6 py-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">KERUGIAN PRODUK EXPIRED</th>
                                 <th class="px-6 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">KEMAS</th>
                                 <th class="px-6 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">EXP</th>
                                 <th class="px-6 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">STATUS</th>
@@ -79,7 +69,7 @@
                                     <td class="px-6 py-5 text-base text-gray-600 border-r border-[#d4af37]/10 italic font-medium">{{ $history->rasa_produk ?? '-' }}</td>
                                     <td class="px-6 py-5 text-sm text-[#7a0e14] font-black border-r border-[#d4af37]/10 truncate max-w-[150px] uppercase tracking-tighter">{{ $history->kategori }}</td>
                                     <td class="px-6 py-5 text-base text-red-600 font-black border-r border-[#d4af37]/10 text-center bg-red-50/50">{{ number_format($history->jumlah) }}</td>
-                                    <td class="px-6 py-5 text-base text-[#7a0e14] font-black border-r border-[#d4af37]/10 text-right font-mono tracking-tighter">Rp {{ number_format($history->dynamic_nominal, 2, ',', '.') }}</td>
+                                    <td class="px-6 py-5 text-base text-[#7a0e14] font-black border-r border-[#d4af37]/10 text-right font-mono tracking-tighter">Rp {{ number_format($history->jumlah * ($history->hpp ?? 0), 0, ',', '.') }}</td>
                                     <td class="px-6 py-5 text-sm text-gray-700 border-r border-[#d4af37]/10 text-center font-bold">{{ $history->tgl_masuk ? $history->tgl_masuk->format('d/m/y') : '-' }}</td>
                                     <td class="px-6 py-5 text-sm text-red-600 border-r border-[#d4af37]/10 text-center font-black">{{ $history->tgl_expired ? $history->tgl_expired->format('d/m/y') : '-' }}</td>
                                     <td class="px-6 py-5 text-center border-r border-[#d4af37]/10">
@@ -90,20 +80,20 @@
                                     </td>
                                     <td class="px-6 py-5">
                                         <div class="flex items-center justify-center gap-2">
-                                            @if(!$history->is_journaled)
-                                                <form action="{{ route('monitoring.expired-history.add-to-journal', $history->id) }}" method="POST" class="inline">
+@if(!$history->is_journaled)
+                                                <form action="{{ route('monitoring.add-to-journal', $history->id) }}" method="POST" class="inline">
                                                     @csrf
                                                     <button type="submit" class="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg text-[10px] font-black uppercase shadow-lg hover:from-blue-700 hover:to-blue-900 transition-all flex items-center gap-1 group whitespace-nowrap" title="Masukkan ke Jurnal">
                                                         <svg class="w-3 h-3 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                                         Jurnal
                                                     </button>
                                                 </form>
-                                            @else
+@else
                                                 <div class="px-3 py-2 bg-gray-100 text-gray-400 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-not-allowed" title="Sudah di Jurnal">
                                                     <svg class="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                                     Sudah
                                                 </div>
-                                            @endif
+@endif
 
                                             <form action="{{ route('monitoring.expired-history.destroy', $history->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus riwayat ini?');">
                                                 @csrf

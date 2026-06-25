@@ -95,14 +95,13 @@ class InventoryResource extends Resource
                     ->label('Hampir Expired'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \Filament\Actions\Action::make('edit')
+                    ->label('Edit')
+                    ->url(fn (\App\Models\Inventory $record): string => static::getUrl('edit', ['record' => $record])),
+
+                \Filament\Actions\DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

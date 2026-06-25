@@ -43,9 +43,17 @@
                             <label for="jenis_kemasan" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">
                                 Kemasan
                             </label>
-                            <input type="text" name="jenis_kemasan" id="jenis_kemasan" 
-                                class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 shadow-sm" 
-                                placeholder="Contoh: Botol, Box">
+                            <div class="relative">
+                                <select name="jenis_kemasan" id="jenis_kemasan"
+                                    class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none shadow-sm">
+                                    <option value="">Pilih Kemasan</option>
+                                    <option value="Toples" {{ old('jenis_kemasan') == 'Toples' ? 'selected' : '' }}>Toples</option>
+                                    <option value="Pouch" {{ old('jenis_kemasan') == 'Pouch' ? 'selected' : '' }}>Pouch</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
                             @error('jenis_kemasan')
                                 <p class="mt-2 text-sm text-red-400 font-bold">{{ $message }}</p>
                             @enderror

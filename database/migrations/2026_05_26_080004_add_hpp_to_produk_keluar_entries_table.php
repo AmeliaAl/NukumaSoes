@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('laba_rugi_manuals', function (Blueprint $table) {
-            $table->decimal('harga_pokok_produksi', 20, 2)->default(0)->after('persediaan_bdp_akhir');
-            $table->decimal('harga_pokok_penjualan', 20, 2)->default(0)->after('persediaan_produk_jadi_akhir');
+        Schema::table('produk_keluar_entries', function (Blueprint $table) {
+            $table->decimal('harga_pokok_produksi', 15, 2)->nullable();
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('laba_rugi_manuals', function (Blueprint $table) {
-            //
+        Schema::table('produk_keluar_entries', function (Blueprint $table) {
+            $table->dropColumn('harga_pokok_produksi');
         });
     }
 };

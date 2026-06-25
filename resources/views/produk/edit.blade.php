@@ -84,6 +84,97 @@
                         <x-input-error :messages="$errors->get('kategori')" class="mt-2" />
                     </div>
 
+                    <!-- HARGA -->
+                    <div>
+                        <label for="harga" class="block text-sm font-bold text-[#d4af37] mb-3">HARGA PRODUK <span class="text-red-500 font-black">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
+                                <span class="text-gray-500 font-bold">Rp</span>
+                            </div>
+                            <input type="number" name="harga" id="harga" value="{{ old('harga', $product->harga) }}" 
+                                   class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('harga') border-red-400 @enderror" 
+                                   placeholder="0" required min="0">
+                        </div>
+                        <x-input-error :messages="$errors->get('harga')" class="mt-2" />
+                    </div>
+
+                    <!-- JENIS PRODUK -->
+                    <div>
+                        <label for="jenis_produk" class="block text-sm font-bold text-[#d4af37] mb-3">JENIS PRODUK <span class="text-red-500 font-black">*</span></label>
+                        <div class="relative">
+                            <select name="jenis_produk" id="jenis_produk"
+                                    class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none @error('jenis_produk') border-red-400 @enderror"
+                                    required>
+                                <option value="Brand Sendiri" {{ old('jenis_produk', $product->jenis_produk ?? 'Brand Sendiri') == 'Brand Sendiri' ? 'selected' : '' }}>Brand Sendiri</option>
+                                <option value="Maklon" {{ old('jenis_produk', $product->jenis_produk ?? 'Brand Sendiri') == 'Maklon' ? 'selected' : '' }}>Maklon</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                        <x-input-error :messages="$errors->get('jenis_produk')" class="mt-2" />
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- BIAYA BAHAN BAKU (BBB) -->
+                        <div>
+                            <label for="bbb" class="block text-sm font-bold text-[#d4af37] mb-3">BIAYA BAHAN BAKU (BBB)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
+                                    <span class="text-gray-500 font-bold">Rp</span>
+                                </div>
+                                <input type="number" name="bbb" id="bbb" value="{{ old('bbb', $product->bbb) }}" 
+                                       class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('bbb') border-red-400 @enderror" 
+                                       placeholder="0" min="0" step="0.01">
+                            </div>
+                            <x-input-error :messages="$errors->get('bbb')" class="mt-2" />
+                        </div>
+
+                        <!-- BIAYA TENAGA KERJA LANGSUNG (BTKL) -->
+                        <div>
+                            <label for="btkl" class="block text-sm font-bold text-[#d4af37] mb-3">BIAYA TENAGA KERJA LANGSUNG (BTKL)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
+                                    <span class="text-gray-500 font-bold">Rp</span>
+                                </div>
+                                <input type="number" name="btkl" id="btkl" value="{{ old('btkl', $product->btkl) }}" 
+                                       class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('btkl') border-red-400 @enderror" 
+                                       placeholder="0" min="0" step="0.01">
+                            </div>
+                            <x-input-error :messages="$errors->get('btkl')" class="mt-2" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- BIAYA OVERHEAD PABRIK (BOP) -->
+                        <div>
+                            <label for="bop" class="block text-sm font-bold text-[#d4af37] mb-3">BIAYA OVERHEAD PABRIK (BOP)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
+                                    <span class="text-gray-500 font-bold">Rp</span>
+                                </div>
+                                <input type="number" name="bop" id="bop" value="{{ old('bop', $product->bop) }}" 
+                                       class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('bop') border-red-400 @enderror" 
+                                       placeholder="0" min="0" step="0.01">
+                            </div>
+                            <x-input-error :messages="$errors->get('bop')" class="mt-2" />
+                        </div>
+
+                        <!-- HARGA POKOK PRODUKSI (HPP) -->
+                        <div>
+                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3">HARGA POKOK PRODUKSI (HPP)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
+                                    <span class="text-gray-500 font-bold">Rp</span>
+                                </div>
+                                <input type="number" name="hpp" id="hpp" value="{{ old('hpp', $product->hpp) }}" 
+                                       class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('hpp') border-red-400 @enderror" 
+                                       placeholder="0" min="0" step="0.01">
+                            </div>
+                            <x-input-error :messages="$errors->get('hpp')" class="mt-2" />
+                        </div>
+                    </div>
+
                     <!-- Hidden Fields -->
                     <input type="hidden" name="harga_jual" id="harga_jual" value="{{ old('harga_jual', $product->harga_jual) }}">
                     <input type="hidden" name="masa_simpan" id="masa_simpan" value="{{ old('masa_simpan', $product->masa_simpan) }}">

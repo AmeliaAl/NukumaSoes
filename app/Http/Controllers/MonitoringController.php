@@ -92,7 +92,7 @@ class MonitoringController extends Controller
         $coaKredit = \App\Models\Coa::where('nama_akun', 'LIKE', '%Persediaan Produk Jadi%')->first();
         $refKredit = $coaKredit ? $coaKredit->kode_akun : '113';
 
-        $totalNominal = $history->dynamic_nominal;
+        $totalNominal = $history->jumlah * ($history->hpp ?? 0);
 
         // Create Journal Entries
         \App\Models\JurnalUmum::create([

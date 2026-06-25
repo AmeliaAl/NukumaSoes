@@ -55,15 +55,19 @@
                                 <thead>
                                     <!-- Main Header with Orange Theme (Matching Jurnal Umum) -->
                                     <tr class="bg-orange-100 text-gray-700 border-b border-gray-300">
-                                        <th rowspan="2" class="px-4 py-4 text-center text-sm font-bold uppercase tracking-wider border border-gray-300">Tanggal</th>
+                                        <th rowspan="2" class="px-4 py-4 text-center text-sm font-bold uppercase tracking-wider border border-gray-300">Tanggal Transaksi</th>
+                                        <th rowspan="2" class="px-4 py-4 text-center text-sm font-bold uppercase tracking-wider border border-gray-300">No Batch</th>
                                         <th rowspan="2" class="px-4 py-4 text-center text-sm font-bold uppercase tracking-wider border border-gray-300">Deskripsi</th>
-                                        <th colspan="3" class="px-4 py-2 text-center text-sm font-bold uppercase tracking-wider border border-gray-300">Produk</th>
+                                        <th rowspan="2" class="px-4 py-4 text-center text-sm font-bold uppercase tracking-wider border border-gray-300">Expired</th>
+                                        <th colspan="2" class="px-4 py-2 text-center text-sm font-bold uppercase tracking-wider border border-gray-300">Produk</th>
+                                        <th rowspan="2" class="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider border border-gray-300">Sisa</th>
+                                        <th rowspan="2" class="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider border border-gray-300 bg-orange-100">HPP</th>
+                                        <th rowspan="2" class="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider border border-gray-300 bg-orange-100">Total Nilai</th>
                                     </tr>
                                     <!-- Sub Header -->
                                     <tr class="bg-orange-100 text-gray-700">
                                         <th class="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider border border-gray-300">Masuk</th>
                                         <th class="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider border border-gray-300">Keluar</th>
-                                        <th class="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider border border-gray-300">Sisa</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
@@ -77,10 +81,32 @@
                                             <td class="px-4 py-4 text-sm text-center text-gray-900 border-x border-gray-200">
                                                 {{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}
                                             </td>
-                                            
+
+                                            <!-- No Batch -->
+                                            <td class="px-4 py-4 text-sm text-center font-mono font-bold text-gray-700 border-r border-gray-200 uppercase tracking-tight">
+                                                {{ $entry['no_batch'] ?? '-' }}
+                                            </td>
+
                                             <!-- Deskripsi -->
                                             <td class="px-4 py-4 text-sm text-gray-700 border-r border-gray-200">
                                                 {{ $entry['keterangan'] }}
+                                            </td>
+
+                                            <!-- Expired -->
+                                            <td class="px-4 py-4 text-sm text-center border-r border-gray-200">
+                                                @if(!empty($entry['tgl_expired']))
+                                                    @php
+                                                        $exp = \Carbon\Carbon::parse($entry['tgl_expired']);
+                                                        $isExpired = $exp->isPast();
+                                                        $isNearExp = !$isExpired && $exp->diffInDays(now()) <= 30;
+                                                    @endphp
+                                                    <span class="px-2 py-1 rounded-full text-xs font-bold
+                                                        {{ $isExpired ? 'bg-red-100 text-red-700' : ($isNearExp ? 'bg-orange-100 text-orange-700' : 'bg-green-50 text-green-700') }}">
+                                                        {{ $exp->format('d/m/Y') }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
                                             </td>
 
                                             <!-- Produk Masuk -->
@@ -97,15 +123,61 @@
                                             <td class="px-4 py-4 text-sm text-center font-bold text-gray-900 border-r border-gray-200 bg-gray-50/50">
                                                 {{ $entry['saldo'] ?? '0' }}
                                             </td>
+
+                                            <!-- HPP -->
+                                            <td class="px-4 py-4 text-sm text-right font-semibold text-gray-700 border-r border-gray-200 bg-orange-50">
+                                                @if(!empty($entry['hpp']))
+                                                    Rp {{ number_format($entry['hpp'], 0, ',', '.') }}
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+
+                                            <!-- Total Nilai -->
+                                            <td class="px-4 py-4 text-sm text-right font-bold text-[#7a0e14] border-r border-gray-200 bg-orange-50">
+                                                @if(!empty($entry['total_hpp']))
+                                                    Rp {{ number_format($entry['total_hpp'], 0, ',', '.') }}
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic">
+                                            <td colspan="9" class="px-6 py-12 text-center text-gray-400 italic">
                                                 Belum ada transaksi untuk periode ini.
                                             </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
+                                @if(count($entries) > 0)
+                                <tfoot>
+                                    <tr class="bg-gray-50 border-t-2 border-gray-300">
+                                        <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-800 text-right border border-gray-200 uppercase tracking-wide">
+                                            Total Nilai Persediaan
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-center font-bold {{ $sisaAkhir >= 0 ? 'text-green-700' : 'text-red-700' }} border border-gray-200 bg-gray-50/50">
+                                            {{ number_format($sisaAkhir, 0, ',', '.') }}
+                                        </td>
+                                        <td class="border border-gray-200 bg-gray-50"></td>
+                                        <td class="px-4 py-3 text-sm text-right font-bold {{ $totalNilaiBersih >= 0 ? 'text-green-700' : 'text-red-700' }} border border-gray-200 bg-orange-50">
+                                            Rp {{ number_format($totalNilaiBersih, 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <td colspan="6" class="px-4 py-3 text-sm font-bold text-gray-800 text-right border border-gray-200 uppercase tracking-wide">
+                                            Total Nilai Produk Keluar
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-center font-bold text-red-700 border border-gray-200 bg-gray-50/50">
+                                            {{ number_format($totalKeluar, 0, ',', '.') }}
+                                        </td>
+                                        <td class="border border-gray-200 bg-gray-50"></td>
+                                        <td class="px-4 py-3 text-sm text-right font-bold text-red-700 border border-gray-200 bg-orange-50">
+                                            Rp {{ number_format($totalNilaiKeluar, 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                                @endif
                             </table>
                         </div>
                     @else

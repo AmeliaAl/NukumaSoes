@@ -4,77 +4,90 @@
     <title>Kartu Stok Produk</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: Arial, sans-serif;
             font-size: 10px;
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            padding: 20px 18px;
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
         .header h1 {
-            font-size: 18px;
+            font-size: 20px;
             margin: 0;
-            color: #333;
+            color: #111827;
+            letter-spacing: 0.05em;
         }
-        .info-table {
+        .header p {
+            margin: 4px 0 0;
+            font-size: 11px;
+            color: #4b5563;
+            font-weight: bold;
+        }
+        .meta-table {
             width: 100%;
-            margin-bottom: 15px;
+            margin-top: 8px;
+            margin-bottom: 16px;
             border-collapse: collapse;
         }
-        .info-table td {
-            padding: 5px;
+        .meta-table td {
+            padding: 4px 6px;
             vertical-align: top;
+            font-size: 10px;
         }
-        .info-label {
+        .meta-label {
             font-weight: bold;
-            color: #d53f8c; /* pink-600 */
+            color: #374151;
             text-transform: uppercase;
             font-size: 9px;
+            width: 90px;
         }
-        .info-value {
-            font-size: 14px;
+        .meta-value {
             font-weight: bold;
-            color: #97266d; /* pink-800 */
+            color: #111827;
+        }
+        .table-wrapper {
+            width: 100%;
+            overflow: hidden;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            border: 1px solid #fbb6ce; /* pink-200 */
+            border: 1px solid #d1d5db;
+            font-size: 9px;
         }
         th, td {
-            border: 1px solid #cbd5e0; /* gray-400 */
-            padding: 6px 4px;
+            border: 1px solid #d1d5db;
+            padding: 6px 5px;
+            vertical-align: middle;
         }
         th {
-            background-color: #f687b3; /* pink-300 */
-            color: #1a202c; /* gray-900 */
-            font-weight: bold;
+            background-color: #f3f4f6;
+            color: #111827;
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 8px;
-            text-align: center;
+            font-size: 9px;
+            letter-spacing: 0.03em;
         }
-        .bg-pink-400 { background-color: #f687b3; }
-        .bg-pink-500 { background-color: #ed64a6; }
-        .bg-pink-200 { background-color: #fbb6ce; }
-        
-        tr:nth-child(even) {
-            background-color: #f7fafc; /* gray-50 */
+        tr:nth-child(even) td {
+            background-color: #fbfbfb;
         }
-        
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .text-left { text-align: left; }
-        
-        .text-green-600 { color: #047857; }
-        .text-red-600 { color: #dc2626; }
-        .text-pink-600 { color: #d53f8c; }
-        .font-bold { font-weight: bold; }
-        
+        .font-bold { font-weight: 700; }
+        .nowrap { white-space: nowrap; }
+        .small { font-size: 8px; }
         .footer {
-            margin-top: 30px;
+            margin-top: 12px;
             text-align: right;
             font-size: 9px;
-            color: #718096;
+            color: #6b7280;
         }
     </style>
 </head>
@@ -88,49 +101,64 @@
     @endphp
     <div class="header">
         <h1>KARTU STOK PRODUK</h1>
-        <p style="text-align: center; font-weight: bold; margin-top: -10px;">PERIODE: {{ strtoupper($namaPeriode) }}</p>
+        <p>PERIODE: {{ strtoupper($namaPeriode) }}</p>
     </div>
 
-    @if(request('kategori'))
-        <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-            <span style="font-size: 10px; color: #718096; text-transform: uppercase; font-weight: bold;">Kategori:</span>
-            <span style="font-size: 14px; font-weight: bold; color: #2d3748;">{{ request('kategori') }}</span>
-        </div>
-    @endif
-
-    <table>
-        <thead>
-            <tr class="bg-orange-100">
-                <th rowspan="2" style="width: 15%; background-color: #ffedd5; color: #374151; border: 1px solid #000;">Tanggal</th>
-                <th rowspan="2" style="width: 40%; background-color: #ffedd5; color: #374151; border: 1px solid #000;">Deskripsi</th>
-                <th colspan="3" style="background-color: #ffedd5; color: #374151; border: 1px solid #000;">Produk</th>
-            </tr>
-            <tr class="bg-orange-100">
-                <th style="background-color: #ffedd5; color: #374151; border: 1px solid #000;">Masuk</th>
-                <th style="background-color: #ffedd5; color: #374151; border: 1px solid #000;">Keluar</th>
-                <th style="background-color: #ffedd5; color: #374151; border: 1px solid #000;">Sisa</th>
-            </tr>
-        </thead>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 12%;">Tanggal</th>
+                    <th style="width: 9%;">No Batch</th>
+                    <th style="width: 18%;">Deskripsi</th>
+                    <th style="width: 10%;">Expired</th>
+                    <th style="width: 8%;">Masuk</th>
+                    <th style="width: 8%;">Keluar</th>
+                    <th style="width: 8%;">Sisa</th>
+                    <th style="width: 11%;">HPP</th>
+                    <th style="width: 14%;">Total Nilai</th>
+                </tr>
+            </thead>
         <tbody>
             @forelse($entries as $entry)
                 @php
-                    $rowStyle = $entry['masuk'] > 0 ? 'background-color: #dcfce7;' : ($entry['keluar'] > 0 ? 'background-color: #fee2e2;' : '');
+                    $rowStyle = $entry['masuk'] > 0 ? 'background-color: #ecfdf5;' : ($entry['keluar'] > 0 ? 'background-color: #fef2f2;' : '');
                 @endphp
                 <tr style="{{ $rowStyle }}">
-                    <td class="text-center">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}</td>
-                    <td>{{ $entry['keterangan'] }}</td>
-                    <td class="text-center font-bold text-green-600">{{ $entry['masuk'] ?: '0' }}</td>
-                    <td class="text-center font-bold text-red-600">{{ $entry['keluar'] ?: '0' }}</td>
-                    <td class="text-center font-bold">{{ $entry['saldo'] ?? '0' }}</td>
+                    <td class="text-center nowrap">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}</td>
+                    <td class="text-center nowrap">{{ $entry['no_batch'] ?: '-' }}</td>
+                    <td class="text-left">{{ $entry['keterangan'] }}</td>
+                    <td class="text-center nowrap">{{ !empty($entry['tgl_expired']) ? \Carbon\Carbon::parse($entry['tgl_expired'])->format('d/m/Y') : '-' }}</td>
+                    <td class="text-center font-bold text-green-600">{{ number_format($entry['masuk'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-center font-bold text-red-600">{{ number_format($entry['keluar'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-center font-bold">{{ number_format($entry['saldo'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ !empty($entry['hpp']) ? 'Rp ' . number_format($entry['hpp'], 0, ',', '.') : '-' }}</td>
+                    <td class="text-right font-bold">{{ !empty($entry['total_hpp']) ? 'Rp ' . number_format($entry['total_hpp'], 0, ',', '.') : '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center" style="padding: 20px; font-style: italic; color: #718096;">
+                    <td colspan="9" class="text-center" style="padding: 16px; font-style: italic; color: #6b7280;">
                         Belum ada transaksi untuk kriteria ini.
                     </td>
                 </tr>
             @endforelse
         </tbody>
+        @if(count($entries) > 0)
+        <tfoot>
+            <tr>
+                <td colspan="6" class="text-right font-bold small" style="background-color: #f3f4f6;">Total Nilai Persediaan</td>
+                <td class="text-center font-bold small" style="background-color: #f3f4f6; color: {{ $sisaAkhir >= 0 ? '#047857' : '#dc2626' }};">{{ number_format($sisaAkhir, 0, ',', '.') }}</td>
+                <td class="text-right" style="background-color: #f3f4f6;">&nbsp;</td>
+                <td class="text-right font-bold" style="background-color: #f8fafc; color: {{ $totalNilaiBersih >= 0 ? '#047857' : '#dc2626' }};">Rp {{ number_format($totalNilaiBersih, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td colspan="6" class="text-right font-bold small" style="background-color: #f3f4f6;">Total Nilai Produk Keluar</td>
+                <td class="text-center font-bold small" style="background-color: #f3f4f6; color: #dc2626;">{{ number_format($totalKeluar, 0, ',', '.') }}</td>
+                <td class="text-right" style="background-color: #f3f4f6;">&nbsp;</td>
+                <td class="text-right font-bold" style="background-color: #f8fafc; color: #dc2626;">Rp {{ number_format($totalNilaiKeluar, 0, ',', '.') }}</td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="footer">

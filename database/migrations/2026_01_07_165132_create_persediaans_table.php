@@ -22,7 +22,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->foreignId('id_kategori')
-                ->constrained('kategori_asets')
+                ->constrained('kategori_aset')
                 ->restrictOnDelete();
 
             $table->foreignId('id_vendor')

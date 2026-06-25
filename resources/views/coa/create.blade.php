@@ -58,6 +58,13 @@
                                 <input type="file" name="file" accept=".xlsx,.xls" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                 <p class="mt-1 text-xs text-gray-500">Format: kode_akun | header_akun | nama_akun (baris 1 = header)</p>
                             </div>
+                            <div class="flex flex-col gap-3">
+                                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                    <input type="checkbox" name="hapus_lama" value="1" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    Hapus COA lama sebelum import
+                                </label>
+                                <p class="text-xs text-gray-500">Centang jika Anda ingin mengganti semua daftar COA saat ini dengan data baru dari file Excel.</p>
+                            </div>
                             <div class="flex gap-3">
                                 <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
                                     <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">

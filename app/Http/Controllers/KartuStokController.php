@@ -72,6 +72,9 @@ class KartuStokController extends Controller
         })->when($periode, function ($query) use ($periode) {
             return $query->where('tanggal', 'like', $periode . '%');
         })->get()->map(function ($entry) {
+            $inv = Inventory::where('kode_produk', $entry->kode_produk)
+                ->where('no_batch', $entry->no_batch)
+                ->first();
             return [
                 'tanggal' => $entry->tanggal,
                 'keterangan' => 'Produk Masuk',
@@ -81,6 +84,9 @@ class KartuStokController extends Controller
                 'harga' => $entry->harga,
                 'total_harga' => $entry->total_harga,
                 'no_batch' => $entry->no_batch ?? '',
+                'tgl_masuk' => $inv ? $inv->tgl_masuk : null,
+                'tgl_expired' => $inv ? $inv->tgl_expired : null,
+                'hpp' => $inv ? $inv->hpp : null,
                 'kode_produk' => $entry->kode_produk,
                 'nama_produk' => $entry->nama_produk,
                 'penanggung_jawab' => '-',
@@ -101,6 +107,9 @@ class KartuStokController extends Controller
         })->when($periode, function ($query) use ($periode) {
             return $query->where('tanggal', 'like', $periode . '%');
         })->get()->map(function ($entry) {
+            $inv = Inventory::where('kode_produk', $entry->kode_produk)
+                ->orderBy('tgl_expired', 'asc')
+                ->first();
             return [
                 'tanggal' => $entry->tanggal,
                 'keterangan' => 'Produk Keluar',
@@ -109,7 +118,10 @@ class KartuStokController extends Controller
                 'keluar' => $entry->jumlah_keluar,
                 'harga' => $entry->harga,
                 'total_harga' => $entry->total_harga,
-                'no_batch' => $entry->no_batch ?? '',
+                'no_batch' => $entry->no_batch ?? ($inv ? $inv->no_batch : ''),
+                'tgl_masuk' => $inv ? $inv->tgl_masuk : null,
+                'tgl_expired' => $inv ? $inv->tgl_expired : null,
+                'hpp' => $inv ? $inv->hpp : null,
                 'kode_produk' => $entry->kode_produk,
                 'nama_produk' => $entry->nama_produk,
                 'penanggung_jawab' => '-',
@@ -138,14 +150,26 @@ class KartuStokController extends Controller
             $entry['saldo'] = $balance;
             $entry['saldo_harga'] = $avgCost;
             $entry['saldo_total'] = $totalValue;
+
+            $qty = $entry['masuk'] > 0 ? $entry['masuk'] : $entry['keluar'];
+            $entry['total_hpp'] = ($entry['hpp'] ?? 0) > 0 && $qty > 0
+                ? $qty * $entry['hpp']
+                : null;
             
             return $entry;
         });
+
+        $totalNilaiMasuk = $entries->sum(fn ($entry) => $entry['masuk'] > 0 ? ($entry['total_hpp'] ?? 0) : 0);
+        $totalNilaiKeluar = $entries->sum(fn ($entry) => $entry['keluar'] > 0 ? ($entry['total_hpp'] ?? 0) : 0);
+        $totalMasuk = $entries->sum(fn ($entry) => $entry['masuk'] ?? 0);
+        $totalKeluar = $entries->sum(fn ($entry) => $entry['keluar'] ?? 0);
+        $totalNilaiBersih = $totalNilaiMasuk - $totalNilaiKeluar;
+        $sisaAkhir = $entries->last()['saldo'] ?? ($totalMasuk - $totalKeluar);
 
         // Get all categories and inventories for filters
         $categories = Category::all();
         $inventories = Inventory::select('kode_produk', 'nama_produk', 'no_batch')->distinct()->get();
         
-        return compact('entries', 'kodeProduk', 'categories', 'inventories', 'selectedProduct', 'periode');
+        return compact('entries', 'kodeProduk', 'categories', 'inventories', 'selectedProduct', 'periode', 'totalNilaiMasuk', 'totalNilaiKeluar', 'totalMasuk', 'totalKeluar', 'totalNilaiBersih', 'sisaAkhir');
     }
 }

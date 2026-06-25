@@ -47,7 +47,6 @@
                                     <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">REF</th>
                                     <th class="px-4 py-3 text-right font-bold text-gray-700 uppercase tracking-wider">DEBIT</th>
                                     <th class="px-4 py-3 text-right font-bold text-gray-700 uppercase tracking-wider">KREDIT</th>
-                                    <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase tracking-wider">AKSI</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-400">
@@ -80,33 +79,22 @@
                                     <td class="px-4 py-3 whitespace-nowrap text-gray-900 border-r border-gray-200">{{ $entry->ref }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-right text-gray-900 border-r border-gray-200">
                                         @if($entry->debit > 0)
-                                            {{ number_format($entry->debit, 2, ',', '.') }}
+                                            Rp {{ number_format($entry->debit, 2, ',', '.') }}
                                         @else
                                             -
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-right text-gray-900 border-r border-gray-200">
                                         @if($entry->kredit > 0)
-                                            {{ number_format($entry->kredit, 2, ',', '.') }}
+                                            Rp {{ number_format($entry->kredit, 2, ',', '.') }}
                                         @else
                                             -
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-center">
-                                        <form action="{{ route('laporan.jurnal-umum.destroy', $entry->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus entri ini?');" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900 transition-colors" title="Hapus">
-                                                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center text-gray-500 italic">Belum ada data jurnal.</td>
+                                    <td colspan="5" class="px-4 py-8 text-center text-gray-500 italic">Belum ada data jurnal.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -115,7 +103,6 @@
                                     <td colspan="3" class="px-4 py-3 text-right uppercase">Total</td>
                                     <td class="px-4 py-3 text-right">Rp {{ number_format($entries->sum('debit'), 2, ',', '.') }}</td>
                                     <td class="px-4 py-3 text-right">Rp {{ number_format($entries->sum('kredit'), 2, ',', '.') }}</td>
-                                    <td></td>
                                 </tr>
                             </tfoot>
                         </table>
