@@ -218,10 +218,6 @@ Route::middleware(['auth:admin', 'check.admin'])->group(function () {
     Route::get('laporan/neraca-saldo', [NeracaLajurController::class, 'index'])
          ->name('laporan.neraca-saldo');
     
-    // Analisis Varians
-    Route::get('laporan/analisis-varians/{id}', [LaporanBiayaProduksiController::class, 'analisisVarians'])
-         ->name('laporan.analisis-varians');
-
     // Jurnal Umum
     Route::get('laporan/jurnal-umum', [JurnalUmumController::class, 'index'])
          ->name('jurnal-umum.index');

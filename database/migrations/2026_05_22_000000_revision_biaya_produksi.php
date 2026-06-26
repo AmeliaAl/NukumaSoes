@@ -12,6 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $isSqlite = DB::getDriverName() === 'sqlite';
+
         // 1. Modify stok_produk table
         Schema::table('stok_produk', function (Blueprint $table) {
             if (!Schema::hasColumn('stok_produk', 'sisa_stok')) {
@@ -27,40 +29,60 @@ return new class extends Migration
 
         // 2. Modify bom_bahan table
         // Drop unique constraint first
-        Schema::table('bom_bahan', function (Blueprint $table) {
-            $table->dropUnique('bom_bahan_id_produk_id_bahan_unique');
-        });
+        if (! $isSqlite) {
+            Schema::table('bom_bahan', function (Blueprint $table) {
+                $table->dropUnique('bom_bahan_id_produk_id_bahan_unique');
+            });
+        }
 
         // Drop foreign key, change to nullable, re-add foreign key, and add id_produk_wip
-        Schema::table('bom_bahan', function (Blueprint $table) {
-            $table->dropForeign('bom_bahan_id_bahan_foreign');
-        });
+        if (! $isSqlite) {
+            Schema::table('bom_bahan', function (Blueprint $table) {
+                $table->dropForeign('bom_bahan_id_bahan_foreign');
+            });
+        }
 
-        Schema::table('bom_bahan', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_bahan')->nullable()->change();
-            $table->unsignedBigInteger('id_produk_wip')->nullable()->after('id_bahan');
+        Schema::table('bom_bahan', function (Blueprint $table) use ($isSqlite) {
+            if (! $isSqlite) {
+                $table->unsignedBigInteger('id_bahan')->nullable()->change();
+            }
+            if (! Schema::hasColumn('bom_bahan', 'id_produk_wip')) {
+                $table->unsignedBigInteger('id_produk_wip')->nullable()->after('id_bahan');
+            }
             
-            $table->foreign('id_bahan')->references('id_bahan')->on('bahan_baku')->onDelete('cascade');
-            $table->foreign('id_produk_wip')->references('id_produk')->on('produk')->onDelete('cascade');
+            if (! $isSqlite) {
+                $table->foreign('id_bahan')->references('id_bahan')->on('bahan_baku')->onDelete('cascade');
+                $table->foreign('id_produk_wip')->references('id_produk')->on('produk')->onDelete('cascade');
+            }
         });
 
         // 3. Modify pemakaian_bahan_baku table
-        Schema::table('pemakaian_bahan_baku', function (Blueprint $table) {
-            $table->dropForeign('pemakaian_bahan_baku_id_bahan_foreign');
-            $table->dropForeign('pemakaian_bahan_baku_id_stok_foreign');
-        });
+        if (! $isSqlite) {
+            Schema::table('pemakaian_bahan_baku', function (Blueprint $table) {
+                $table->dropForeign('pemakaian_bahan_baku_id_bahan_foreign');
+                $table->dropForeign('pemakaian_bahan_baku_id_stok_foreign');
+            });
+        }
 
-        Schema::table('pemakaian_bahan_baku', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_bahan')->nullable()->change();
-            $table->unsignedBigInteger('id_stok')->nullable()->change(); // Stok bahan baku
+        Schema::table('pemakaian_bahan_baku', function (Blueprint $table) use ($isSqlite) {
+            if (! $isSqlite) {
+                $table->unsignedBigInteger('id_bahan')->nullable()->change();
+                $table->unsignedBigInteger('id_stok')->nullable()->change(); // Stok bahan baku
+            }
             
-            $table->unsignedBigInteger('id_produk_wip')->nullable()->after('id_bahan');
-            $table->unsignedBigInteger('id_stok_produk')->nullable()->after('id_stok'); // Stok WIP (FIFO)
+            if (! Schema::hasColumn('pemakaian_bahan_baku', 'id_produk_wip')) {
+                $table->unsignedBigInteger('id_produk_wip')->nullable()->after('id_bahan');
+            }
+            if (! Schema::hasColumn('pemakaian_bahan_baku', 'id_stok_produk')) {
+                $table->unsignedBigInteger('id_stok_produk')->nullable()->after('id_stok'); // Stok WIP (FIFO)
+            }
 
-            $table->foreign('id_bahan')->references('id_bahan')->on('bahan_baku')->onDelete('cascade');
-            $table->foreign('id_stok')->references('id_stok')->on('stok_bahan_baku')->onDelete('cascade');
-            $table->foreign('id_produk_wip')->references('id_produk')->on('produk')->onDelete('cascade');
-            $table->foreign('id_stok_produk')->references('id_stok_produk')->on('stok_produk')->onDelete('cascade');
+            if (! $isSqlite) {
+                $table->foreign('id_bahan')->references('id_bahan')->on('bahan_baku')->onDelete('cascade');
+                $table->foreign('id_stok')->references('id_stok')->on('stok_bahan_baku')->onDelete('cascade');
+                $table->foreign('id_produk_wip')->references('id_produk')->on('produk')->onDelete('cascade');
+                $table->foreign('id_stok_produk')->references('id_stok_produk')->on('stok_produk')->onDelete('cascade');
+            }
         });
 
         // 4. Modify bahan_baku table (add jenis_bahan)

@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <h4 class="mb-1">Data Produk</h4>
-            <p class="text-muted mb-0">Kelola data produk hasil produksi</p>
+            <p class="text-muted mb-0">Kelola data produk hasil produksi.</p>
         </div>
         <a href="{{ route('produk.create') }}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>Tambah Produk
@@ -34,7 +34,6 @@
                         <th>Tipe</th>
                         <th>Satuan</th>
                         <th class="text-center">BOM Bahan</th>
-                        <th class="text-center">BOM Mesin</th>
                         <th class="text-center">Job Order</th>
                         <th>Status</th>
                         <th class="text-center">Aksi</th>
@@ -49,26 +48,11 @@
                                 {{ $item->nama_produk }}
                             </a>
                         </td>
-                        <td>
-                            @if($item->tipe_produk == 'kulit')
-                                <span class="badge bg-secondary">Kulit (WIP)</span>
-                            @elseif($item->tipe_produk == 'isi')
-                                <span class="badge bg-info">Isi</span>
-                            @else
-                                <span class="badge bg-success">Barang Jadi</span>
-                            @endif
-                        </td>
+                        <td>{!! $item->tipe_badge !!}</td>
                         <td>{{ $item->satuan_produk }}</td>
                         <td class="text-center">
                             @if($item->bomBahan->count() > 0)
                                 <span class="badge bg-success">{{ $item->bomBahan->count() }} bahan</span>
-                            @else
-                                <span class="badge bg-light text-muted border">-</span>
-                            @endif
-                        </td>
-                        <td class="text-center">
-                            @if($item->bomMesin->count() > 0)
-                                <span class="badge bg-warning text-dark">{{ $item->bomMesin->count() }} mesin</span>
                             @else
                                 <span class="badge bg-light text-muted border">-</span>
                             @endif
@@ -85,16 +69,13 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ route('produk.show', $item->id_produk) }}" 
-                                   class="btn btn-info" title="Detail BOM">
+                                <a href="{{ route('produk.show', $item->id_produk) }}" class="btn btn-info" title="Detail">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('produk.edit', $item->id_produk) }}" 
-                                   class="btn btn-warning" title="Edit">
+                                <a href="{{ route('produk.edit', $item->id_produk) }}" class="btn btn-warning" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <button type="button" class="btn btn-danger" 
-                                        onclick="confirmDelete({{ $item->id_produk }})" title="Hapus">
+                                <button type="button" class="btn btn-danger" onclick="confirmDelete({{ $item->id_produk }})" title="Hapus">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -120,16 +101,16 @@
             order: [[0, 'asc']]
         });
     });
-    
+
     function confirmDelete(id) {
         Swal.fire({
             title: 'Hapus Produk?',
-            text: "Data yang sudah dihapus tidak dapat dikembalikan!",
+            text: 'Data yang sudah dihapus tidak dapat dikembalikan.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Ya, Hapus!',
+            confirmButtonText: 'Ya, Hapus',
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {

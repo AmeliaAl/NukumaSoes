@@ -57,12 +57,6 @@ class Produk extends Model
         return $this->hasMany(BomBahan::class, 'id_produk', 'id_produk');
     }
 
-    // Relasi: Produk punya BOM Mesin/Peralatan
-    public function bomMesin()
-    {
-        return $this->hasMany(BomMesin::class, 'id_produk', 'id_produk');
-    }
-
     // Relasi: Produk punya banyak permintaan produksi (job order)
     public function permintaanProduksi()
     {

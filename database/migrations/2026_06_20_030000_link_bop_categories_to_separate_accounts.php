@@ -61,14 +61,20 @@ return new class extends Migration
         $electricityId = DB::table('akun')->where('kode_akun', '712')->value('id_akun');
         $waterId = DB::table('akun')->where('kode_akun', '713')->value('id_akun');
         $airCategoryId = DB::table('kategori_bop')->where('nama_kategori', 'Air')->value('id_kategori_bop');
+        $airJournalQuery = DB::table('jurnal_umum')
+            ->where('tipe_referensi', 'pengeluaran_bop_aktual');
+
+        if (DB::getDriverName() === 'sqlite') {
+            $airJournalQuery->whereRaw('LOWER(keterangan) LIKE ?', ['%air%']);
+        } else {
+            $airJournalQuery->whereRaw("LOWER(keterangan) REGEXP '(^|[^a-z])air([^a-z]|$)'");
+        }
+
         $airJurnalIds = DB::table('biaya_overhead_pabrik')
             ->where('id_kategori_bop', $airCategoryId)
             ->whereNotNull('id_jurnal_aktual')
             ->pluck('id_jurnal_aktual')
-            ->merge(DB::table('jurnal_umum')
-                ->where('tipe_referensi', 'pengeluaran_bop_aktual')
-                ->whereRaw("LOWER(keterangan) REGEXP '(^|[^a-z])air([^a-z]|$)'")
-                ->pluck('id_jurnal'))
+            ->merge($airJournalQuery->pluck('id_jurnal'))
             ->unique();
 
         if ($electricityId && $waterId && $airJurnalIds->isNotEmpty()) {

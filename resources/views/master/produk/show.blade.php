@@ -8,11 +8,11 @@
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <h4 class="mb-1">{{ $produk->nama_produk }}</h4>
-            <p class="text-muted mb-0">{{ $produk->kode_produk }} • {!! $produk->tipe_badge !!}</p>
+            <p class="text-muted mb-0">{{ $produk->kode_produk }} - {!! $produk->tipe_badge !!}</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('produk.edit', $produk->id_produk) }}" class="btn btn-warning">
-                <i class="fas fa-edit me-2"></i>Edit Produk & BOM
+                <i class="fas fa-edit me-2"></i>Edit Produk
             </a>
             <a href="{{ route('produk.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Kembali
@@ -22,7 +22,6 @@
 </div>
 
 <div class="row">
-    {{-- Info Produk --}}
     <div class="col-md-4 mb-4">
         <div class="card h-100">
             <div class="card-header bg-white border-0">
@@ -67,12 +66,11 @@
         </div>
     </div>
 
-    {{-- BOM Bahan Baku --}}
     <div class="col-md-8 mb-4">
         <div class="card h-100">
             <div class="card-header bg-white border-0">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="fas fa-boxes text-success me-2"></i>Bill of Materials — Bahan Baku</h6>
+                    <h6 class="mb-0"><i class="fas fa-boxes text-success me-2"></i>BOM Bahan Baku</h6>
                     <span class="badge bg-success">{{ $produk->bomBahan->count() }} bahan</span>
                 </div>
             </div>
@@ -91,7 +89,7 @@
                             <tbody>
                                 @foreach($produk->bomBahan as $i => $bom)
                                 <tr>
-                                    <td>{{ $i+1 }}</td>
+                                    <td>{{ $i + 1 }}</td>
                                     <td>
                                         @if($bom->bahanBaku)
                                             <code>{{ $bom->bahanBaku->kode_bahan }}</code>
@@ -101,9 +99,11 @@
                                     </td>
                                     <td>
                                         @if($bom->bahanBaku)
-                                            <strong>{{ $bom->bahanBaku->nama_bahan }}</strong> <span class="badge bg-primary ms-1">Bahan Baku</span>
+                                            <strong>{{ $bom->bahanBaku->nama_bahan }}</strong>
+                                            <span class="badge bg-primary ms-1">Bahan Baku</span>
                                         @else
-                                            <strong>{{ $bom->produkWip->nama_produk }}</strong> <span class="badge bg-info text-dark ms-1">WIP</span>
+                                            <strong>{{ $bom->produkWip->nama_produk }}</strong>
+                                            <span class="badge bg-info text-dark ms-1">WIP</span>
                                         @endif
                                     </td>
                                     <td>{{ $bom->keterangan ?? '-' }}</td>
@@ -126,47 +126,6 @@
     </div>
 </div>
 
-{{-- BOM Mesin --}}
-<div class="card mb-4">
-    <div class="card-header bg-white border-0">
-        <div class="d-flex justify-content-between align-items-center">
-            <h6 class="mb-0"><i class="fas fa-cogs text-warning me-2"></i>Bill of Materials — Mesin & Peralatan</h6>
-            <span class="badge bg-warning text-dark">{{ $produk->bomMesin->count() }} mesin</span>
-        </div>
-    </div>
-    <div class="card-body">
-        @if($produk->bomMesin->count() > 0)
-            <div class="row">
-                @foreach($produk->bomMesin as $mesin)
-                <div class="col-md-3 mb-3">
-                    <div class="card border-warning border-opacity-50">
-                        <div class="card-body py-3">
-                            <div class="d-flex align-items-center">
-                                <div class="me-3 text-warning">
-                                    <i class="fas fa-cog fa-lg"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-bold">{{ $mesin->nama_mesin }}</div>
-                                    @if($mesin->keterangan)
-                                        <small class="text-muted">{{ $mesin->keterangan }}</small>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        @else
-            <div class="text-center py-3 text-muted">
-                <i class="fas fa-cogs fa-2x mb-2 d-block"></i>
-                Belum ada BOM mesin.
-            </div>
-        @endif
-    </div>
-</div>
-
-{{-- Riwayat Job Order --}}
 <div class="card">
     <div class="card-header bg-white border-0">
         <h6 class="mb-0"><i class="fas fa-history text-info me-2"></i>Riwayat Job Order</h6>

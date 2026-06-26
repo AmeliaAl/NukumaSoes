@@ -6,14 +6,13 @@ use Illuminate\Http\Request;
 use App\Models\Produk;
 use App\Models\BahanBaku;
 use App\Models\BomBahan;
-use App\Models\BomMesin;
 use Illuminate\Support\Facades\DB;
 
 class ProdukController extends Controller
 {
     public function index()
     {
-        $produk = Produk::with(['permintaanProduksi', 'bomBahan', 'bomMesin'])->get();
+        $produk = Produk::with(['permintaanProduksi', 'bomBahan'])->get();
         return view('master.produk.index', compact('produk'));
     }
 
@@ -69,9 +68,6 @@ class ProdukController extends Controller
             // BOM Bahan
             'bom_bahan_id.*' => 'nullable|string',
             'bom_bahan_keterangan.*' => 'nullable|string',
-            // BOM Mesin
-            'bom_mesin_nama.*' => 'nullable|string|max:100',
-            'bom_mesin_keterangan.*' => 'nullable|string',
         ], [
             'kode_produk.required' => 'Kode produk harus diisi',
             'kode_produk.unique' => 'Kode produk sudah digunakan',
@@ -120,19 +116,6 @@ class ProdukController extends Controller
                 }
             }
 
-            // Simpan BOM Mesin
-            if ($request->bom_mesin_nama) {
-                foreach ($request->bom_mesin_nama as $i => $namaMesin) {
-                    if ($namaMesin) {
-                        BomMesin::create([
-                            'id_produk' => $produk->id_produk,
-                            'nama_mesin' => $namaMesin,
-                            'keterangan' => $request->bom_mesin_keterangan[$i] ?? null,
-                        ]);
-                    }
-                }
-            }
-
             DB::commit();
 
             return redirect()->route('produk.index')
@@ -146,13 +129,13 @@ class ProdukController extends Controller
 
     public function show($id)
     {
-        $produk = Produk::with(['permintaanProduksi', 'bomBahan.bahanBaku', 'bomBahan.produkWip', 'bomMesin'])->findOrFail($id);
+        $produk = Produk::with(['permintaanProduksi', 'bomBahan.bahanBaku', 'bomBahan.produkWip'])->findOrFail($id);
         return view('master.produk.show', compact('produk'));
     }
 
     public function edit($id)
     {
-        $produk = Produk::with(['bomBahan.bahanBaku', 'bomBahan.produkWip', 'bomMesin'])->findOrFail($id);
+        $produk = Produk::with(['bomBahan.bahanBaku', 'bomBahan.produkWip'])->findOrFail($id);
         $bahanBaku = BahanBaku::where('status', 'aktif')->orderBy('nama_bahan')->get();
         $wipProduk = Produk::where('status', 'aktif')
             ->whereIn('tipe_produk', ['kulit', 'isi'])
@@ -201,7 +184,6 @@ class ProdukController extends Controller
             'status' => 'required|in:aktif,nonaktif',
             'deskripsi' => 'nullable|string',
             'bom_bahan_id.*' => 'nullable|string',
-            'bom_mesin_nama.*' => 'nullable|string|max:100',
         ], [
             'nama_produk.required' => 'Nama produk harus diisi',
             'tipe_produk.required' => 'Tipe produk harus dipilih',
@@ -220,7 +202,6 @@ class ProdukController extends Controller
 
             // Hapus BOM lama dan insert ulang
             $produk->bomBahan()->delete();
-            $produk->bomMesin()->delete();
 
             // Simpan BOM Bahan baru
             if ($request->bom_bahan_id) {
@@ -247,19 +228,6 @@ class ProdukController extends Controller
                             
                             BomBahan::create($bomData);
                         }
-                    }
-                }
-            }
-
-            // Simpan BOM Mesin baru
-            if ($request->bom_mesin_nama) {
-                foreach ($request->bom_mesin_nama as $i => $namaMesin) {
-                    if ($namaMesin) {
-                        BomMesin::create([
-                            'id_produk' => $produk->id_produk,
-                            'nama_mesin' => $namaMesin,
-                            'keterangan' => $request->bom_mesin_keterangan[$i] ?? null,
-                        ]);
                     }
                 }
             }
