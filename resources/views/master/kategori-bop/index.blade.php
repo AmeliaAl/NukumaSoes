@@ -39,6 +39,7 @@
                         <th style="width: 80px;">No</th>
                         <th>Nama Kategori</th>
                         <th>Keterangan</th>
+                        <th>Akun COA</th>
                         <th class="text-center" style="width: 150px;">Total Penggunaan</th>
                         <th class="text-center" style="width: 150px;">Aksi</th>
                     </tr>
@@ -49,6 +50,14 @@
                         <td>{{ $index + 1 }}</td>
                         <td><strong>{{ $kategori->nama_kategori }}</strong></td>
                         <td>{{ $kategori->keterangan ?? '-' }}</td>
+                        <td>
+                            @if($kategori->akun)
+                                <span class="badge bg-secondary">{{ $kategori->akun->kode_akun }}</span>
+                                {{ $kategori->akun->nama_akun }}
+                            @else
+                                <span class="text-danger">Belum dipetakan</span>
+                            @endif
+                        </td>
                         <td class="text-center">
                             <span class="badge bg-info">{{ $kategori->biaya_overhead_pabrik_count }} Kali</span>
                         </td>

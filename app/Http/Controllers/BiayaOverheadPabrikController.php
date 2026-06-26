@@ -10,6 +10,7 @@ use App\Models\JurnalUmum;
 use App\Models\Akun;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class BiayaOverheadPabrikController extends Controller
 {
@@ -71,14 +72,14 @@ class BiayaOverheadPabrikController extends Controller
                                                     'nomor_job' => $item->permintaanProduksi->nomor_job ?? '-',
                                                     'id_permintaan_produksi' => $item->id_permintaan_produksi,
                                                     'nama_produk' => $item->permintaanProduksi->produk->nama_produk ?? '-',
-                                                    'jenis_overhead' => 'Bahan Tidak Langsung / Kemasan',
+                                                    'jenis_overhead' => 'Bahan Penolong / BOP',
                                                     'badge_class' => 'bg-success text-white',
                                                     'satuan' => 'bahan_baku',
                                                     'satuan_label' => $item->bahanBaku->satuan ?? '',
                                                     'nominal' => $item->harga_satuan,
                                                     'jumlah' => $item->jumlah_pakai,
                                                     'total_biaya' => $item->total_biaya,
-                                                    'keterangan' => 'Pemakaian ' . ($item->bahanBaku->nama_bahan ?? '-') . ' untuk kemasan/BOP',
+                                                    'keterangan' => 'Pemakaian ' . ($item->bahanBaku->nama_bahan ?? '-') . ' sebagai bahan penolong/BOP',
                                                     'is_otomatis' => true,
                                                     'tipe' => 'bahan_tidak_langsung',
                                                 ];
@@ -97,7 +98,7 @@ class BiayaOverheadPabrikController extends Controller
                                       ->get();
                                       
         $totalBatchAktif = BiayaOverheadPabrik::totalBatchAktif();
-        $categories = KategoriBop::all();
+        $categories = KategoriBop::productionScope()->orderBy('nama_kategori')->get();
 
         return view('transaksi.biaya-overhead-pabrik.create', compact('jobOrders', 'totalBatchAktif', 'categories'));
     }
@@ -127,6 +128,7 @@ class BiayaOverheadPabrikController extends Controller
         DB::beginTransaction();
         try {
             $kategori = KategoriBop::findOrFail($request->id_kategori_bop);
+            $this->ensureProductionCategory($kategori);
             
             $overhead = BiayaOverheadPabrik::create([
                 'id_permintaan_produksi' => $request->id_permintaan_produksi,
@@ -176,7 +178,7 @@ class BiayaOverheadPabrikController extends Controller
                                       ->get();
                                       
         $totalBatchAktif = BiayaOverheadPabrik::totalBatchAktif();
-        $categories = KategoriBop::all();
+        $categories = KategoriBop::productionScope()->orderBy('nama_kategori')->get();
 
         return view('transaksi.biaya-overhead-pabrik.edit', compact('overhead', 'jobOrders', 'totalBatchAktif', 'categories'));
     }
@@ -208,6 +210,7 @@ class BiayaOverheadPabrikController extends Controller
         DB::beginTransaction();
         try {
             $kategori = KategoriBop::findOrFail($request->id_kategori_bop);
+            $this->ensureProductionCategory($kategori);
             
             // Cari dan hapus jurnal umum lama beserta detailnya
             $oldJurnals = JurnalUmum::where('id_referensi', $overhead->id_overhead)
@@ -320,5 +323,16 @@ class BiayaOverheadPabrikController extends Controller
             DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    private function ensureProductionCategory(KategoriBop $kategori): void
+    {
+        if (! KategoriBop::isAssetRelatedName($kategori->nama_kategori)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'id_kategori_bop' => 'Kategori BOP terkait mesin/aset tidak masuk lingkup aplikasi produksi. Gunakan kategori biaya operasional seperti Gas, Listrik, atau Air, lalu isi keterangan mesin yang digunakan.',
+        ]);
     }
 }

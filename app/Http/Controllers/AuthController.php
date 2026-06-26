@@ -28,8 +28,8 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'username' => 'required|string',
-            'password' => 'required',
+            'username' => 'required|string|max:50',
+            'password' => 'required|string|max:255',
         ], [
             'username.required' => 'Username harus diisi',
             'password.required' => 'Password harus diisi',
@@ -83,8 +83,8 @@ class AuthController extends Controller
     public function changePassword(Request $request)
     {
         $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
+            'current_password' => 'required|string|max:255',
+            'new_password' => 'required|string|min:6|max:255|confirmed',
         ], [
             'current_password.required' => 'Password lama harus diisi',
             'new_password.required' => 'Password baru harus diisi',
@@ -185,7 +185,7 @@ class AuthController extends Controller
         $request->validate([
             'nama_lengkap' => 'required|string|max:100',
             'username' => 'required|string|max:50|alpha_num|unique:admins,username',
-            'password' => 'required|min:6|confirmed',
+            'password' => 'required|string|min:6|max:255|confirmed',
         ], [
             'nama_lengkap.required' => 'Nama lengkap harus diisi',
             'username.required' => 'Username harus diisi',
@@ -238,8 +238,8 @@ class AuthController extends Controller
 
         $request->validate([
             'nama_lengkap' => 'required|string|max:100',
-            'username' => 'required|string|max:50|unique:admins,username',
-            'password' => 'required|min:6|confirmed',
+            'username' => 'required|string|max:50|alpha_num|unique:admins,username',
+            'password' => 'required|string|min:6|max:255|confirmed',
         ], [
             'nama_lengkap.required' => 'Nama lengkap harus diisi',
             'username.required' => 'Username harus diisi',

@@ -82,15 +82,10 @@
                             @if($bahan->jenis_bahan == 'langsung')
                                 <span class="badge bg-primary">Langsung</span>
                             @else
-                                <span class="badge bg-warning text-dark">Tidak Langsung / Kemasan</span>
+                                <span class="badge bg-warning text-dark">Penolong / BOP</span>
                             @endif
                         </td>
-                        <td>
-                            {{ $bahan->satuan }}
-                            @if($bahan->satuan_beli)
-                                <br><small class="text-muted">1 {{ $bahan->satuan_beli }} = {{ floatval($bahan->isi_per_kemasan) }} {{ $bahan->satuan }}</small>
-                            @endif
-                        </td>
+                        <td>{{ $bahan->satuan }}</td>
                         <td class="text-end">
                             @if($bahan->stok_saat_ini <= $bahan->stok_minimum)
                                 <span class="badge bg-danger">{{ number_format($bahan->stok_saat_ini, 0) }}</span>

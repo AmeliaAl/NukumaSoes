@@ -21,8 +21,7 @@ class AccountingService
 
         if (abs($totalDebit - $totalKredit) > 0.01) {
             Log::error("Jurnal tidak balance! Debit: $totalDebit, Kredit: $totalKredit. Referensi: $tipeReferensi - $referensiId");
-            // Bisa dilempar sebagai Exception jika strict, tapi di sini kita biarkan return false
-            return false;
+            throw new \RuntimeException("Jurnal {$tipeReferensi} tidak seimbang.");
         }
 
         DB::beginTransaction();
@@ -66,7 +65,7 @@ class AccountingService
         } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal membuat jurnal: " . $e->getMessage());
-            return false;
+            throw $e;
         }
     }
 
@@ -75,38 +74,17 @@ class AccountingService
      */
     public function getAkunIdByKode($kode)
     {
-        $akun = Akun::where('kode_akun', $kode)->first();
-        return $akun ? $akun->id_akun : null;
+        $akun = Akun::where('kode_akun', $kode)->where('status', 'aktif')->first();
+        if (!$akun) {
+            throw new \RuntimeException("Akun COA aktif dengan kode {$kode} tidak ditemukan.");
+        }
+
+        return $akun->id_akun;
     }
 
     // ==============================================================================
     // SIKLUS JURNAL PRODUKSI
     // ==============================================================================
-
-    /**
-     * 1. Penerimaan Bahan Baku (Dari Gudang ke Produksi)
-     */
-    public function recordPenerimaanBahanBaku($penerimaan)
-    {
-        $idAkunPersediaan = $this->getAkunIdByKode('142'); // Persediaan Bahan Baku (Dulu 1-300)
-        $idAkunTransfer = $this->getAkunIdByKode('301'); // Modal (Dulu 3-300 Transfer Gudang Pusat)
-
-        if (!$idAkunPersediaan || !$idAkunTransfer) return false;
-
-        $entries = [
-            ['id_akun' => $idAkunPersediaan, 'debit' => $penerimaan->total_biaya, 'kredit' => 0],
-            ['id_akun' => $idAkunTransfer, 'debit' => 0, 'kredit' => $penerimaan->total_biaya],
-        ];
-
-        return $this->createJurnal(
-            $penerimaan->tanggal_penerimaan,
-            "Penerimaan Bahan Baku: {$penerimaan->nomor_penerimaan}",
-            $penerimaan->id_penerimaan,
-            'penerimaan_bahan_baku',
-            $penerimaan->id_admin,
-            $entries
-        );
-    }
 
     /**
      * 2. Pemakaian Bahan Baku (Masuk ke BDP)

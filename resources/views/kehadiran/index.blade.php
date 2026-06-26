@@ -97,7 +97,7 @@
                     <div>
                         <h6 class="fw-bold mb-1">Tidak Ada Job Order Aktif Berstatus 'proses'</h6>
                         <p class="mb-0 text-muted" style="font-size:14px;">
-                            Saat ini tidak ada Job Order yang sedang berjalan pada tanggal <strong>{{ Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}</strong>. 
+                            Saat ini tidak ada Job Order dengan batch aktif pada tanggal <strong>{{ Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}</strong>. 
                             Anda tetap dapat menginput absensi pekerja, namun upah kerja mereka hari ini <strong>tidak akan dialokasikan</strong> ke Job Order dan biaya HPP mana pun.
                         </p>
                     </div>
@@ -105,12 +105,12 @@
             </div>
         @else
             <p class="text-muted mb-3" style="font-size:14px;">
-                Upah harian dari seluruh pekerja yang hadir hari ini akan dialokasikan secara <strong>proporsional</strong> berdasarkan ukuran batch (jumlah produksi) dari masing-masing Job Order aktif di bawah ini:
+                Upah harian dari seluruh pekerja yang hadir hari ini akan dialokasikan secara <strong>proporsional</strong> berdasarkan jumlah batch aktif dari masing-masing Job Order. Tenaga kerja langsung masuk BTKL, tenaga kerja tidak langsung masuk BOP.
             </p>
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
                 @foreach($activeJobs as $job)
                     @php
-                        $porsi = $totalBatchAktif > 0 ? ($job->jumlah_produksi / $totalBatchAktif) * 100 : 0;
+                        $porsi = $totalBatchAktif > 0 ? ($job->batch_aktif_count / $totalBatchAktif) * 100 : 0;
                     @endphp
                     <div class="col">
                         <div class="card h-100 border border-light shadow-sm transition-hover">
@@ -123,8 +123,8 @@
                                 </div>
                                 <h6 class="fw-bold text-truncate mb-1">{{ $job->produk->nama_produk ?? 'Produk' }}</h6>
                                 <div class="d-flex justify-content-between align-items-center mb-2" style="font-size:13px;">
-                                    <span class="text-muted">Jumlah Batch:</span>
-                                    <strong class="text-dark">{{ number_format($job->jumlah_produksi, 0) }} unit</strong>
+                                    <span class="text-muted">Batch Aktif:</span>
+                                    <strong class="text-dark">{{ number_format($job->batch_aktif_count, 0) }} batch</strong>
                                 </div>
                                 <div class="progress mb-1 shadow-sm" style="height: 6px; border-radius: 3px;">
                                     <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $porsi }}%" 
@@ -140,8 +140,8 @@
                 @endforeach
             </div>
             <div class="mt-3 p-3 bg-light rounded border border-light-subtle d-flex justify-content-between align-items-center">
-                <span class="text-secondary fw-semibold">Total Batch Tergabung:</span>
-                <span class="fs-5 fw-bold text-dark">{{ number_format($totalBatchAktif, 0, ',', '.') }} Unit</span>
+                <span class="text-secondary fw-semibold">Total Batch Aktif Tergabung:</span>
+                <span class="fs-5 fw-bold text-dark">{{ number_format($totalBatchAktif, 0, ',', '.') }} Batch</span>
             </div>
         @endif
     </div>

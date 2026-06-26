@@ -56,12 +56,13 @@ class PenerimaanOrderProduksiController extends Controller
             'tanggal_terima_order' => 'required|date',
             'nomor_job'            => 'required|string|max:50|unique:permintaan_produksi,nomor_job',
             'id_produk'            => 'required|exists:produk,id_produk',
-            'tanggal_mulai'        => 'required|date',
+            'tanggal_mulai'        => 'required|date|after_or_equal:tanggal_terima_order',
             'jumlah_produksi'      => 'required|numeric|min:1',
             'jumlah_batch'         => 'required|integer|min:1',
+            'kapasitas_batch_per_hari' => 'nullable|integer|min:1|max:50',
             'jenis_produksi'       => 'required|in:maklun,brand_sendiri',
             'tujuan_produksi'      => 'required|in:pesanan,stok_wip,stok_barang_jadi',
-            'tahap_produksi'       => 'required|in:persiapan,produksi,filling,selesai',
+            'tahap_produksi'       => 'required|in:persiapan,produksi,filling',
             'keterangan'           => 'nullable|string',
         ], [
             'kode_order_eksternal.unique' => 'Kode Order tersebut sudah pernah diterima sebelumnya!',
@@ -91,6 +92,12 @@ class PenerimaanOrderProduksiController extends Controller
             'harga_pokok_per_unit' => 0,
             'keterangan'           => $request->keterangan,
         ]);
+        $job->sinkronkanBatchRencana(
+            (int) $request->jumlah_batch,
+            (float) $request->jumlah_produksi,
+            $request->tanggal_mulai,
+            (int) $request->input('kapasitas_batch_per_hari', 1)
+        );
 
         Log::info("Order Produksi Diterima: {$job->nomor_job} dari Kode Eksternal: {$job->kode_order_eksternal}");
 

@@ -12,6 +12,7 @@ use App\Models\Akun;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class KehadiranController extends Controller
 {
@@ -20,6 +21,10 @@ class KehadiranController extends Controller
      */
     public function index(Request $request)
     {
+        $request->validate([
+            'tanggal' => 'nullable|date',
+        ]);
+
         $dateInput = $request->input('tanggal', Carbon::now()->toDateString());
         $date = Carbon::parse($dateInput)->toDateString();
 
@@ -32,9 +37,16 @@ class KehadiranController extends Controller
         // Cari job order aktif berstatus 'proses' hari ini
         $activeJobs = PermintaanProduksi::where('status', 'proses')
             ->with('produk')
-            ->get();
+            ->withCount(['batchProduksi as batch_aktif_count' => fn ($query) => $query
+                ->whereIn('status', ['proses', 'selesai'])
+                ->whereDate('tanggal_mulai', '<=', $date)
+                ->where(fn ($dateQuery) => $dateQuery->whereNull('tanggal_selesai')
+                    ->orWhereDate('tanggal_selesai', '>=', $date))])
+            ->get()
+            ->filter(fn ($job) => (int) $job->batch_aktif_count > 0)
+            ->values();
 
-        $totalBatchAktif = $activeJobs->sum('jumlah_produksi');
+        $totalBatchAktif = $activeJobs->sum('batch_aktif_count');
 
         return view('kehadiran.index', compact('workers', 'date', 'existingKehadiran', 'activeJobs', 'totalBatchAktif'));
     }
@@ -52,6 +64,17 @@ class KehadiranController extends Controller
             'attendance.*.jam_lembur' => 'required|numeric|min:0|max:24',
             'attendance.*.keterangan' => 'nullable|string|max:255',
         ]);
+
+        $workerIds = collect(array_keys($request->attendance))
+            ->filter(fn ($id) => ctype_digit((string) $id))
+            ->map(fn ($id) => (int) $id)
+            ->unique();
+        $validWorkerCount = TenagaKerja::whereIn('id_tenaga', $workerIds)->count();
+        if ($workerIds->count() !== count($request->attendance) || $validWorkerCount !== $workerIds->count()) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Data tenaga kerja pada absensi tidak valid.',
+            ]);
+        }
 
         $date = $request->tanggal;
         $adminId = Auth::guard('admin')->id();
@@ -107,8 +130,16 @@ class KehadiranController extends Controller
 
             // 3. Pooled-Allocation Engine
             // Cari job order aktif berstatus 'proses' hari ini
-            $activeJobs = PermintaanProduksi::where('status', 'proses')->get();
-            $totalBatch = $activeJobs->sum('jumlah_produksi');
+            $activeJobs = PermintaanProduksi::where('status', 'proses')
+                ->withCount(['batchProduksi as batch_aktif_count' => fn ($query) => $query
+                    ->whereIn('status', ['proses', 'selesai'])
+                    ->whereDate('tanggal_mulai', '<=', $date)
+                    ->where(fn ($dateQuery) => $dateQuery->whereNull('tanggal_selesai')
+                        ->orWhereDate('tanggal_selesai', '>=', $date))])
+                ->get()
+                ->filter(fn ($job) => (int) $job->batch_aktif_count > 0)
+                ->values();
+            $totalBatch = $activeJobs->sum('batch_aktif_count');
 
             $allocatedCount = 0;
             $totalCostAllocated = 0;
@@ -137,7 +168,8 @@ class KehadiranController extends Controller
 
                     // Distribusikan upah harian secara proporsional ke semua Job Order aktif
                     foreach ($activeJobs as $job) {
-                        $porsiJob = floatval($job->jumlah_produksi) / floatval($totalBatch);
+                        $batchAktifJob = (int) $job->batch_aktif_count;
+                        $porsiJob = $batchAktifJob / floatval($totalBatch);
                         $allocatedCost = $porsiJob * $totalUpahHarian;
 
                         if ($allocatedCost <= 0) continue;
@@ -150,12 +182,12 @@ class KehadiranController extends Controller
                             'tanggal_kerja'          => $date,
                             'hari_kerja'             => $jamKerja / 8.0, // porsi hari standar
                             'jam_absen'              => $jamKerja,
-                            'jumlah_batch'           => $job->jumlah_produksi,
+                            'jumlah_batch'           => $batchAktifJob,
                             'upah_per_minggu'        => $worker->upah_per_jam, // fallback ke upah per jam untuk kartu biaya
                             'nominal_potongan'       => 0,
                             'nominal_lembur'         => $upahLembur * $porsiJob,
                             'total_biaya'            => $allocatedCost,
-                            'keterangan'             => "Alokasi Harian (" . ($worker->jenis_tenaga === 'langsung' ? 'BTKL' : 'BTKTL') . " - {$worker->nama_tenaga}, Batch: " . number_format($job->jumlah_produksi, 0) . " dari " . number_format($totalBatch, 0) . ")",
+                            'keterangan'             => "Alokasi Harian (" . ($worker->jenis_tenaga === 'langsung' ? 'BTKL' : 'BTKTL') . " - {$worker->nama_tenaga}, Batch aktif: " . number_format($batchAktifJob, 0) . " dari " . number_format($totalBatch, 0) . ")",
                         ]);
 
                         $jobsToRecalculate->push($job->id_permintaan_produksi);
@@ -201,6 +233,10 @@ class KehadiranController extends Controller
      */
     public function rekapMingguan(Request $request)
     {
+        $request->validate([
+            'tanggal_mulai' => 'nullable|date',
+        ]);
+
         // Default minggu ini (Senin - Sabtu)
         $startOfWeek = $request->filled('tanggal_mulai') 
             ? Carbon::parse($request->tanggal_mulai)->startOfWeek(Carbon::MONDAY) 
@@ -290,23 +326,37 @@ class KehadiranController extends Controller
         $request->validate([
             'id_tenaga' => 'required|exists:tenaga_kerja,id_tenaga',
             'tanggal_akhir' => 'required|date',
-            'nominal' => 'required|numeric|min:0',
         ]);
 
         $workerId = $request->id_tenaga;
         $date = $request->tanggal_akhir;
-        $nominal = floatval($request->nominal);
+        $nominal = 30000;
         $adminId = Auth::guard('admin')->id();
 
         $worker = TenagaKerja::findOrFail($workerId);
         $accountingService = app(\App\Services\AccountingService::class);
+
+        $endOfWeek = Carbon::parse($date);
+        $startOfWeek = $endOfWeek->copy()->startOfWeek(Carbon::MONDAY);
+        $endStr = $startOfWeek->copy()->addDays(5)->toDateString();
+        $startStr = $startOfWeek->toDateString();
+
+        $weeklyAttendances = KehadiranHarian::where('id_tenaga', $workerId)
+            ->whereBetween('tanggal', [$startStr, $endStr])
+            ->get();
+        $presentDays = $weeklyAttendances->where('status_kehadiran', 'hadir')->count();
+        $totalHours = (float) $weeklyAttendances->where('status_kehadiran', 'hadir')->sum('jam_kerja');
+
+        if ($presentDays !== 6 || $totalHours < 48) {
+            return back()->with('error', 'Insentif tidak dapat dijurnal karena pekerja belum memenuhi syarat hadir 6 hari dan minimal 48 jam kerja.');
+        }
 
         DB::beginTransaction();
         try {
             // Cek duplikasi klaim
             $sudahKlaim = JurnalUmum::where('id_referensi', $workerId)
                 ->where('tipe_referensi', 'insentif_mingguan')
-                ->whereDate('tanggal', $date)
+                ->whereDate('tanggal', $endStr)
                 ->exists();
 
             if ($sudahKlaim) {
@@ -314,7 +364,7 @@ class KehadiranController extends Controller
             }
 
             // Post Jurnal Insentif
-            $success = $accountingService->recordInsentifMingguan($date, $nominal, $adminId, $worker);
+            $success = $accountingService->recordInsentifMingguan($endStr, $nominal, $adminId, $worker);
 
             if (!$success) {
                 throw new \Exception("Gagal mencatat jurnal insentif di AccountingService.");

@@ -179,7 +179,6 @@
                                             @csrf
                                             <input type="hidden" name="id_tenaga" value="{{ $worker->id_tenaga }}">
                                             <input type="hidden" name="tanggal_akhir" value="{{ $endStr }}">
-                                            <input type="hidden" name="nominal" value="30000">
                                             <button type="button" class="btn btn-sm btn-success rounded-pill fw-semibold shadow-sm px-3 py-2 btn-klaim-insentif">
                                                 <i class="fas fa-gift me-1"></i>Klaim Rp 30k
                                             </button>

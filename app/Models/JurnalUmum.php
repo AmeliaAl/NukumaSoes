@@ -14,7 +14,10 @@ class JurnalUmum extends Model
 
     protected $fillable = [
         'tanggal',
+        'periode_mulai',
+        'periode_selesai',
         'nomor_bukti',
+        'nomor_pembayaran',
         'keterangan',
         'id_referensi',
         'tipe_referensi',
@@ -23,6 +26,8 @@ class JurnalUmum extends Model
 
     protected $casts = [
         'tanggal' => 'date',
+        'periode_mulai' => 'date',
+        'periode_selesai' => 'date',
     ];
 
     // Relasi: Jurnal punya banyak detail (debit/kredit entries)
@@ -35,6 +40,12 @@ class JurnalUmum extends Model
     public function admin()
     {
         return $this->belongsTo(Admin::class, 'id_admin', 'id_admin');
+    }
+
+    public function alokasiBopAktual()
+    {
+        return $this->hasMany(BiayaOverheadPabrik::class, 'id_jurnal_aktual', 'id_jurnal')
+            ->where('is_alokasi_aktual', true);
     }
 
     // Helper: Get total debit dari detail

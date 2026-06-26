@@ -237,7 +237,21 @@ class PemakaianBahanBakuController extends Controller
         $request->validate([
             'id_permintaan_produksi' => 'required|exists:permintaan_produksi,id_permintaan_produksi',
             'items' => 'required|array|min:1',
-            'items.*.id_bahan' => 'required|string',
+            'items.*.id_bahan' => [
+                'required',
+                'string',
+                'distinct',
+                'regex:/^(bahan|wip)_\d+$/',
+                function ($attribute, $value, $fail) {
+                    [$type, $id] = explode('_', $value, 2);
+                    $exists = $type === 'bahan'
+                        ? BahanBaku::whereKey($id)->exists()
+                        : Produk::whereKey($id)->exists();
+                    if (!$exists) {
+                        $fail('Bahan baku atau WIP yang dipilih tidak ditemukan.');
+                    }
+                },
+            ],
             'items.*.jumlah_pakai' => 'required|numeric|min:0.01',
         ], [
             'id_permintaan_produksi.required' => 'Job Order harus dipilih',

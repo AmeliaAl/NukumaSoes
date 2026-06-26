@@ -132,8 +132,8 @@
             }
         }
         
-        @stack('styles')
     </style>
+    @stack('styles')
 </head>
 <body>
     <!-- Sidebar -->

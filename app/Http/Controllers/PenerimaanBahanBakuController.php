@@ -162,7 +162,7 @@ class PenerimaanBahanBakuController extends Controller
                 'supplier' => 'nullable|string|max:100',
                 'keterangan' => 'nullable|string',
                 'bahan' => 'required|array|min:1',
-                'bahan.*.id_bahan' => 'required|exists:bahan_baku,id_bahan',
+                'bahan.*.id_bahan' => 'required|distinct|exists:bahan_baku,id_bahan',
                 'bahan.*.jumlah_diterima' => 'required|numeric|min:0.01',
                 'bahan.*.harga_per_satuan' => 'required|numeric|min:0',
                 'bahan.*.id_permintaan_detail' => 'nullable|exists:permintaan_bahan_baku_detail,id_permintaan_detail'
@@ -174,6 +174,13 @@ class PenerimaanBahanBakuController extends Controller
                     if (isset($b['id_permintaan_detail'])) {
                         $detailPermintaan = \App\Models\PermintaanBahanBakuDetail::find($b['id_permintaan_detail']);
                         if ($detailPermintaan) {
+                            if ((int) $detailPermintaan->id_permintaan_bahan !== (int) $request->id_permintaan_bahan
+                                || (int) $detailPermintaan->id_bahan !== (int) $b['id_bahan']) {
+                                return back()->withErrors([
+                                    'bahan' => 'Detail bahan tidak sesuai dengan permintaan bahan baku yang dipilih.'
+                                ])->withInput();
+                            }
+
                             $bahanData = BahanBaku::find($b['id_bahan']);
                             $isiPerKemasan = $bahanData->isi_per_kemasan > 0 ? floatval($bahanData->isi_per_kemasan) : 1;
                             
@@ -263,10 +270,8 @@ class PenerimaanBahanBakuController extends Controller
                 $bahan->save();
             }
 
-            // 5. JURNAL OTOMATIS
-            // The recordPenerimaanBahanBaku uses $penerimaan->total_biaya (from accessor)
-            $accountingService = app(\App\Services\AccountingService::class);
-            $accountingService->recordPenerimaanBahanBaku($penerimaan);
+            // Jurnal pembelian/penerimaan persediaan menjadi tanggung jawab modul
+            // pembelian dan gudang. Modul produksi hanya menerima kuantitas stok.
 
             DB::commit();
 

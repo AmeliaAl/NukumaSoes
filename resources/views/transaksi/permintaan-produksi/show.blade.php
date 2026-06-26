@@ -64,6 +64,19 @@
     </div>
 @endif
 
+@if($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-times-circle me-2"></i>
+        <strong>Periksa input:</strong>
+        <ul class="mb-0 mt-1">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
 <!-- Info Job Order -->
 <div class="row mb-4">
     <div class="col-md-6">
@@ -86,7 +99,7 @@
                         <td><strong>{{ number_format($job->jumlah_produksi, 0) }} {{ $job->produk->satuan_produk }}</strong></td>
                     </tr>
                     <tr>
-                        <th>Jumlah Batch</th>
+                        <th>Total Batch Direncanakan</th>
                         <td><strong>{{ $job->jumlah_batch ?? 1 }} Batch</strong></td>
                     </tr>
                     <tr>
@@ -218,6 +231,133 @@
                 @endif
             </div>
         </div>
+    </div>
+</div>
+
+@php
+    $targetProduksi = (float) $job->jumlah_produksi;
+    $totalTargetBatch = (float) $job->batchProduksi->where('status', '!=', 'dibatalkan')->sum('jumlah_target');
+    $totalHasilBatch = (float) $job->batchProduksi->where('status', '!=', 'dibatalkan')->sum('jumlah_hasil');
+    $sisaProduksi = max(0, $targetProduksi - $totalHasilBatch);
+    $batchAktif = $job->batchProduksi->whereIn('status', ['proses', 'selesai'])->count();
+    $batchBatal = $job->batchProduksi->where('status', 'dibatalkan')->count();
+@endphp
+
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Pelaksanaan Batch Produksi</h5>
+        <span>{{ $job->batchProduksi->where('status', 'selesai')->count() }} selesai, {{ $batchBatal }} batal</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">
+            Satu Job Order dapat diselesaikan melalui beberapa batch. Tanggal setiap batch menentukan apakah batch tersebut menerima alokasi BOP aktual pada suatu periode.
+        </p>
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted d-block">Target Job Order</small>
+                    <strong>{{ number_format($targetProduksi, 2, ',', '.') }} {{ $job->produk->satuan_produk }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted d-block">Target Batch Aktif</small>
+                    <strong>{{ number_format($totalTargetBatch, 2, ',', '.') }} {{ $job->produk->satuan_produk }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted d-block">Hasil Aktual Batch</small>
+                    <strong>{{ number_format($totalHasilBatch, 2, ',', '.') }} {{ $job->produk->satuan_produk }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 h-100">
+                    <small class="text-muted d-block">Sisa Produksi</small>
+                    <strong class="{{ $sisaProduksi > 0 ? 'text-warning' : 'text-success' }}">{{ number_format($sisaProduksi, 2, ',', '.') }} {{ $job->produk->satuan_produk }}</strong>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Batch</th>
+                        <th>Mulai</th>
+                        <th>Selesai</th>
+                        <th class="text-end">Target</th>
+                        <th class="text-end">Hasil Aktual</th>
+                        <th>Status</th>
+                        <th>Keterangan</th>
+                        @if($job->status !== 'selesai')<th>Aksi</th>@endif
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($job->batchProduksi as $batch)
+                        @if($job->status !== 'selesai')
+                            <form id="batch-form-{{ $batch->id_batch_produksi }}" method="POST"
+                                  action="{{ route('permintaan-produksi.batch.update', [$job->id_permintaan_produksi, $batch->id_batch_produksi]) }}">
+                                @csrf
+                                @method('PUT')
+                            </form>
+                        @endif
+                        <tr>
+                            <td>
+                                <strong>Batch {{ $batch->urutan }}</strong>
+                                <br>
+                                <span class="badge {{ $batch->jenis_batch === 'tambahan' ? 'bg-info' : 'bg-secondary' }}">
+                                    {{ $batch->jenis_batch === 'tambahan' ? 'Tambahan' : 'Rencana' }}
+                                </span>
+                            </td>
+                            <td><input form="batch-form-{{ $batch->id_batch_produksi }}" type="date" name="tanggal_mulai" class="form-control form-control-sm" value="{{ $batch->tanggal_mulai?->format('Y-m-d') }}" required {{ $job->status === 'selesai' ? 'disabled' : '' }}></td>
+                            <td><input form="batch-form-{{ $batch->id_batch_produksi }}" type="date" name="tanggal_selesai" class="form-control form-control-sm" value="{{ $batch->tanggal_selesai?->format('Y-m-d') }}" {{ $job->status === 'selesai' ? 'disabled' : '' }}></td>
+                            <td><input form="batch-form-{{ $batch->id_batch_produksi }}" type="number" min="0" step="0.01" name="jumlah_target" class="form-control form-control-sm text-end" value="{{ $batch->jumlah_target }}" required {{ $job->status === 'selesai' ? 'disabled' : '' }}></td>
+                            <td><input form="batch-form-{{ $batch->id_batch_produksi }}" type="number" min="0" step="0.01" name="jumlah_hasil" class="form-control form-control-sm text-end" value="{{ $batch->jumlah_hasil }}" required {{ $job->status === 'selesai' ? 'disabled' : '' }}></td>
+                            <td>
+                                <select form="batch-form-{{ $batch->id_batch_produksi }}" name="status" class="form-select form-select-sm" required {{ $job->status === 'selesai' ? 'disabled' : '' }}>
+                                    <option value="rencana" @selected($batch->status === 'rencana')>Rencana</option>
+                                    <option value="proses" @selected($batch->status === 'proses')>Proses</option>
+                                    <option value="selesai" @selected($batch->status === 'selesai')>Selesai</option>
+                                    <option value="dibatalkan" @selected($batch->status === 'dibatalkan')>Dibatalkan</option>
+                                </select>
+                            </td>
+                            <td><input form="batch-form-{{ $batch->id_batch_produksi }}" type="text" maxlength="255" name="keterangan" class="form-control form-control-sm" value="{{ $batch->keterangan }}" {{ $job->status === 'selesai' ? 'disabled' : '' }}></td>
+                            @if($job->status !== 'selesai')
+                                <td><button form="batch-form-{{ $batch->id_batch_produksi }}" class="btn btn-primary btn-sm">Simpan</button></td>
+                            @endif
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="text-center text-muted">Belum ada rincian batch.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($job->status !== 'selesai')
+            <div class="border rounded p-3 mt-3">
+                <h6 class="mb-2">Tambah Batch Tambahan</h6>
+                <form action="{{ route('permintaan-produksi.batch.store', $job->id_permintaan_produksi) }}" method="POST" class="row g-2 align-items-end">
+                    @csrf
+                    <div class="col-md-3">
+                        <label class="form-label small">Tanggal Mulai</label>
+                        <input type="date" name="tanggal_mulai" class="form-control form-control-sm" value="{{ now()->toDateString() }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Target Batch</label>
+                        <input type="number" name="jumlah_target" class="form-control form-control-sm" min="0.01" step="0.01" value="{{ number_format($sisaProduksi, 2, '.', '') }}" {{ $sisaProduksi <= 0 ? 'disabled' : '' }}>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Keterangan</label>
+                        <input type="text" name="keterangan" class="form-control form-control-sm" maxlength="255" placeholder="Opsional" {{ $sisaProduksi <= 0 ? 'disabled' : '' }}>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-primary btn-sm w-100" {{ $sisaProduksi <= 0 ? 'disabled' : '' }}>
+                            Tambah Batch
+                        </button>
+                    </div>
+                </form>
+                <small class="text-muted">Gunakan ini jika realisasi batch rencana belum memenuhi target produksi.</small>
+            </div>
+        @endif
     </div>
 </div>
 
@@ -387,7 +527,7 @@
             foreach($job->pemakaianBahanBakuTidakLangsung as $bh) {
                 $allBop->push([
                     'tanggal' => $bh->created_at->format('d/m/Y H:i'),
-                    'jenis' => 'Bahan Tidak Langsung / Kemasan',
+                    'jenis' => 'Bahan Penolong / BOP',
                     'keterangan' => 'Pemakaian ' . ($bh->bahanBaku->nama_bahan ?? '') . ' (' . number_format($bh->jumlah_pakai, 2) . ' ' . ($bh->bahanBaku->satuan ?? '') . ')',
                     'batch' => $job->jumlah_batch ?? 1,
                     'biaya' => $bh->total_biaya

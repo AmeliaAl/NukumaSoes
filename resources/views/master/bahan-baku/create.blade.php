@@ -64,9 +64,8 @@
                             <option value="Gram" {{ old('satuan') == 'Gram' ? 'selected' : '' }}>Gram</option>
                             <option value="Liter" {{ old('satuan') == 'Liter' ? 'selected' : '' }}>Liter</option>
                             <option value="Ml" {{ old('satuan') == 'Ml' ? 'selected' : '' }}>Mililiter (Ml)</option>
-                            <option value="Pcs" {{ old('satuan') == 'Pcs' ? 'selected' : '' }}>Pieces (Pcs)</option>
                             <option value="Butir" {{ old('satuan') == 'Butir' ? 'selected' : '' }}>Butir</option>
-                            <option value="Pack" {{ old('satuan') == 'Pack' ? 'selected' : '' }}>Pack</option>
+                            <option value="Pcs" {{ old('satuan') == 'Pcs' ? 'selected' : '' }}>Pcs</option>
                         </select>
                         @error('satuan')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -96,45 +95,13 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label">Satuan Beli (Kemasan)</label>
-                        <input type="text" 
-                               class="form-control @error('satuan_beli') is-invalid @enderror" 
-                               name="satuan_beli" 
-                               value="{{ old('satuan_beli') }}"
-                               placeholder="Contoh: Bungkus, Galon, Dus">
-                        <small class="text-muted">Kosongkan jika sama dengan satuan pakai</small>
-                        @error('satuan_beli')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label">Isi per Kemasan</label>
-                        <input type="number" 
-                               class="form-control @error('isi_per_kemasan') is-invalid @enderror" 
-                               name="isi_per_kemasan" 
-                               value="{{ old('isi_per_kemasan', 1) }}"
-                               min="0.01"
-                               step="0.01">
-                        <small class="text-muted">Berapa <span id="labelSatuanUtama">satuan</span> dalam 1 kemasan beli?</small>
-                        @error('isi_per_kemasan')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
                         <label class="form-label">Jenis Bahan <span class="text-danger">*</span></label>
                         <select class="form-select @error('jenis_bahan') is-invalid @enderror" 
                                 name="jenis_bahan" required>
                             <option value="langsung" {{ old('jenis_bahan') == 'langsung' ? 'selected' : '' }}>Bahan Baku Langsung</option>
-                            <option value="tidak_langsung" {{ old('jenis_bahan') == 'tidak_langsung' ? 'selected' : '' }}>Bahan Baku Tidak Langsung / Kemasan (BOP)</option>
+                            <option value="tidak_langsung" {{ old('jenis_bahan') == 'tidak_langsung' ? 'selected' : '' }}>Bahan Penolong / Tidak Langsung (BOP)</option>
                         </select>
+                        <small class="text-muted">Contoh: toples, pouch, label, atau bahan penolong lain. Satuan tetap memakai satuan ukur seperti Pcs.</small>
                         @error('jenis_bahan')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -169,7 +136,7 @@
             
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Catatan:</strong> Stok saat ini akan otomatis 0. Gunakan menu Penerimaan Bahan Baku untuk menambah stok.
+                <strong>Catatan:</strong> Stok saat ini akan otomatis 0. Kemasan tetap dicatat sebagai bahan penolong/BOP, tetapi satuannya menggunakan satuan ukur seperti Pcs, bukan "kemasan" atau "pack".
             </div>
             
             <div class="d-flex gap-2">
@@ -183,17 +150,4 @@
         </form>
     </div>
 </div>
-@endsection
-
-@section('scripts')
-<script>
-    document.getElementById('satuanPakai').addEventListener('change', function() {
-        let val = this.value || 'satuan';
-        document.getElementById('labelSatuanUtama').textContent = val;
-    });
-    // Trigger on load
-    if (document.getElementById('satuanPakai').value) {
-        document.getElementById('labelSatuanUtama').textContent = document.getElementById('satuanPakai').value;
-    }
-</script>
 @endsection

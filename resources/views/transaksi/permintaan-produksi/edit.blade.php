@@ -103,13 +103,33 @@
                                min="1"
                                step="1"
                                required>
-                        <small class="text-muted">Jumlah batch dalam satu hari/job order</small>
+                        <small class="text-muted">Jumlah batch rencana untuk menyelesaikan satu Job Order.</small>
                         @error('jumlah_batch')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted">Hanya batch berstatus Rencana yang dapat ditambah atau dikurangi. Batch yang sudah berjalan tetap dipertahankan.</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Kapasitas Batch per Hari <span class="text-danger">*</span></label>
+                        <input type="number"
+                               class="form-control @error('kapasitas_batch_per_hari') is-invalid @enderror"
+                               name="kapasitas_batch_per_hari"
+                               value="{{ old('kapasitas_batch_per_hari', 2) }}"
+                               min="1"
+                               step="1"
+                               required>
+                        <small class="text-muted">Dipakai untuk menyusun ulang jadwal batch yang masih berstatus Rencana.</small>
+                        @error('kapasitas_batch_per_hari')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
-                
+            </div>
+
+            <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Jenis Produksi <span class="text-danger">*</span></label>
@@ -124,7 +144,6 @@
                         @enderror
                     </div>
                 </div>
-            </div>
 
             <div class="row">
                 <div class="col-md-6">

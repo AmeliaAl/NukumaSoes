@@ -257,7 +257,8 @@
                 <textarea class="form-control @error('keterangan') is-invalid @enderror" 
                           name="keterangan" 
                           rows="2"
-                          placeholder="Keterangan detail tentang biaya overhead ini (opsional)">{{ old('keterangan') }}</textarea>
+                          placeholder="Contoh: Gas LPG untuk oven produksi soes kering">{{ old('keterangan') }}</textarea>
+                <small class="text-muted">Mesin/oven tidak dicatat sebagai BOP. Catat biaya operasionalnya, misalnya gas untuk oven tertentu.</small>
                 @error('keterangan')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -267,10 +268,10 @@
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Panduan Satuan Periode:</strong>
                 <ul class="mb-0 mt-2">
-                    <li><strong>Per Batch:</strong> Maintenance, Bahan Penolong — nominal × jumlah batch</li>
-                    <li><strong>Per Hari:</strong> Gas — nominal per hari × jumlah hari pemakaian</li>
+                    <li><strong>Per Batch:</strong> Bahan Penolong — nominal × jumlah batch</li>
+                    <li><strong>Per Hari:</strong> Gas — nominal per hari × jumlah hari pemakaian. Tulis mesin/oven pada keterangan.</li>
                     <li><strong>Per Minggu:</strong> Biaya mingguan — nominal per minggu × jumlah minggu</li>
-                    <li><strong>Per Bulan:</strong> Listrik, Air, Asuransi, Depresiasi — nominal per bulan × jumlah bulan</li>
+                    <li><strong>Per Bulan:</strong> Listrik, Air, Asuransi — nominal per bulan × jumlah bulan</li>
                 </ul>
             </div>
             
@@ -294,10 +295,7 @@
         'Listrik': 'per_bulan',
         'Air': 'per_bulan',
         'Gas': 'per_hari',
-        'Maintenance': 'per_batch',
-        'Depresiasi Mesin': 'per_bulan',
-        'Depresiasi Bangunan': 'per_bulan',
-        'Asuransi': 'per_bulan',
+        'Asuransi Pabrik': 'per_bulan',
         'Bahan Penolong': 'per_batch',
         'Lainnya': 'per_batch'
     };
@@ -310,7 +308,7 @@
     };
 
     // Cek jenis overhead untuk Shared BOP
-    const sharedTypes = ['Listrik', 'Air', 'Gas', 'Depresiasi Mesin', 'Depresiasi Bangunan', 'Asuransi'];
+    const sharedTypes = ['Listrik', 'Air', 'Gas', 'Asuransi Pabrik'];
     
     document.getElementById('jenisOverhead').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];

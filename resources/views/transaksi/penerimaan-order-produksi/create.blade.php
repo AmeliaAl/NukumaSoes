@@ -151,7 +151,7 @@
                                        class="form-control @error('jumlah_produksi') is-invalid @enderror"
                                        name="jumlah_produksi"
                                        value="{{ old('jumlah_produksi') }}"
-                                       min="1" placeholder="0"
+                                       min="1" step="1" placeholder="0"
                                        style="border-color: #bee3f8;">
                                 @error('jumlah_produksi')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -164,11 +164,25 @@
                                        class="form-control @error('jumlah_batch') is-invalid @enderror"
                                        name="jumlah_batch"
                                        value="{{ old('jumlah_batch', 1) }}"
-                                       min="1" placeholder="1"
+                                       min="1" step="1" placeholder="1"
                                        style="border-color: #bee3f8;">
                                 @error('jumlah_batch')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-muted text-uppercase">Kapasitas Batch per Hari <span class="text-danger">*</span></label>
+                                <input type="number"
+                                       class="form-control @error('kapasitas_batch_per_hari') is-invalid @enderror"
+                                       name="kapasitas_batch_per_hari"
+                                       value="{{ old('kapasitas_batch_per_hari', 2) }}"
+                                       min="1" step="1" placeholder="2"
+                                       style="border-color: #bee3f8;">
+                                @error('kapasitas_batch_per_hari')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Dipakai untuk membuat jadwal awal batch otomatis.</small>
                             </div>
 
                             <div class="col-md-6">

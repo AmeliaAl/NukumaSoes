@@ -27,11 +27,25 @@
                        class="form-control @error('nama_kategori') is-invalid @enderror" 
                        name="nama_kategori" 
                        value="{{ old('nama_kategori') }}"
-                       placeholder="Contoh: Toples Kue, Gas LPG, Listrik Pabrik"
+                       placeholder="Contoh: Gas, Listrik, Air, Bahan Penolong"
                        required>
+                <small class="text-muted">Kategori terkait mesin/aset tidak dicatat di aplikasi ini. Untuk oven, catat biaya gasnya dan tulis mesin/oven pada keterangan transaksi.</small>
                 @error('nama_kategori')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Akun COA BOP <span class="text-danger">*</span></label>
+                <select class="form-select @error('id_akun') is-invalid @enderror" name="id_akun" required>
+                    <option value="">-- Pilih Akun COA --</option>
+                    @foreach($akunBop as $akun)
+                        <option value="{{ $akun->id_akun }}" {{ old('id_akun') == $akun->id_akun ? 'selected' : '' }}>
+                            [{{ $akun->kode_akun }}] {{ $akun->nama_akun }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('id_akun')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             
             <div class="mb-3">

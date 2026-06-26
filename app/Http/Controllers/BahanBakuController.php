@@ -9,6 +9,8 @@ use App\Models\PemakaianBahanBaku;
 
 class BahanBakuController extends Controller
 {
+    private const ALLOWED_UNITS = ['Kg', 'Gram', 'Liter', 'Ml', 'Butir', 'Pcs'];
+
     public function index()
     {
         $bahanBaku = BahanBaku::all();
@@ -38,9 +40,7 @@ class BahanBakuController extends Controller
             'kode_bahan' => 'required|string|max:20|unique:bahan_baku,kode_bahan',
             'nama_bahan' => 'required|string|max:100',
             'jenis_bahan' => 'required|in:langsung,tidak_langsung',
-            'satuan' => 'required|string|max:20',
-            'satuan_beli' => 'nullable|string|max:20',
-            'isi_per_kemasan' => 'nullable|numeric|min:0.01',
+            'satuan' => 'required|in:' . implode(',', self::ALLOWED_UNITS),
             'stok_minimum' => 'required|numeric|min:0',
             'status' => 'required|in:aktif,nonaktif',
             'keterangan' => 'nullable|string',
@@ -50,6 +50,7 @@ class BahanBakuController extends Controller
             'nama_bahan.required' => 'Nama bahan harus diisi',
             'jenis_bahan.required' => 'Jenis bahan harus diisi',
             'satuan.required' => 'Satuan harus dipilih',
+            'satuan.in' => 'Satuan harus berupa satuan ukur bahan baku yang tersedia',
             'stok_minimum.required' => 'Stok minimum harus diisi',
             'stok_minimum.numeric' => 'Stok minimum harus berupa angka',
             'stok_minimum.min' => 'Stok minimum tidak boleh kurang dari 0',
@@ -60,8 +61,8 @@ class BahanBakuController extends Controller
             'nama_bahan' => $request->nama_bahan,
             'jenis_bahan' => $request->jenis_bahan,
             'satuan' => $request->satuan,
-            'satuan_beli' => $request->satuan_beli,
-            'isi_per_kemasan' => $request->isi_per_kemasan ?? 1,
+            'satuan_beli' => null,
+            'isi_per_kemasan' => 1,
             'stok_saat_ini' => 0,
             'stok_minimum' => $request->stok_minimum,
             'status' => $request->status,
@@ -105,9 +106,7 @@ class BahanBakuController extends Controller
         $request->validate([
             'nama_bahan' => 'required|string|max:100',
             'jenis_bahan' => 'required|in:langsung,tidak_langsung',
-            'satuan' => 'required|string|max:20',
-            'satuan_beli' => 'nullable|string|max:20',
-            'isi_per_kemasan' => 'nullable|numeric|min:0.01',
+            'satuan' => 'required|in:' . implode(',', self::ALLOWED_UNITS),
             'stok_minimum' => 'required|numeric|min:0',
             'status' => 'required|in:aktif,nonaktif',
             'keterangan' => 'nullable|string',
@@ -115,6 +114,7 @@ class BahanBakuController extends Controller
             'nama_bahan.required' => 'Nama bahan harus diisi',
             'jenis_bahan.required' => 'Jenis bahan harus diisi',
             'satuan.required' => 'Satuan harus dipilih',
+            'satuan.in' => 'Satuan harus berupa satuan ukur bahan baku yang tersedia',
             'stok_minimum.required' => 'Stok minimum harus diisi',
         ]);
 
@@ -122,8 +122,8 @@ class BahanBakuController extends Controller
             'nama_bahan' => $request->nama_bahan,
             'jenis_bahan' => $request->jenis_bahan,
             'satuan' => $request->satuan,
-            'satuan_beli' => $request->satuan_beli,
-            'isi_per_kemasan' => $request->isi_per_kemasan ?? 1,
+            'satuan_beli' => null,
+            'isi_per_kemasan' => 1,
             'stok_minimum' => $request->stok_minimum,
             'status' => $request->status,
             'keterangan' => $request->keterangan,

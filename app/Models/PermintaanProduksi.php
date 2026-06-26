@@ -123,6 +123,89 @@ class PermintaanProduksi extends Model
         return $this->hasMany(BiayaOverheadPabrik::class, 'id_permintaan_produksi', 'id_permintaan_produksi');
     }
 
+    public function batchProduksi()
+    {
+        return $this->hasMany(BatchProduksi::class, 'id_permintaan_produksi', 'id_permintaan_produksi')
+            ->orderBy('urutan');
+    }
+
+    public function sinkronkanBatchRencana(int $jumlahBatch, float $jumlahProduksi, $tanggalMulai, int $kapasitasBatchPerHari = 1): void
+    {
+        $jumlahBatch = max(1, $jumlahBatch);
+        $kapasitasBatchPerHari = max(1, $kapasitasBatchPerHari);
+        $batchBerjalan = $this->batchProduksi()
+            ->where('jenis_batch', 'rencana')
+            ->whereNotIn('status', ['rencana', 'dibatalkan'])
+            ->count();
+
+        if ($jumlahBatch < $batchBerjalan) {
+            throw new \InvalidArgumentException("Jumlah batch tidak boleh kurang dari {$batchBerjalan} batch yang sudah berjalan.");
+        }
+
+        $this->batchProduksi()
+            ->where('jenis_batch', 'rencana')
+            ->where('status', 'rencana')
+            ->where('urutan', '>', $jumlahBatch)->delete();
+
+        $belumPunyaBatch = $this->batchProduksi()->count() === 0;
+        for ($urutan = 1; $urutan <= $jumlahBatch; $urutan++) {
+            $tanggalBatch = \Carbon\Carbon::parse($tanggalMulai)
+                ->addDays(intdiv($urutan - 1, $kapasitasBatchPerHari))
+                ->toDateString();
+            $statusAwal = $this->status === 'proses' && $belumPunyaBatch && $urutan <= $kapasitasBatchPerHari
+                ? 'proses'
+                : 'rencana';
+            $this->batchProduksi()->firstOrCreate(
+                ['urutan' => $urutan],
+                ['tanggal_mulai' => $tanggalBatch, 'jenis_batch' => 'rencana', 'status' => $statusAwal]
+            );
+        }
+
+        $base = floor(($jumlahProduksi / $jumlahBatch) * 100) / 100;
+        foreach ($this->batchProduksi()->where('jenis_batch', 'rencana')->get() as $batch) {
+            if (!in_array($batch->status, ['rencana', 'dibatalkan'], true) && (float) $batch->jumlah_target > 0) continue;
+            $tanggalBatch = \Carbon\Carbon::parse($tanggalMulai)
+                ->addDays(intdiv($batch->urutan - 1, $kapasitasBatchPerHari))
+                ->toDateString();
+            $target = $batch->urutan === $jumlahBatch
+                ? round($jumlahProduksi - ($base * ($jumlahBatch - 1)), 2)
+                : $base;
+            $batch->update(['jumlah_target' => $target, 'tanggal_mulai' => $tanggalBatch]);
+        }
+
+        $this->update(['jumlah_batch' => $jumlahBatch]);
+    }
+
+    public function totalHasilBatchAktif(): float
+    {
+        return (float) $this->batchProduksi()
+            ->where('status', '!=', 'dibatalkan')
+            ->sum('jumlah_hasil');
+    }
+
+    public function sisaProduksiBatch(): float
+    {
+        return round(max(0, (float) $this->jumlah_produksi - $this->totalHasilBatchAktif()), 2);
+    }
+
+    public function jumlahBatchAktif(): int
+    {
+        return $this->batchProduksi()
+            ->whereIn('status', ['proses', 'selesai'])
+            ->count();
+    }
+
+    public function jumlahBatchRealisasi(): int
+    {
+        return $this->batchProduksi()
+            ->where('status', '!=', 'dibatalkan')
+            ->where(function ($query) {
+                $query->whereIn('status', ['proses', 'selesai'])
+                    ->orWhere('jenis_batch', 'tambahan');
+            })
+            ->count();
+    }
+
     // ==========================================
     // HELPER METHODS - PERHITUNGAN BIAYA
     // ==========================================
@@ -205,7 +288,7 @@ class PermintaanProduksi extends Model
             })
             ->sum('total_biaya');
 
-        // Bahan Tidak Langsung / Kemasan: jenis_bahan = tidak_langsung
+        // Bahan penolong/BOP: jenis_bahan = tidak_langsung
         $totalBiayaBahanTidakLangsung = $this->pemakaianBahanBaku()
             ->whereHas('bahanBaku', function($q) {
                 $q->where('jenis_bahan', 'tidak_langsung');

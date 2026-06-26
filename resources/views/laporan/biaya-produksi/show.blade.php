@@ -284,7 +284,7 @@
                 }
                 foreach($jobOrder->pemakaianBahanBakuTidakLangsung as $bh) {
                     $allBop->push([
-                        'jenis' => 'Bahan Tidak Langsung / Kemasan',
+                        'jenis' => 'Bahan Penolong / BOP',
                         'keterangan' => 'Pemakaian ' . ($bh->bahanBaku->nama_bahan ?? '') . ' (' . number_format($bh->jumlah_pakai, 2) . ' ' . ($bh->bahanBaku->satuan ?? '') . ')',
                         'batch' => $jobOrder->jumlah_batch ?? 1,
                         'biaya' => $bh->total_biaya
@@ -315,13 +315,11 @@
                                         
                                         if (in_array($jenisOverhead, ['Listrik', 'Air', 'Gas'])) {
                                             $badgeColor = 'primary';
-                                        } elseif (in_array($jenisOverhead, ['Maintenance', 'Depresiasi Mesin', 'Depresiasi Bangunan'])) {
-                                            $badgeColor = 'warning';
                                         } elseif (in_array($jenisOverhead, ['Asuransi', 'Bahan Penolong'])) {
                                             $badgeColor = 'info';
                                         } elseif ($jenisOverhead == 'BTK Tidak Langsung (BTKTL)') {
                                             $badgeColor = 'dark';
-                                        } elseif ($jenisOverhead == 'Bahan Tidak Langsung / Kemasan') {
+                                        } elseif ($jenisOverhead == 'Bahan Penolong / BOP') {
                                             $badgeColor = 'success';
                                         }
                                     @endphp

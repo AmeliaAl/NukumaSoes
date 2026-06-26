@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\PermintaanProduksi;
 use App\Models\Produk;
+use App\Models\BatchProduksi;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -48,12 +49,13 @@ class PermintaanProduksiController extends Controller
             'tanggal_mulai' => 'required|date',
             'jumlah_produksi' => 'required|numeric|min:1',
             'jumlah_batch' => 'required|integer|min:1',
+            'kapasitas_batch_per_hari' => 'nullable|integer|min:1|max:50',
             'jenis_produksi' => 'required|in:maklun,brand_sendiri',
             'tujuan_produksi' => 'required|in:pesanan,stok_wip,stok_barang_jadi',
             'tahap_produksi' => 'required|in:persiapan,produksi,filling,selesai',
             'nama_customer_maklun' => 'nullable|required_if:jenis_produksi,maklun|string|max:100',
             'customer' => 'nullable|string|max:100',
-            'status' => 'required|in:pending,proses,selesai',
+            'status' => 'required|in:pending,proses',
             'keterangan' => 'nullable|string',
         ]);
 
@@ -79,6 +81,12 @@ class PermintaanProduksiController extends Controller
             'harga_pokok_per_unit' => 0,
             'keterangan' => $request->keterangan,
         ]);
+        $job->sinkronkanBatchRencana(
+            (int) $request->jumlah_batch,
+            (float) $request->jumlah_produksi,
+            $request->tanggal_mulai,
+            (int) $request->input('kapasitas_batch_per_hari', 1)
+        );
 
         Log::info("Job Order Created: {$job->nomor_job}", [
             'id' => $job->id_permintaan_produksi,
@@ -101,7 +109,8 @@ class PermintaanProduksiController extends Controller
             'pemakaianBahanBaku.bahanBaku',
             'pemakaianBahanBaku.stokBahanBaku',
             'biayaTenagaKerja.tenagaKerja',
-            'biayaOverheadPabrik'
+            'biayaOverheadPabrik',
+            'batchProduksi',
         ])->findOrFail($id);
 
         // CRITICAL FIX: Auto-recalculate saat page load
@@ -144,16 +153,18 @@ class PermintaanProduksiController extends Controller
             'tanggal_mulai' => 'required|date',
             'jumlah_produksi' => 'required|numeric|min:1',
             'jumlah_batch' => 'required|integer|min:1',
+            'kapasitas_batch_per_hari' => 'nullable|integer|min:1|max:50',
             'jenis_produksi' => 'required|in:maklun,brand_sendiri',
             'tujuan_produksi' => 'required|in:pesanan,stok_wip,stok_barang_jadi',
             'tahap_produksi' => 'required|in:persiapan,produksi,filling,selesai',
             'nama_customer_maklun' => 'nullable|required_if:jenis_produksi,maklun|string|max:100',
             'customer' => 'nullable|string|max:100',
-            'status' => 'required|in:pending,proses,selesai',
+            'status' => 'required|in:pending,proses',
             'keterangan' => 'nullable|string',
         ]);
 
-        $job->update([
+        try {
+            $job->update([
             'id_produk' => $request->id_produk,
             'tanggal_mulai' => $request->tanggal_mulai,
             'jumlah_produksi' => $request->jumlah_produksi,
@@ -165,24 +176,15 @@ class PermintaanProduksiController extends Controller
             'customer' => $request->customer,
             'status' => $request->status,
             'keterangan' => $request->keterangan,
-        ]);
-
-        if ($request->status === 'selesai' && $job->tanggal_selesai === null) {
-            $job->tanggal_selesai = now();
-            $job->save();
-            $job->hitungTotalBiayaProduksi();
-            $job->buatStokProduk();
-
-            // JURNAL OTOMATIS: Barang Selesai (WIP / Produk Jadi)
-            $accountingService = app(\App\Services\AccountingService::class);
-            $accountingService->recordBarangSelesai($job);
-
-            // Update saldo akun berjalan
-            $akuns = \App\Models\Akun::all();
-            foreach ($akuns as $akun) {
-                $akun->saldo = $akun->hitungSaldo();
-                $akun->save();
-            }
+            ]);
+            $job->sinkronkanBatchRencana(
+                (int) $request->jumlah_batch,
+                (float) $request->jumlah_produksi,
+                $request->tanggal_mulai,
+                (int) $request->input('kapasitas_batch_per_hari', 1)
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['jumlah_batch' => $e->getMessage()])->withInput();
         }
 
         return redirect()->route('permintaan-produksi.index')
@@ -213,10 +215,30 @@ class PermintaanProduksiController extends Controller
      */
     public function complete($id)
     {
-        $job = PermintaanProduksi::findOrFail($id);
+        $job = PermintaanProduksi::with('batchProduksi')->findOrFail($id);
 
         if ($job->status === 'selesai') {
             return back()->with('error', 'Job Order ini sudah selesai!');
+        }
+
+        if ($job->batchProduksi->isEmpty()) {
+            return back()->with('error', 'Job Order belum memiliki rincian batch.');
+        }
+
+        if ($job->batchProduksi->contains(fn ($batch) => !in_array($batch->status, ['selesai', 'dibatalkan'], true))) {
+            return back()->with('error', 'Batch yang belum dipakai harus diselesaikan atau dibatalkan terlebih dahulu.');
+        }
+
+        $totalHasil = (float) $job->batchProduksi
+            ->where('status', '!=', 'dibatalkan')
+            ->sum('jumlah_hasil');
+        if ($totalHasil <= 0) {
+            return back()->with('error', 'Hasil aktual seluruh batch harus lebih dari 0.');
+        }
+
+        $targetProduksi = (float) $job->jumlah_produksi;
+        if (abs($totalHasil - $targetProduksi) > 0.01) {
+            return back()->with('error', 'Total hasil batch harus sama dengan target produksi. Jika kurang, tambah batch tambahan. Jika lebih, koreksi hasil batch.');
         }
 
         DB::beginTransaction();
@@ -224,6 +246,7 @@ class PermintaanProduksiController extends Controller
             $job->status = 'selesai';
             $job->tahap_produksi = 'selesai';
             $job->tanggal_selesai = now();
+            $job->jumlah_produksi = $totalHasil;
             $job->save();
             
             // Hitung total biaya produksi
@@ -261,6 +284,85 @@ class PermintaanProduksiController extends Controller
             Log::error("Error completing job order: " . $e->getMessage());
             return back()->with('error', 'Terjadi kesalahan saat menyelesaikan job order: ' . $e->getMessage());
         }
+    }
+
+    public function storeBatch(Request $request, $id)
+    {
+        $job = PermintaanProduksi::with('batchProduksi')->findOrFail($id);
+        if ($job->status === 'selesai') {
+            return back()->with('error', 'Job Order yang sudah selesai tidak dapat ditambah batch.');
+        }
+
+        $sisaProduksi = $job->sisaProduksiBatch();
+        if ($sisaProduksi <= 0) {
+            return back()->with('error', 'Target produksi sudah terpenuhi. Batalkan batch rencana yang tidak dipakai, bukan menambah batch baru.');
+        }
+
+        $validated = $request->validate([
+            'tanggal_mulai' => 'required|date',
+            'jumlah_target' => 'nullable|numeric|min:0.01',
+            'keterangan' => 'nullable|string|max:255',
+        ]);
+
+        $urutan = ((int) $job->batchProduksi()->max('urutan')) + 1;
+        $target = min((float) ($validated['jumlah_target'] ?? $sisaProduksi), $sisaProduksi);
+
+        BatchProduksi::create([
+            'id_permintaan_produksi' => $job->id_permintaan_produksi,
+            'urutan' => $urutan,
+            'tanggal_mulai' => $validated['tanggal_mulai'],
+            'jumlah_target' => $target,
+            'jumlah_hasil' => 0,
+            'jenis_batch' => 'tambahan',
+            'status' => 'rencana',
+            'keterangan' => $validated['keterangan'] ?? 'Batch tambahan karena realisasi belum memenuhi target',
+        ]);
+
+        return back()->with('success', "Batch tambahan {$urutan} berhasil dibuat dengan target " . number_format($target, 2, ',', '.') . ".");
+    }
+
+    public function updateBatch(Request $request, $id, $batchId)
+    {
+        $job = PermintaanProduksi::findOrFail($id);
+        if ($job->status === 'selesai') {
+            return back()->with('error', 'Batch dari Job Order yang sudah selesai tidak dapat diubah.');
+        }
+
+        $batch = BatchProduksi::where('id_permintaan_produksi', $job->id_permintaan_produksi)
+            ->findOrFail($batchId);
+        $validated = $request->validate([
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai|required_if:status,selesai',
+            'jumlah_target' => 'required|numeric|min:0',
+            'jumlah_hasil' => 'required|numeric|min:0|required_if:status,selesai',
+            'status' => 'required|in:rencana,proses,selesai,dibatalkan',
+            'keterangan' => 'nullable|string|max:255',
+        ]);
+
+        if ($validated['status'] === 'selesai' && (float) $validated['jumlah_hasil'] <= 0) {
+            return back()->withErrors(['jumlah_hasil' => 'Batch selesai harus memiliki hasil aktual lebih dari 0.']);
+        }
+
+        if ($validated['status'] === 'dibatalkan') {
+            $validated['jumlah_hasil'] = 0;
+            $validated['tanggal_selesai'] = $validated['tanggal_selesai'] ?: now()->toDateString();
+        }
+
+        $totalHasilLain = (float) $job->batchProduksi()
+            ->where('id_batch_produksi', '!=', $batch->id_batch_produksi)
+            ->where('status', '!=', 'dibatalkan')
+            ->sum('jumlah_hasil');
+        $hasilBaru = $validated['status'] === 'dibatalkan' ? 0 : (float) $validated['jumlah_hasil'];
+        if (($totalHasilLain + $hasilBaru) > ((float) $job->jumlah_produksi + 0.01)) {
+            return back()->withErrors(['jumlah_hasil' => 'Total hasil batch tidak boleh melebihi target produksi Job Order.']);
+        }
+
+        $batch->update($validated);
+        if (in_array($batch->status, ['proses', 'selesai'], true) && $job->status === 'pending') {
+            $job->update(['status' => 'proses']);
+        }
+
+        return back()->with('success', "Batch {$batch->urutan} berhasil diperbarui.");
     }
 
     /**

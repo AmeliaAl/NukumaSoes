@@ -42,12 +42,16 @@
                         <th>Satuan Pakai (Terkecil)</th>
                         <td>{{ $bahan->satuan }}</td>
                     </tr>
-                    @if($bahan->satuan_beli)
                     <tr>
-                        <th>Satuan Beli (Kemasan)</th>
-                        <td>{{ $bahan->satuan_beli }} (Isi: {{ floatval($bahan->isi_per_kemasan) }} {{ $bahan->satuan }})</td>
+                        <th>Jenis Bahan</th>
+                        <td>
+                            @if($bahan->jenis_bahan == 'langsung')
+                                Bahan Baku Langsung
+                            @else
+                                Bahan Penolong / Tidak Langsung (BOP)
+                            @endif
+                        </td>
                     </tr>
-                    @endif
                     <tr>
                         <th>Status</th>
                         <td>

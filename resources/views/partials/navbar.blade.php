@@ -9,8 +9,11 @@
             <!-- Page Title -->
             <div class="d-none d-md-block">
                 <h5 class="mb-0 fw-bold text-dark">
-                    <i class="fas fa-home me-2 text-primary"></i>
-                    @yield('page-title', 'Dashboard')
+                    @hasSection('page-title')
+                        @yield('page-title')
+                    @else
+                        @yield('title', 'Dashboard')
+                    @endif
                 </h5>
             </div>
             

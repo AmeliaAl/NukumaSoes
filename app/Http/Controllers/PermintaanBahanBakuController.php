@@ -55,7 +55,7 @@ class PermintaanBahanBakuController extends Controller
             'tanggal_permintaan' => 'required|date',
             'keterangan' => 'nullable|string',
             'bahan' => 'required|array|min:1',
-            'bahan.*.id_bahan' => 'required|exists:bahan_baku,id_bahan',
+            'bahan.*.id_bahan' => 'required|distinct|exists:bahan_baku,id_bahan',
             'bahan.*.jumlah' => 'required|numeric|min:0.01',
         ], [
             'nomor_permintaan.unique' => 'Nomor permintaan sudah digunakan',
@@ -140,7 +140,7 @@ class PermintaanBahanBakuController extends Controller
             'tanggal_permintaan' => 'required|date',
             'keterangan' => 'nullable|string',
             'bahan' => 'required|array|min:1',
-            'bahan.*.id_bahan' => 'required|exists:bahan_baku,id_bahan',
+            'bahan.*.id_bahan' => 'required|distinct|exists:bahan_baku,id_bahan',
             'bahan.*.jumlah' => 'required|numeric|min:0.01',
         ]);
 

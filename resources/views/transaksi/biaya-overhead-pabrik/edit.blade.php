@@ -245,7 +245,9 @@
                 <label class="form-label">Keterangan</label>
                 <textarea class="form-control @error('keterangan') is-invalid @enderror" 
                           name="keterangan" 
-                          rows="2">{{ old('keterangan', $overhead->keterangan) }}</textarea>
+                          rows="2"
+                          placeholder="Contoh: Gas LPG untuk oven produksi soes kering">{{ old('keterangan', $overhead->keterangan) }}</textarea>
+                <small class="text-muted">Mesin/oven tidak dicatat sebagai BOP. Catat biaya operasionalnya, misalnya gas untuk oven tertentu.</small>
                 @error('keterangan')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -274,7 +276,7 @@
     };
 
     // Cek jenis overhead untuk Shared BOP
-    const sharedTypes = ['Listrik', 'Air', 'Gas', 'Depresiasi Mesin', 'Depresiasi Bangunan', 'Asuransi'];
+    const sharedTypes = ['Listrik', 'Air', 'Gas', 'Asuransi Pabrik'];
     
     document.getElementById('jenisOverhead').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];

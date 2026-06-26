@@ -13,7 +13,10 @@ use App\Http\Controllers\PemakaianBahanBakuController;
 use App\Http\Controllers\BiayaTenagaKerjaController;
 use App\Http\Controllers\BiayaOverheadPabrikController;
 use App\Http\Controllers\PengeluaranBopController;
-use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\BukuBesarController;
+use App\Http\Controllers\JurnalUmumController;
+use App\Http\Controllers\LaporanBiayaProduksiController;
+use App\Http\Controllers\NeracaLajurController;
 use App\Http\Controllers\StokProdukController;
 use App\Http\Controllers\AkunController;
 use App\Http\Controllers\PenerimaanOrderProduksiController;
@@ -129,6 +132,10 @@ Route::middleware(['auth:admin', 'check.admin'])->group(function () {
          ->name('permintaan-produksi.complete');
     Route::post('permintaan-produksi/{id}/recalculate', [PermintaanProduksiController::class, 'recalculate'])
          ->name('permintaan-produksi.recalculate');
+    Route::post('permintaan-produksi/{id}/batch', [PermintaanProduksiController::class, 'storeBatch'])
+         ->name('permintaan-produksi.batch.store');
+    Route::put('permintaan-produksi/{id}/batch/{batchId}', [PermintaanProduksiController::class, 'updateBatch'])
+         ->name('permintaan-produksi.batch.update');
     
     // Resource route
     Route::resource('permintaan-produksi', PermintaanProduksiController::class)->parameters([
@@ -195,33 +202,33 @@ Route::middleware(['auth:admin', 'check.admin'])->group(function () {
     // =============================================
     
     // Laporan Biaya Produksi
-    Route::get('laporan/biaya-produksi', [LaporanController::class, 'index'])
+    Route::get('laporan/biaya-produksi', [LaporanBiayaProduksiController::class, 'index'])
          ->name('laporan.biaya-produksi.index');
-    Route::get('laporan/biaya-produksi/{id}', [LaporanController::class, 'show'])
+    Route::get('laporan/biaya-produksi/{id}', [LaporanBiayaProduksiController::class, 'show'])
          ->name('laporan.biaya-produksi.show');
-    Route::get('laporan/biaya-produksi/{id}/pdf', [LaporanController::class, 'exportPdf'])
+    Route::get('laporan/biaya-produksi/{id}/pdf', [LaporanBiayaProduksiController::class, 'exportPdf'])
          ->name('laporan.biaya-produksi.pdf');
-    Route::get('laporan/biaya-produksi/{id}/kartu-biaya', [LaporanController::class, 'kartuBiaya'])
+    Route::get('laporan/biaya-produksi/{id}/kartu-biaya', [LaporanBiayaProduksiController::class, 'kartuBiaya'])
          ->name('laporan.biaya-produksi.kartu-biaya');
     // Laporan Ringkasan (Dinonaktifkan)
-    // Route::get('laporan/summary', [LaporanController::class, 'summary'])
+    // Route::get('laporan/summary', [LaporanBiayaProduksiController::class, 'summary'])
     //      ->name('laporan.summary');
 
-    // Laporan Neraca Saldo
-    Route::get('laporan/neraca-saldo', [LaporanController::class, 'neracaSaldo'])
+    // Neraca Lajur
+    Route::get('laporan/neraca-saldo', [NeracaLajurController::class, 'index'])
          ->name('laporan.neraca-saldo');
     
     // Analisis Varians
-    Route::get('laporan/analisis-varians/{id}', [LaporanController::class, 'analisisVarians'])
+    Route::get('laporan/analisis-varians/{id}', [LaporanBiayaProduksiController::class, 'analisisVarians'])
          ->name('laporan.analisis-varians');
 
     // Jurnal Umum
-    Route::get('laporan/jurnal-umum', [LaporanController::class, 'jurnalUmum'])
+    Route::get('laporan/jurnal-umum', [JurnalUmumController::class, 'index'])
          ->name('jurnal-umum.index');
-    Route::get('laporan/jurnal-umum/{id}', [LaporanController::class, 'jurnalUmumShow'])
+    Route::get('laporan/jurnal-umum/{id}', [JurnalUmumController::class, 'show'])
          ->name('jurnal-umum.show');
 
     // Buku Besar
-    Route::get('laporan/buku-besar', [LaporanController::class, 'bukuBesar'])
+    Route::get('laporan/buku-besar', [BukuBesarController::class, 'index'])
          ->name('buku-besar.index');
 });

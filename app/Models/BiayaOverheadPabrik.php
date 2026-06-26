@@ -26,6 +26,7 @@ class BiayaOverheadPabrik extends Model
         'total_nominal_global',
         'jumlah_batch_terlibat',
         'id_jurnal_aktual',
+        'is_alokasi_aktual',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class BiayaOverheadPabrik extends Model
         'nominal'             => 'decimal:2',
         'total_nominal_global'=> 'decimal:2',
         'jumlah_batch_terlibat' => 'integer',
+        'is_alokasi_aktual' => 'boolean',
     ];
 
     // Accessor aliases untuk kompatibilitas view lama
@@ -102,8 +104,10 @@ class BiayaOverheadPabrik extends Model
      */
     public static function totalBatchAktif(): int
     {
-        return (int) PermintaanProduksi::whereIn('status', ['pending', 'proses'])
-            ->sum('jumlah_batch');
+        $batchAktif = BatchProduksi::whereIn('status', ['proses', 'selesai'])->count();
+        if ($batchAktif > 0) return $batchAktif;
+
+        return (int) PermintaanProduksi::whereIn('status', ['pending', 'proses'])->sum('jumlah_batch');
     }
 
     // ─── Relasi ──────────────────────────────────────────────────────────────────
@@ -177,10 +181,7 @@ class BiayaOverheadPabrik extends Model
             'Listrik'             => 'Listrik',
             'Air'                 => 'Air',
             'Gas'                 => 'Gas',
-            'Maintenance'         => 'Maintenance',
-            'Depresiasi Mesin'    => 'Depresiasi Mesin',
-            'Depresiasi Bangunan' => 'Depresiasi Bangunan',
-            'Asuransi'            => 'Asuransi',
+            'Asuransi Pabrik'     => 'Asuransi Pabrik',
             'Bahan Penolong'      => 'Bahan Penolong',
             'Lainnya'             => 'Lainnya',
         ];
@@ -192,7 +193,7 @@ class BiayaOverheadPabrik extends Model
      */
     public static function getJenisShared(): array
     {
-        return ['Listrik', 'Air', 'Gas', 'Depresiasi Mesin', 'Depresiasi Bangunan', 'Asuransi'];
+        return ['Listrik', 'Air', 'Gas', 'Asuransi Pabrik'];
     }
 
     public static function getDefaultSatuanPeriode($jenis)
@@ -201,10 +202,7 @@ class BiayaOverheadPabrik extends Model
             'Listrik'             => 'per_bulan',
             'Air'                 => 'per_bulan',
             'Gas'                 => 'per_hari',
-            'Maintenance'         => 'per_batch',
-            'Depresiasi Mesin'    => 'per_bulan',
-            'Depresiasi Bangunan' => 'per_bulan',
-            'Asuransi'            => 'per_bulan',
+            'Asuransi Pabrik'     => 'per_bulan',
             'Bahan Penolong'      => 'per_batch',
             default               => 'per_batch',
         };

@@ -176,21 +176,21 @@
         </a>
 
         <!-- Jurnal Umum -->
-        <a href="{{ route('laporan.jurnal-umum') }}"
+        <a href="{{ route('jurnal-umum.index') }}"
            class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
-           {{ request()->routeIs('laporan.jurnal-umum') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+           {{ request()->routeIs('jurnal-umum*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
             <span class="relative z-10 flex items-center w-full">
-                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('laporan.jurnal-umum') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('jurnal-umum*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Jurnal Umum
             </span>
         </a>
 
         <!-- Buku Besar -->
-        <a href="{{ route('laporan.buku-besar') }}"
+        <a href="{{ route('buku-besar.index') }}"
            class="group flex items-center px-4 py-4 mx-3 my-2 rounded-xl text-lg font-medium transition-all duration-300 relative overflow-hidden
-           {{ request()->routeIs('laporan.buku-besar') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
+           {{ request()->routeIs('buku-besar*') ? 'bg-white/10 text-white shadow-lg ring-1 ring-white/20' : 'text-red-100/80 hover:bg-white/5 hover:text-white' }}">
             <span class="relative z-10 flex items-center w-full">
-                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('laporan.buku-besar') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                <svg class="w-5 h-5 mr-3 {{ request()->routeIs('buku-besar*') ? 'text-white' : 'text-red-300 group-hover:text-white' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 Buku Besar
             </span>
         </a>

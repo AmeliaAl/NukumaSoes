@@ -371,7 +371,7 @@
             }
             foreach($jobOrder->pemakaianBahanBakuTidakLangsung as $bh) {
                 $allBop->push([
-                    'jenis' => 'Bahan Tidak Langsung / Kemasan',
+                    'jenis' => 'Bahan Penolong / BOP',
                     'keterangan' => 'Pemakaian ' . ($bh->bahanBaku->nama_bahan ?? '') . ' (' . number_format($bh->jumlah_pakai, 2) . ' ' . ($bh->bahanBaku->satuan ?? '') . ')',
                     'batch' => $jobOrder->jumlah_batch ?? 1,
                     'biaya' => $bh->total_biaya
