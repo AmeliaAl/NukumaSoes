@@ -142,9 +142,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 <script>
-    document.addEventListener('turbo:load', function () {
-        console.log('Dashboard Blade Script: Turbo load detected');
-        
+    function initializeCharts() {
         // Data from PHP
         const statusData = {!! json_encode($statusChartData) !!};
         const transactionData = {!! json_encode($transactionChartData ?? []) !!};
@@ -152,13 +150,18 @@
         // --- 1. Status Produk Chart ---
         const statusCtx = document.getElementById('statusChart');
         if (statusCtx) {
+            const existingChart = Chart.helpers?.getCanvas?.(statusCtx)?.__chartInstance;
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
             new Chart(statusCtx, {
                 type: 'pie',
                 data: {
                     labels: statusData.labels,
                     datasets: [{
                         data: statusData.data,
-                        backgroundColor: ['#3498db', '#f39c12', '#e74c3c'],
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
                         borderColor: '#ffffff',
                         borderWidth: 2
                     }]
@@ -187,10 +190,15 @@
         // --- 2. Transaction Chart ---
         const transCtx = document.getElementById('transactionChart');
         if (transCtx) {
+            const existingChart = Chart.helpers?.getCanvas?.(transCtx)?.__chartInstance;
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
             new Chart(transCtx, {
                 type: 'line',
                 data: {
-                    labels: transactionData.labels,
+                    labels: transactionData.labels || [],
                     datasets: [
                         {
                             label: 'Produk Masuk',
@@ -200,7 +208,8 @@
                             borderWidth: 3,
                             tension: 0.4,
                             fill: true,
-                            pointRadius: 4
+                            pointRadius: 4,
+                            pointBackgroundColor: '#10B981'
                         },
                         {
                             label: 'Produk Keluar',
@@ -210,7 +219,8 @@
                             borderWidth: 3,
                             tension: 0.4,
                             fill: true,
-                            pointRadius: 4
+                            pointRadius: 4,
+                            pointBackgroundColor: '#EF4444'
                         }
                     ]
                 },
@@ -226,6 +236,12 @@
                 }
             });
         }
-    });
+    }
+
+    // Initialize on DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', initializeCharts);
+    
+    // Also initialize on turbo:load for compatibility
+    document.addEventListener('turbo:load', initializeCharts);
 </script>
 </x-app-layout>

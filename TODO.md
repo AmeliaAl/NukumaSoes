@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Fix Laravel Sessions Table Error (42S02) - COMPLETED
 
 ## Steps:
@@ -13,7 +12,9 @@
 - [x] Caches cleared.
 - [x] `php artisan db:seed` → admin@gmail.com / password ready.
 - Test: Login → dashboard works.
-=======
+
+---
+
 # TODO - Revisi Stok ke FEFO & Batch (Filament v4)
 
 ## Rencana Implementasi (sesuai requirement user)
@@ -63,5 +64,3 @@
 ### 9) Testing
 - Jalankan migration & uji alur create/edit/delete + retur ⏳
 
-
->>>>>>> origin/sarah-backup-final

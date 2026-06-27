@@ -46,6 +46,20 @@ class InventoryEntryController extends Controller
             'masa_simpan' => 'required|integer|min:0',
         ]);
 
+        // Cek duplikasi: kombinasi kode_produk + no_batch tidak boleh ada di inventories
+        if ($request->filled('kode_produk') && $request->filled('no_batch')) {
+            $duplikat = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
+                ->where('no_batch', $request->no_batch)
+                ->exists();
+
+            if ($duplikat) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['no_batch' => 'No batch ini sudah digunakan untuk ID produk yang sama.']);
+            }
+        }
+
+
         $data = $request->all();
         // Get jenis_produk from the selected product
         $selectedProduct = Product::where('kode_produk', $request->kode_produk)->first();
@@ -125,6 +139,21 @@ class InventoryEntryController extends Controller
             'tgl_masuk' => 'required|date',
             'masa_simpan' => 'required|integer|min:0',
         ]);
+
+        // Cek duplikasi: kombinasi kode_produk + no_batch tidak boleh ada di inventories selain dirinya sendiri
+        if ($request->filled('kode_produk') && $request->filled('no_batch')) {
+            $duplikat = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
+                ->where('no_batch', $request->no_batch)
+                ->where('id', '!=', $inventory->id)
+                ->exists();
+
+            if ($duplikat) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['no_batch' => 'No batch ini sudah digunakan untuk ID produk yang sama.']);
+            }
+        }
+
 
         $data = $request->all();
         // Get jenis_produk from the selected product

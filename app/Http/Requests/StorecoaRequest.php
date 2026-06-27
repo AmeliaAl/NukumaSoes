@@ -11,7 +11,7 @@ class StorecoaRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,9 @@ class StorecoaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'kode_akun' => ['required', 'string', 'max:50'],
+            'header_akun' => ['nullable', 'string', 'max:100'],
+            'nama_akun' => ['required', 'string', 'max:255'],
         ];
     }
 }

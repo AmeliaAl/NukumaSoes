@@ -11,6 +11,13 @@
                 </div>
             @endif
 
+            @if($errors->has('kode_produk'))
+                <div class="bg-red-100 border-2 border-red-500 text-red-800 font-bold px-6 py-4 rounded-2xl shadow-lg flex items-center gap-3">
+                    <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>{{ $errors->first('kode_produk') }}</span>
+                </div>
+            @endif
+
             <!-- Glassmorphism Card for Form -->
             <div class="bg-white/95 backdrop-blur-md border-2 border-[#d4af37]/60 rounded-[40px] shadow-[0_30px_80px_rgba(0,0,0,0.4)] p-10">
                 <div class="mb-10 text-center border-b border-[#d4af37]/20 pb-8">
@@ -34,6 +41,7 @@
                             <label for="kode_produk" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">PRODUK ID <span class="text-red-500 font-black">*</span></label>
                             <div class="relative group">
                                 <select id="kode_produk" 
+                                        name="inventory_id_select"
                                         class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none @error('kode_produk') border-red-400 @enderror" 
                                         required autofocus>
                                     <option value="">Pilih Produk ID</option>
@@ -323,6 +331,7 @@
                 const hargaInput = document.getElementById('harga_display');
                 const jumlahMasukInput = document.getElementById('jumlah_masuk');
                 const totalHargaInput = document.getElementById('total_harga_display');
+                const inventoryIdHidden = document.getElementById('inventory_id_hidden');
                 const noBatchInput = document.getElementById('no_batch');
                 const stokSaatIniInput = document.getElementById('stok_saat_ini');
 
@@ -370,6 +379,7 @@
                     const hpp = selectedOption.getAttribute('data-hpp');
 
                     if (nama) {
+                        inventoryIdHidden.value = selectedOption.value; // simpan inventory id
                         namaProdukHidden.value = nama;
                         kodeProdukHidden.value = kode || '';
                         hargaHidden.value = harga;
@@ -394,6 +404,7 @@
                         updateStokDisplay();
                         calculateTotalHarga();
                     } else {
+                        inventoryIdHidden.value = '';
                         namaProdukHidden.value = '';
                         kodeProdukHidden.value = '';
                         hargaHidden.value = '';
@@ -426,6 +437,8 @@
                 hargaPokokProduksiInput.addEventListener('input', function() {
                     // readonly, no action needed
                 });
+
+
             });
         </script>
     </div>

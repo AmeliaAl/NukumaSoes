@@ -105,8 +105,8 @@ class PersediaanController extends Controller
             'id_transaksi' => 'required|string|max:255',
             'tanggal' => 'required|date',
             'no_batch' => 'required|string|max:255',
-            'kode_produk' => 'required|string|max:255',
-            'nama_produk' => 'required|string|max:255',
+            'kode_produk' => 'nullable|string|max:255',
+            'nama_produk' => 'nullable|string|max:255',
             'jumlah_masuk' => 'required|integer|min:1',
             'stok_awal' => 'nullable|integer|min:0',
             'harga' => 'nullable|numeric|min:0',
@@ -119,6 +119,32 @@ class PersediaanController extends Controller
             'harga_dasar_jual' => 'nullable|numeric|min:0',
             'margin' => 'nullable|numeric|min:0',
         ]);
+
+        // Ambil inventory yang dipilih dari dropdown (nilai dikirim langsung oleh browser)
+        $selectedInventoryId = $request->inventory_id_select ?: $request->inventory_id;
+
+        if (empty($selectedInventoryId)) {
+            return back()->withInput()->withErrors(['kode_produk' => 'Pilih produk terlebih dahulu.']);
+        }
+
+        $selectedInventory = \App\Models\Inventory::find($selectedInventoryId);
+
+        if (!$selectedInventory) {
+            return back()->withInput()->withErrors(['kode_produk' => 'Produk tidak ditemukan.']);
+        }
+
+        // Pastikan kode_produk dan nama_produk terisi dari inventory yang dipilih
+        $request->merge([
+            'kode_produk'  => $selectedInventory->kode_produk,
+            'nama_produk'  => $request->nama_produk ?: $selectedInventory->nama_produk,
+            'inventory_id' => $selectedInventory->id,
+        ]);
+
+        // Validasi duplikasi dihapus dari sini sesuai permintaan user,
+        // karena di menu ini (Tambah Entry Produk Masuk) user justru 
+        // sedang menambah stok ke batch yang sudah ada (auto-fill).
+
+
 
         // Calculate Persediaan Produk Jadi (Total Harga) and HPP
         // Strip Indonesian number formatting (e.g. "73.202,70" -> 73202.70)
@@ -189,7 +215,7 @@ class PersediaanController extends Controller
             $entryData['harga'] = $harga;
             $entryData['total_harga'] = $total_harga;
             $entryData['stok_awal'] = $stok_awal ?? ($inventory->stok_awal ?? 0);
-            PersediaanEntry::create($entryData);
+            $persediaanEntry = PersediaanEntry::create($entryData);
 
             // Create KartuStokEntry
             KartuStokEntry::create([
@@ -209,25 +235,16 @@ class PersediaanController extends Controller
                 Product::syncQuantity($request->kode_produk);
             }
 
-            // Create Jurnal Umum (Double Entry)
-            // 140: Persediaan Barang Jadi
-            // 143: Persediaan Barang dalam proses
-            \App\Models\JurnalUmum::create([
-                'tanggal' => $request->tanggal,
-                'keterangan' => 'Persediaan Produk Jadi',
-                'ref' => '140',
-                'debit' => $total_harga,
-                'kredit' => 0,
-                'id_transaksi' => $request->id_transaksi,
-            ]);
-            \App\Models\JurnalUmum::create([
-                'tanggal' => $request->tanggal,
-                'keterangan' => 'Produk Dalam Proses',
-                'ref' => '143',
-                'debit' => 0,
-                'kredit' => $total_harga,
-                'id_transaksi' => $request->id_transaksi,
-            ]);
+            // Create Jurnal double-entry:
+            //   D 140 Persediaan Produk Jadi
+            //   K 143 Produk Dalam Proses
+            $this->createJurnalPersediaan(
+                $request->tanggal,
+                'Produk Masuk: ' . $request->nama_produk,
+                $total_harga,
+                $persediaanEntry->id,
+                $request->id_transaksi
+            );
         });
 
         return redirect()->route('persediaan.index')->with('success', 'Entry produk masuk berhasil ditambahkan.');
@@ -318,25 +335,16 @@ class PersediaanController extends Controller
             // Sync Product quantity
             Product::syncQuantity($entry->kode_produk);
 
-            // Update Jurnal Umum
+            // Hapus jurnal lama lalu buat ulang
             \App\Models\JurnalUmum::where('id_transaksi', $entry->id_transaksi)->delete();
-            
-            \App\Models\JurnalUmum::create([
-                'tanggal' => $request->tanggal,
-                'keterangan' => 'Persediaan Produk Jadi',
-                'ref' => '140',
-                'debit' => $total_harga,
-                'kredit' => 0,
-                'id_transaksi' => $request->id_transaksi,
-            ]);
-            \App\Models\JurnalUmum::create([
-                'tanggal' => $request->tanggal,
-                'keterangan' => 'Produk Dalam Proses',
-                'ref' => '143',
-                'debit' => 0,
-                'kredit' => $total_harga,
-                'id_transaksi' => $request->id_transaksi,
-            ]);
+
+            $this->createJurnalPersediaan(
+                $request->tanggal,
+                'Produk Masuk: ' . $entry->nama_produk,
+                $total_harga,
+                $entry->id,
+                $request->id_transaksi
+            );
         });
 
         return redirect()->route('persediaan.index')->with('success', 'Entry updated successfully.');
@@ -358,15 +366,58 @@ class PersediaanController extends Controller
                 }
             }
             
-            $kode_produk = $entry->kode_produk;
+            $kode_produk    = $entry->kode_produk;
+            $id_transaksi   = $entry->id_transaksi;
+            $entry_id       = $entry->id;
             $entry->delete();
             
             Product::syncQuantity($kode_produk);
 
-            // Delete related Jurnal Umum
-            \App\Models\JurnalUmum::where('id_transaksi', $entry->id_transaksi)->delete();
+            // Delete related JurnalUmum + linked Jurnal double-entry
+            \App\Models\JurnalUmum::where('id_transaksi', $id_transaksi)->delete();
+            \App\Models\Jurnal::where('no_referensi', $id_transaksi)->each(function ($j) {
+                $j->details()->delete();
+                $j->delete();
+            });
         });
 
         return redirect()->route('persediaan.index')->with('success', 'Entry deleted successfully.');
+    }
+
+    /**
+     * Create double-entry rows in jurnal_umum for inventory intake:
+     *   D 140 Persediaan Produk Jadi  = nilai persediaan produk jadi
+     *   K 143 Produk Dalam Proses     = nilai persediaan produk jadi
+     */
+    protected function createJurnalPersediaan(
+        string $tanggal,
+        string $nama_produk,
+        float  $nominal,
+        int    $ref_id,
+        string $id_transaksi
+    ): void {
+        // Baris 1 – DEBIT: Persediaan Produk Jadi
+        \App\Models\JurnalUmum::create([
+            'tanggal'      => $tanggal,
+            'keterangan'   => 'Persediaan Produk Jadi',
+            'ref'          => '140',
+            'debit'        => $nominal,
+            'kredit'       => 0,
+            'ref_type'     => 'Persediaan',
+            'ref_id'       => $ref_id,
+            'id_transaksi' => $id_transaksi,
+        ]);
+
+        // Baris 2 – KREDIT: Produk Dalam Proses
+        \App\Models\JurnalUmum::create([
+            'tanggal'      => $tanggal,
+            'keterangan'   => 'Produk Dalam Proses',
+            'ref'          => '143',
+            'debit'        => 0,
+            'kredit'       => $nominal,
+            'ref_type'     => 'Persediaan',
+            'ref_id'       => $ref_id,
+            'id_transaksi' => $id_transaksi,
+        ]);
     }
 }

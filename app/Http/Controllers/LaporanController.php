@@ -25,6 +25,9 @@ class LaporanController extends Controller
 
         $entries = \App\Models\JurnalUmum::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
+            ->where(function ($q) {
+                $q->where('debit', '>', 0)->orWhere('kredit', '>', 0);
+            })
             ->orderBy('tanggal', 'asc')
             ->orderBy('created_at', 'asc')
             ->get();
@@ -48,6 +51,9 @@ class LaporanController extends Controller
 
         $entries = \App\Models\JurnalUmum::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
+            ->where(function ($q) {
+                $q->where('debit', '>', 0)->orWhere('kredit', '>', 0);
+            })
             ->orderBy('tanggal', 'asc')
             ->orderBy('created_at', 'asc')
             ->get();

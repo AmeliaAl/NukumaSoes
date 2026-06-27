@@ -16,7 +16,7 @@ class LaporanUmurPiutang extends Page
 
     public function getTitle(): string
     {
-        return 'Laporan Umur Piutang';
+        return 'Laporan ';
     }
 
     public function getData(): array

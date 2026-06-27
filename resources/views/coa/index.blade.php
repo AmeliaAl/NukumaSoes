@@ -49,15 +49,15 @@
 </tr>
                         </thead>
                         <tbody class="divide-y divide-[#d4af37]/20">
-                            @forelse ($coas as $index => $coa)
+                            @forelse ($coa as $index => $coaItem)
                                 <tr class="{{ $index % 2 == 0 ? 'bg-white' : 'bg-[#fff9eb]' }} hover:bg-[#fff0d1] transition-colors">
                                     <td class="px-6 py-4 font-bold text-gray-800">{{ $index + 1 }}</td>
-                                    <td class="px-6 py-4 text-gray-700 font-medium">{{ $coa->kode_akun }}</td>
-                                    <td class="px-6 py-4 text-gray-800 font-semibold">{{ $coa->nama_akun }}</td>
+                                    <td class="px-6 py-4 text-gray-700 font-medium">{{ $coaItem->kode_akun }}</td>
+                                    <td class="px-6 py-4 text-gray-800 font-semibold">{{ $coaItem->nama_akun }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-10 text-center text-gray-500 italic bg-white">Data COA tidak ditemukan.</td>
+                                    <td colspan="3" class="px-6 py-10 text-center text-gray-500 italic bg-white">Data COA tidak ditemukan.</td>
                                 </tr>
                             @endforelse
                         </tbody>

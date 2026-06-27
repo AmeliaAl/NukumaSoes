@@ -76,6 +76,7 @@ class KartuStokController extends Controller
                 ->where('no_batch', $entry->no_batch)
                 ->first();
             return [
+                'id' => $entry->id,
                 'tanggal' => $entry->tanggal,
                 'keterangan' => 'Produk Masuk',
                 'id_transaksi' => $entry->id_transaksi,
@@ -111,6 +112,7 @@ class KartuStokController extends Controller
                 ->orderBy('tgl_expired', 'asc')
                 ->first();
             return [
+                'id' => $entry->id,
                 'tanggal' => $entry->tanggal,
                 'keterangan' => 'Produk Keluar',
                 'id_transaksi' => $entry->id_transaksi,
@@ -130,7 +132,7 @@ class KartuStokController extends Controller
         });
 
         // Merge and sort entries by date and id
-        $entries = $masukEntries->merge($keluarEntries)->sortBy([['tanggal', 'desc'], ['id', 'desc']])->values();
+        $entries = collect($masukEntries)->concat($keluarEntries)->sortBy([['tanggal', 'desc'], ['id', 'desc']])->values();
 
         // Calculate running balance for all filtered entries
         $balance = 0;

@@ -12,6 +12,8 @@ class JurnalUmum extends Model
         'ref',
         'debit',
         'kredit',
+        'ref_type',
+        'ref_id',
         'id_transaksi',
     ];
     protected $table = 'jurnal_umum';

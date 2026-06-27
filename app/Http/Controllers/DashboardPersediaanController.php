@@ -9,7 +9,7 @@ use App\Models\PersediaanEntry;
 use App\Models\ProdukKeluarEntry;
 use Carbon\Carbon;
 
-class DashboardController extends Controller
+class DashboardPersediaanController extends Controller
 {
     public function index(Request $request)
     {

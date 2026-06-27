@@ -5,21 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\coa;
 use App\Http\Requests\StorecoaRequest;
 use App\Http\Requests\UpdatecoaRequest;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\CoaImport;
 
 class CoaController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(){
-        $coa = Coa::all();
-        return view('coa/view',
-                        [ 
-                            'coa'=>$coa,
-                            'title'=>'contoh m2',
-                            'nama'=>'Sarah Al Arroya'
-                        ]
-                    ); 
+    public function index(Request $request)
+    {
+        $namaAkunSearch = $request->input('nama_akun_search');
+
+        $coa = Coa::when($namaAkunSearch, function ($query, $value) {
+            return $query->where('nama_akun', 'like', "%{$value}%");
+        })->orderBy('kode_akun')->get();
+
+        return view('coa.index', compact('coa', 'namaAkunSearch'));
     }
 
     /**
@@ -27,7 +30,7 @@ class CoaController extends Controller
      */
     public function create()
     {
-        //
+        return view('coa.create');
     }
 
     /**
@@ -35,7 +38,9 @@ class CoaController extends Controller
      */
     public function store(StorecoaRequest $request)
     {
-        //
+        Coa::create($request->validated());
+
+        return redirect()->route('coa.index')->with('success', 'COA berhasil ditambahkan.');
     }
 
     /**
@@ -67,11 +72,17 @@ class CoaController extends Controller
      */
     public function destroy(coa $coa)
     {
-
-        $coa = Coa::findOrFail($id);
         $coa->delete();
 
         return redirect()->route('coa.index')->with('success', 'COA berhasil dihapus.');
+    }
+
+    /**
+     * Show the form for importing COA from Excel.
+     */
+    public function importForm()
+    {
+        return view('coa.import');
     }
 
     /**
