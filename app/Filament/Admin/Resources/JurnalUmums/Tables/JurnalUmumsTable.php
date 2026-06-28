@@ -21,7 +21,7 @@ class JurnalUmumsTable
                 \Filament\Tables\Columns\TextColumn::make('akun.nama_akun')
                     ->label('Nama Akun/perkiraan')
                     ->formatStateUsing(function ($record) {
-                        return $record->kredit > 0 
+                        return $record->credit > 0 
                             ? '&nbsp;&nbsp;&nbsp;&nbsp;' . $record->akun->nama_akun 
                             : $record->akun->nama_akun;
                     })
@@ -39,7 +39,7 @@ class JurnalUmumsTable
                     ->money('IDR', locale: 'id_ID')
                     ->summarize(\Filament\Tables\Columns\Summarizers\Sum::make()->money('IDR', locale: 'id_ID')),
 
-                \Filament\Tables\Columns\TextColumn::make('kredit')
+                \Filament\Tables\Columns\TextColumn::make('credit')
                     ->label('Kredit')
                     ->money('IDR', locale: 'id_ID')
                     ->summarize(\Filament\Tables\Columns\Summarizers\Sum::make()->money('IDR', locale: 'id_ID')),
@@ -80,6 +80,6 @@ class JurnalUmumsTable
                         return $indicators;
                     }),
             ])
-            ->defaultSort(fn (Builder $query) => $query->orderBy('jurnal_umum_id', 'desc')->orderBy('id', 'asc'));
+            ->defaultSort(fn (Builder $query) => $query->orderBy('id_jurnal', 'desc')->orderBy('id', 'asc'));
     }
 }

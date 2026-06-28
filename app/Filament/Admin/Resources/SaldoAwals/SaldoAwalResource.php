@@ -35,7 +35,7 @@ class SaldoAwalResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return \App\Filament\Admin\Resources\SaldoAwals\Tables\SaldoAwalTable::configure($table);
+        return \App\Filament\Admin\Resources\SaldoAwals\Tables\SaldoAwalsTable::configure($table);
     }
 
     public static function getPages(): array

@@ -10,6 +10,7 @@ use App\Models\TagihanKonsinyasi;
 use App\Models\PembayaranTagihanKonsinyasi;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class BukuPembantuPiutang extends Page
 {
@@ -30,6 +31,17 @@ class BukuPembantuPiutang extends Page
     public ?string $inputDari   = null;
     public ?string $inputSampai = null;
     public string  $filterAkun  = 'semua'; // semua | pelanggan | mitra
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
+    }
 
     public function applyFilter(): void
     {

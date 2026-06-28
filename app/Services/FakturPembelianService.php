@@ -46,6 +46,8 @@ class FakturPembelianService
             $totalUtang = 0;
             $mappingKategori = self::getMappingKategoriAset();
 
+            $alokasiBiayaLain = $faktur->getAlokasiBiayaLain();
+
             // 🔹 Debit per item - BACA KATEGORI ASET
             foreach ($faktur->items as $item) {
                 $kategori = $item->kategoriAset;
@@ -78,11 +80,8 @@ class FakturPembelianService
 
                 $nilai = (float) $item->total_harga;
                 
-                // Tambahkan biaya lain ke item pertama (hanya sekali)
-                if ($faktur->biaya_lain > 0) {
-                    $nilai += $faktur->biaya_lain;
-                    $faktur->biaya_lain = 0; // biar ga keitung 2x
-                }
+                // Tambahkan biaya lain yang dialokasikan (prorata) ke item ini
+                $nilai += $alokasiBiayaLain[$item->id] ?? 0;
 
                 $jurnal->details()->create([
                     'no_akun'      => $akunDebit->id,

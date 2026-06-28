@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class PemeliharaanResource extends Resource
 {
@@ -27,6 +28,17 @@ class PemeliharaanResource extends Resource
     protected static ?string $navigationLabel = 'Pemeliharaan';
     protected static ?string $pluralModelLabel = 'Pemeliharaan Aset';
      protected static ?int $navigationSort = 60;
+
+      public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {

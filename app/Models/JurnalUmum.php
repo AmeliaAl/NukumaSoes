@@ -14,12 +14,12 @@ class JurnalUmum extends Model
         'kredit',
         'id_transaksi',
     ];
-    protected $table = 'jurnal_umum';
+    protected $table = 'jurnal_umums';
     protected $guarded = [];
 
     protected static function booted()
     {
-        static::creating(function ($jurnal) {
+        /*static::creating(function ($jurnal) {
             $date = now()->format('Ym');
 
             $last = self::where('no_jurnal', 'like', "JU-{$date}-%")
@@ -29,12 +29,12 @@ class JurnalUmum extends Model
             $urut = $last ? ((int) substr($last, -3)) + 1 : 1;
 
             $jurnal->no_jurnal = "JU-{$date}-" . str_pad($urut, 3, '0', STR_PAD_LEFT);
-        });
+        });*/
     }
     
     public function details()
     {
-        return $this->hasMany(JurnalDetail::class, 'jurnal_umum_id');
+        return $this->hasMany(JurnalDetail::class, 'id_jurnal');
     }
 
     public function getTotalAttribute()

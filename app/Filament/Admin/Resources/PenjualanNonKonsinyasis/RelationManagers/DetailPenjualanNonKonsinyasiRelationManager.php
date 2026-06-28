@@ -96,15 +96,11 @@ class DetailPenjualanNonKonsinyasiRelationManager extends RelationManager
                                     return;
                                 }
 
-                                $harga = $barang->hargaBarang()
-                                    ->where('jenis_mitra', 'umum')
-                                    ->value('harga');
+                                $jenisHarga = $this->ownerRecord->jenis_penjualan === 'MAKLOON'
+                                    ? 'makloon'
+                                    : 'umum';
 
-                                if (! $harga) {
-                                    $harga = $barang->hargaBarang()
-                                        ->where('jenis_mitra', 'reseller')
-                                        ->value('harga') ?? 0;
-                                }
+                                $harga = $barang->getHargaByJenisMitra($jenisHarga);
 
                                 $set('harga', (int) $harga);
                                 $set('qty', 1);

@@ -18,6 +18,7 @@ use UnitEnum;
 use Filament\Actions\Action;
 use Illuminate\Support\Facades\DB;
 use App\Models\Penyusutan;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -31,6 +32,35 @@ class AsetResource extends Resource
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Aset Tetap';
     protected static ?string $pluralModelLabel = 'Aset Tetap';
+    protected static ?int $navigationSort = 5;
+     public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = Auth::user();
+        return $user && ($user->isAsset() || $user->isAdmin());
+    }
+
+    public static function canEdit($record): bool
+    {
+        $user = Auth::user();
+        return $user && ($user->isAsset() || $user->isAdmin());
+    }
+
+    public static function canDelete($record): bool
+    {
+        $user = Auth::user();
+        return $user && ($user->isAsset() || $user->isAdmin());
+    }
 
     public static function form(Schema $schema): Schema
     {

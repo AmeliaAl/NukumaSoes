@@ -8,7 +8,10 @@ use Carbon\Carbon;
 
 class DetailLewatJatuhTempo extends Page
 {
-    protected static bool $shouldRegisterNavigation = false;
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
     protected string $view = 'filament.admin.pages.detail-lewat-jatuh-tempo';
 
     public function getTitle(): string

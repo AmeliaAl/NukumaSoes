@@ -31,7 +31,7 @@ class NeracaPage extends Page
         }
 
         // Admin dan Pemilik bisa akses Neraca
-        return $user->isAdmin() || $user->isPemilik();
+        return $user->isAdmin() || $user->isPemilik() || $user->isAsset();
     }
 
     public function getView(): string

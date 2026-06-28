@@ -8,12 +8,17 @@ use Carbon\Carbon;
 
 class SaldoAwal extends Model
 {
-    protected $table = 'saldo_awals';
+    protected $table = 'saldoawal';
     protected $guarded = [];
 
-    public function coa()
+    /*public function coa()
     {
         return $this->belongsTo(coa::class, 'coa_id');
+    }*/
+
+    public function akun()
+    {
+        return $this->belongsTo(akun::class, 'akun_id');
     }
 
     /**
@@ -25,7 +30,7 @@ class SaldoAwal extends Model
      */
     public static function getSaldoEfektif(int $coaId, int $bulan, int $tahun): float
     {
-        $entri = self::where('coa_id', $coaId)
+        $entri = self::where('akun_id', $coaId)
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->first();
@@ -38,7 +43,7 @@ class SaldoAwal extends Model
             ->subDay()
             ->toDateString();
 
-        $saldoAwalTercatat = self::where('coa_id', $coaId)
+        $saldoAwalTercatat = self::where('akun_id', $coaId)
             ->orderBy('tahun')
             ->orderBy('bulan')
             ->first();
@@ -55,23 +60,12 @@ class SaldoAwal extends Model
 
         $mutasi = DB::table('jurnal_detail')
             ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id')
-            ->where('jurnal_detail.akun_id', $coaId)
+            ->where('jurnal_detail.no_akun', $coaId)
             ->whereDate('jurnal_umum.tanggal', '>=', $tglMulai)
             ->whereDate('jurnal_umum.tanggal', '<=', $tglAkhirBulanLalu)
             ->selectRaw('SUM(debit) - SUM(kredit) as net')
             ->value('net');
 
         return (float) $saldoAwalTercatat->nominal + (float) $mutasi;
-    }
-
-    protected static function booted(): void
-    {
-        static::saved(function (SaldoAwal $saldoAwal) {
-            \App\Services\JurnalPerpetualService::saldoAwal($saldoAwal);
-        });
-
-        static::deleted(function (SaldoAwal $saldoAwal) {
-            \App\Services\JurnalPerpetualService::hapusSaldoAwal($saldoAwal);
-        });
     }
 }

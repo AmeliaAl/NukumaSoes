@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class LokasiAsetResource extends Resource
 {
@@ -26,6 +27,35 @@ class LokasiAsetResource extends Resource
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Lokasi Aset';
      protected static ?string $pluralModelLabel = 'Lokasi Aset';
+      protected static ?int $navigationSort = 3; 
+      public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = Auth::user();
+        return $user && ($user->isAsset() || $user->isAdmin());
+    }
+
+    public static function canEdit($record): bool
+    {
+        $user = Auth::user();
+        return $user && ($user->isAsset() || $user->isAdmin());
+    }
+
+    public static function canDelete($record): bool
+    {
+        $user = Auth::user();
+        return $user && ($user->isAsset() || $user->isAdmin());
+    }
 
     public static function form(Schema $schema): Schema
     {

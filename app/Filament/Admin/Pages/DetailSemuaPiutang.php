@@ -8,7 +8,10 @@ use Carbon\Carbon;
 
 class DetailSemuaPiutang extends Page
 {
-    protected static bool $shouldRegisterNavigation = false;
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }protected static bool $shouldRegisterNavigation = false;
     protected string $view = 'filament.admin.pages.detail-semua-piutang';
 
     public function getTitle(): string

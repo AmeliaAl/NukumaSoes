@@ -38,7 +38,7 @@ class LaporanStokPage extends Page
         }
 
         // Admin dan Pemilik bisa akses Laporan Stok
-        return $user->isAdmin() || $user->isPemilik();
+        return $user->isAdmin() || $user->isPemilik() || $user->isAsset();
     }
 
     public function mount(): void

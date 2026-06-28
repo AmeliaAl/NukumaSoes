@@ -23,6 +23,7 @@ class MitraForm
                         'agen' => 'Agen',
                         'reseller' => 'Reseller',
                         'konsinyasi' => 'Konsinyasi',
+                        'makloon' => 'Makloon',
                     ])
                     ->placeholder('Pilih Jenis Mitra')
                     ->required(),

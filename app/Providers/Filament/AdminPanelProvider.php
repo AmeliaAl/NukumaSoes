@@ -114,11 +114,12 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-o-home'),
             ])
             ->navigationItems([
-                NavigationItem::make('Dashboard Laravel')
+                NavigationItem::make('Dashboard Penyimpanan')
                     ->url('/dashboard')
                     ->icon('heroicon-o-home')
                     ->group('Persediaan')
-                    ->sort(-10),
+                    ->sort(-10)
+                    ->visible(fn () => auth()->user()?->isAdmin()),
             ]);
     }
 

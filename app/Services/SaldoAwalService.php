@@ -53,10 +53,11 @@ class SaldoAwalService
 
             // Buat jurnal header
             $jurnal = Jurnal::create([
-                'tanggal'      => $tanggal,
-                'no_referensi' => "SALDO-{$saldoAwal->id}",
-                'deskripsi'    => "Saldo awal {$akun->nama_akun} - " . self::getNamaBulan($saldoAwal->bulan) . " {$saldoAwal->tahun}",
-            ]);
+    'tanggal'      => $tanggal,
+    'no_referensi' => "SALDO-{$saldoAwal->id}",
+    'deskripsi'    => "Saldo awal {$akun->nama_akun} - " . self::getNamaBulan($saldoAwal->bulan) . " {$saldoAwal->tahun}",
+    'ref_type'     => 'saldo_awal',
+]);
 
             $nominal = abs($saldoAwal->nominal);
 

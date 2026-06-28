@@ -30,6 +30,11 @@ class UserForm
                             ->options([
                                 'admin' => 'Admin',
                                 'pemilik' => 'Pemilik',
+                                'aset' => 'Admin Aset',
+                                'penjualan' => 'Admin Penjualan',
+                                'persediaan' => 'Admin Persediaan',
+                                'produksi' => 'Admin Produksi',
+                                'pembelian' => 'Admin Pembelian',
                             ])
                             ->required()
                             ->default('admin')

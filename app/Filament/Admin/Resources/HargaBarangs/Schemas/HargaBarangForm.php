@@ -46,6 +46,7 @@ class HargaBarangForm
                     'reseller'   => 'Reseller',
                     'konsinyasi' => 'Konsinyasi',
                     'umum'       => 'Umum',
+                    'makloon'     => 'Makloon',
                 ])
                 ->required(),
 

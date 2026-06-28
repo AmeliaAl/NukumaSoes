@@ -16,4 +16,9 @@ class EditSaldoAwal extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function afterCreate(): void
+        {
+            SaldoAwalService::buatJurnal($this->record);
+        }
 }

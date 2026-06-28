@@ -20,6 +20,7 @@ use UnitEnum;
 use App\Filament\Admin\Resources\Barangs\Schemas\BarangForm;
 use App\Filament\Admin\Resources\Barangs\Tables\BarangsTable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class BarangResource extends Resource
 {
@@ -32,7 +33,13 @@ class BarangResource extends Resource
     
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
     }
 
     public static function form(Schema $schema): Schema

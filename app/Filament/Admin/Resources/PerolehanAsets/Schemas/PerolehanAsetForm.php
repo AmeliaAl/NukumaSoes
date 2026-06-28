@@ -101,7 +101,8 @@ class PerolehanAsetForm
                                             $set('qty', $item->qty);
                                             $set('harga_satuan', $item->harga_satuan);
                                             
-                                            $biayaLain = $item->faktur->biaya_lain ?? 0;
+                                            $alokasiBiayaLain = $item->faktur->getAlokasiBiayaLain();
+                                            $biayaLain = $alokasiBiayaLain[$item->id] ?? 0;
                                             $set('biaya_lain', $biayaLain);
                                             
                                             $totalPerolehan = $item->total_harga + $biayaLain;

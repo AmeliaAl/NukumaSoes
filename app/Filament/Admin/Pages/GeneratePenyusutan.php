@@ -36,9 +36,14 @@ class GeneratePenyusutan extends Page
         }
 
         // Hanya Admin yang bisa akses Generate Penyusutan
-        return $user->isAdmin();
+         return $user->isAdmin() || $user->isAsset();
     }
 
+    protected static function isPemiliks(): bool
+    {
+        return true;
+    }
+    
     public $periode;
 
    public $periodeTerakhir;

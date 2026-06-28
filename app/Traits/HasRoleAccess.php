@@ -45,9 +45,9 @@ trait HasRoleAccess
     public static function canCreate(): bool
     {
         $user = Auth::user();
-        
-        // Hanya admin yang bisa create
-        return $user && $user->isAdmin();
+        if (!$user) return false;
+        if ($user->isPemilik()) return false; // Pemilik can't create
+        return static::canAccess();
     }
 
     /**
@@ -56,9 +56,9 @@ trait HasRoleAccess
     public static function canEdit($record): bool
     {
         $user = Auth::user();
-        
-        // Hanya admin yang bisa edit
-        return $user && $user->isAdmin();
+        if (!$user) return false;
+        if ($user->isPemilik()) return false; // Pemilik can't edit
+        return static::canAccess();
     }
 
     /**
@@ -67,9 +67,9 @@ trait HasRoleAccess
     public static function canDelete($record): bool
     {
         $user = Auth::user();
-        
-        // Hanya admin yang bisa delete
-        return $user && $user->isAdmin();
+        if (!$user) return false;
+        if ($user->isPemilik()) return false; // Pemilik can't delete
+        return static::canAccess();
     }
 
     /**

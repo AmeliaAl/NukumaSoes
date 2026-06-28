@@ -18,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use App\Filament\Admin\Resources\PenjualanKonsinyasis\RelationManagers\DetailKonsinyasiRelationManager;
 use App\Filament\Admin\Resources\PenjualanKonsinyasis\RelationManagers\SetoranKonsinyasiRelationManager;
+use Illuminate\Support\Facades\Auth;
 
 class PenjualanKonsinyasiResource extends Resource
 {
@@ -31,7 +32,13 @@ class PenjualanKonsinyasiResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
     }
 
     public static function form(Schema $schema): Schema

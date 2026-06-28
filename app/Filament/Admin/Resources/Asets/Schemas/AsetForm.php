@@ -81,8 +81,7 @@ class AsetForm
                 TextInput::make('masa_manfaat')
                     ->label('Masa Manfaat (dalam tahun)')
                     ->required()
-                    ->numeric()
-                    ->readonly(),     
+                    ->numeric(),     
 
                 TextInput::make('metode_penyusutan')
                     ->autocapitalize('words')

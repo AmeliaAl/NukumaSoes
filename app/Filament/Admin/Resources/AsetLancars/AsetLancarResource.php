@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class AsetLancarResource extends Resource
 {
@@ -26,6 +27,17 @@ class AsetLancarResource extends Resource
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Bahan Habis Pakai';
     protected static ?string $pluralModelLabel = 'Daftar Bahan Habis Pakai';
+    protected static ?int $navigationSort = 6;
+     public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {

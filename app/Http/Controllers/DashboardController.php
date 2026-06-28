@@ -4,9 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+        $user->isAdmin();
+    }
         public function index()
     {
         $startDate = Carbon::now();

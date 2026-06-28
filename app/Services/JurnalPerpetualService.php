@@ -415,85 +415,79 @@ class JurnalPerpetualService
         return akun::where('no_akun', '112')->firstOrFail();
     }
 
-
     // ─────────────────────────────────────────────
     // SALDO AWAL
     // ─────────────────────────────────────────────
 
-    /**
-     * Jurnal saldo awal: D akun bersangkutan / K Modal (311)
-     * Tanggal jurnal = tanggal 1 bulan/tahun yang diinput.
-     *
-     * Dipanggil saat SaldoAwal disimpan (create/update).
-     */
     public static function saldoAwal(\App\Models\SaldoAwal $saldoAwal): void
     {
-        $coa = $saldoAwal->coa;
-        if (! $coa) {
+        $saldoAwal->load('akun');
+        $nominal = (int) $saldoAwal->nominal;
+
+        if ($nominal <= 0) {
             return;
         }
 
-        $keterangan = 'Saldo Awal ' . $coa->nama_akun
-            . ' ' . \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)
-                ->translatedFormat('F Y');
+        $referensi = 'Saldo awal ' . $saldoAwal->akun->nama_akun . ' periode ' . $saldoAwal->bulan . '-' . $saldoAwal->tahun;
 
-        // Hapus jurnal lama jika ada
-        $jurnalLama = JurnalUmum::where('keterangan', $keterangan)->first();
+        // Hapus jurnal lama (jika ada update)
+        $jurnalLama = Jurnal::where('deskripsi', $referensi)->first();
         if ($jurnalLama) {
             $jurnalLama->details()->delete();
             $jurnalLama->delete();
         }
 
-        if ((float) $saldoAwal->nominal <= 0) {
-            return;
-        }
+        // Cari atau buat akun "Saldo Awal" penyeimbang
+        $akunSaldoAwal = akun::firstOrCreate(
+            ['nama_akun' => 'Saldo Awal'],
+            [
+                'no_akun' => '399',
+                'header_akun' => 3
+            ]
+        );
 
-        $akunModal = Coa::where('kode_akun', '311')->first();
+        $tanggal = \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)->format('Y-m-d');
 
-        $jurnal = JurnalUmum::create([
-            'tanggal'    => \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)->toDateString(),
-            'keterangan' => $keterangan,
-            'ref_type'   => 'saldo_awal',
-            'ref_id'     => $saldoAwal->id,
+        $jurnal = Jurnal::create([
+            'tanggal'    => $tanggal,
+            'deskripsi' => $referensi,
         ]);
 
-        // D: akun bersangkutan
-        JurnalDetail::create([
-            'jurnal_umum_id' => $jurnal->id,
-            'akun_id'        => $coa->id,
-            'debit'          => $saldoAwal->nominal,
-            'kredit'         => 0,
-        ]);
+        $kodeAkun = $saldoAwal->akun->no_akun;
+        $awalKode = substr((string)$kodeAkun, 0, 1);
 
-        // K: Modal (311)
-        if ($akunModal) {
+        if (in_array($awalKode, ['1', '5', '6', '8', '9'])) {
+            // Normal Debit
             JurnalDetail::create([
-                'jurnal_umum_id' => $jurnal->id,
-                'akun_id'        => $akunModal->id,
-                'debit'          => 0,
-                'kredit'         => $saldoAwal->nominal,
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $saldoAwal->akun->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => $nominal,
+                'credit'    => 0,
             ]);
-        }
-    }
-
-    /**
-     * Hapus jurnal saldo awal — dipanggil saat SaldoAwal dihapus.
-     */
-    public static function hapusSaldoAwal(\App\Models\SaldoAwal $saldoAwal): void
-    {
-        $coa = $saldoAwal->coa;
-        if (! $coa) {
-            return;
-        }
-
-        $keterangan = 'Saldo Awal ' . $coa->nama_akun
-            . ' ' . \Carbon\Carbon::createFromDate($saldoAwal->tahun, $saldoAwal->bulan, 1)
-                ->translatedFormat('F Y');
-
-        $jurnal = JurnalUmum::where('keterangan', $keterangan)->first();
-        if ($jurnal) {
-            $jurnal->details()->delete();
-            $jurnal->delete();
+            JurnalDetail::create([
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunSaldoAwal->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => 0,
+                'credit'    => $nominal,
+            ]);
+        } else {
+            // Normal Kredit
+            JurnalDetail::create([
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $akunSaldoAwal->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => $nominal,
+                'credit'    => 0,
+            ]);
+            JurnalDetail::create([
+                'id_jurnal' => $jurnal->id,
+                'no_akun'   => $saldoAwal->akun->id,
+                'deskripsi' => 'Saldo Awal',
+                'debit'     => 0,
+                'credit'    => $nominal,
+            ]);
         }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Pages;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class LaporanUmurPiutang extends Page
 {
@@ -17,6 +18,17 @@ class LaporanUmurPiutang extends Page
     public function getTitle(): string
     {
         return 'Laporan Umur Piutang';
+    }
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
     }
 
     public function getData(): array

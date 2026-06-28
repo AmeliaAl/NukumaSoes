@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class FakturPembelianResource extends Resource
 {
@@ -27,6 +28,17 @@ class FakturPembelianResource extends Resource
     protected static ?string $navigationLabel = 'Faktur Pembelian';
     protected static ?string $pluralModelLabel = 'Faktur Pembelian Barang';
     protected static ?int $navigationSort = 10;
+
+     public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {

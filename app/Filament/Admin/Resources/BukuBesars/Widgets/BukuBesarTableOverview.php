@@ -99,8 +99,8 @@ class BukuBesarTableOverview extends Widget
         // ✅ Filter jurnal yang punya transaksi di akun ini
         $jurnalsQuery->whereHas('jurnaldetail', function ($q) use ($idAkun) {
             $q->where('no_akun', $idAkun);
-        })
-        ->where('no_referensi', 'not like', 'SALDO-%');
+        });
+        //->where('no_referensi', 'not like', 'SALDO-%');
 
         $this->jurnals = $jurnalsQuery->get();
 

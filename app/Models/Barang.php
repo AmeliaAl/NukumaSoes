@@ -96,22 +96,33 @@ class Barang extends Model
     }
 
     public function getHargaByJenisMitra(?string $jenisMitra): int
-{
-    if (! $jenisMitra) {
-        return 0;
+    {
+        $prioritas = collect([
+            $jenisMitra,
+            'umum',
+            'reseller',
+            'konsinyasi',
+            'agen',
+            'makloon',
+        ])
+            ->filter()
+            ->map(fn ($jenis) => strtolower(trim((string) $jenis)))
+            ->unique()
+            ->values();
+
+        foreach ($prioritas as $jenis) {
+            $harga = $this->hargaBarang()
+                ->whereRaw('LOWER(jenis_mitra) = ?', [$jenis])
+                ->value('harga');
+
+            if ((int) $harga > 0) {
+                return (int) $harga;
+            }
+        }
+
+        return (int) ($this->hargaBarang()
+            ->where('harga', '>', 0)
+            ->orderBy('id')
+            ->value('harga') ?? 0);
     }
-
-    $harga = $this->hargaBarang()
-        ->where('jenis_mitra', $jenisMitra)
-        ->value('harga');
-
-    // fallback ke reseller
-    if (! $harga) {
-        $harga = $this->hargaBarang()
-            ->where('jenis_mitra', 'reseller')
-            ->value('harga');
-    }
-
-    return (int) ($harga ?? 0);
-}
 }

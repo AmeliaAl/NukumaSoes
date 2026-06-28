@@ -10,6 +10,7 @@ use App\Models\TagihanKonsinyasi;
 use App\Models\PembayaranTagihanKonsinyasi;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class LaporanPenjualan extends Page
 {
@@ -50,12 +51,13 @@ class LaporanPenjualan extends Page
         $konsinyasi = \DB::table('detail_laporan_konsinyasi as dlk')
             ->join('laporan_konsinyasi as lk', 'dlk.no_laporan', '=', 'lk.no_laporan')
             ->join('barang as b', 'dlk.barang_id', '=', 'b.id')
+            ->leftJoin('kategori as k', 'b.kategori_id', '=', 'k.id')
             ->join('tagihan_konsinyasi as tk', 'lk.id', '=', 'tk.laporan_konsinyasi_id')
             ->join('penjualan_konsinyasi as pk', 'lk.penjualan_konsinyasi_id', '=', 'pk.id')
             ->join('mitra as m', 'pk.kode_mitra', '=', 'm.kode_mitra')
             ->whereBetween('lk.tanggal_laporan', [$tanggalDari, $tanggalSampai])
             ->select([
-                'b.kode_barang', 'b.nama_barang', 'dlk.harga_konsinyasi as harga', 'dlk.qty_terjual as kuantitas',
+                'b.kode_barang', 'b.nama_barang', 'k.nama_kategori', 'dlk.harga_konsinyasi as harga', 'dlk.qty_terjual as kuantitas',
                 'dlk.subtotal', \DB::raw('0 as diskon'), 'dlk.subtotal as total', 'lk.no_laporan as ref',
                 'lk.tanggal_laporan as tanggal', 'm.namaMitra as pelanggan_mitra',
                 \DB::raw("CASE WHEN tk.total_terbayar >= tk.total_tagihan THEN 'LUNAS' ELSE 'BELUM LUNAS' END as status_pembayaran"),
@@ -65,11 +67,13 @@ class LaporanPenjualan extends Page
         $nonKonsinyasi = \DB::table('detail_penjualan_non_konsinyasi as dpnk')
             ->join('penjualan_non_konsinyasi as pnk', 'dpnk.penjualan_id', '=', 'pnk.id')
             ->join('barang as b', 'dpnk.barang_id', '=', 'b.id')
+            ->leftJoin('kategori as k', 'b.kategori_id', '=', 'k.id')
             ->join('pelanggan as p', 'pnk.pelanggan_id', '=', 'p.id')
             ->whereBetween('pnk.tanggal', [$tanggalDari, $tanggalSampai])
             ->select([
                 'b.kode_barang', 
                 'b.nama_barang', 
+                'k.nama_kategori',
                 'dpnk.harga', 
                 'dpnk.qty as kuantitas',
                 \DB::raw('(dpnk.harga * dpnk.qty) as subtotal'), 
@@ -97,6 +101,17 @@ class LaporanPenjualan extends Page
             ->orderBy('tanggal', 'desc')
             ->orderBy('ref', 'desc')
             ->get();
+    }
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
     }
 
     public function getTotalSubtotal(): int

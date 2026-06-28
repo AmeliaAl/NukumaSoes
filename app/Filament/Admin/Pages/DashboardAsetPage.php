@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
-
+use Illuminate\Support\Facades\Auth;
 class DashboardAsetPage extends BaseDashboard
 {
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-building-office-2';
@@ -12,7 +12,16 @@ class DashboardAsetPage extends BaseDashboard
     protected static \UnitEnum|string|null $navigationGroup = 'Aset';
     
     protected static string $routePath = 'dasbor-aset';
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
 
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
     public function getWidgets(): array
     {
         return [

@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class PembayaranAsetResource extends Resource
 {
@@ -28,6 +29,16 @@ class PembayaranAsetResource extends Resource
     protected static ?string $pluralModelLabel = 'Pembayaran Aset';
     protected static ?int $navigationSort = 20;
 
+     public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
     public static function form(Schema $schema): Schema
     {
         return PembayaranAsetForm::configure($schema);

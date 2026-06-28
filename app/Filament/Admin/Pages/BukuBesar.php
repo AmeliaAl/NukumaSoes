@@ -103,14 +103,33 @@ class BukuBesar extends Page
             ->get();
 
         return $akuns->map(function ($akun) {
+            
             // ── Hitung saldo awal sebelum rentang filter ─────────────────
             $saldoAwalBaris = 0.0;
             $saldoAwalRows  = collect();
+            $excludeJurnalId = null;
 
             if ($this->dari) {
                 $dari    = \Carbon\Carbon::parse($this->dari);
                 $bulan   = (int) $dari->format('n');
                 $tahun   = (int) $dari->format('Y');
+
+                // Cari jurnal_id untuk Saldo Awal di bulan filter ini agar tidak muncul double di mutasi
+                // karena nilainya sudah masuk ke $efektif
+                $saldoAwalBulanIni = \App\Models\SaldoAwal::where(function($q) use ($akun) {
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('saldoawal', 'coa_id')) {
+                        $q->where('coa_id', $akun->id);
+                    } else {
+                        $q->where('akun_id', $akun->id);
+                    }
+                })
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->first();
+
+                if ($saldoAwalBulanIni) {
+                    $excludeJurnalId = $saldoAwalBulanIni->jurnal_id;
+                }
 
                 $efektif = \App\Models\SaldoAwal::getSaldoEfektif($akun->id, $bulan, $tahun);
 
@@ -125,6 +144,7 @@ class BukuBesar extends Page
                         ->where('jurnal_detail.akun_id', $akun->id)
                         ->where(fn ($q) => $q->whereNull('jurnal_umum.ref_type')
                             ->orWhere('jurnal_umum.ref_type', '!=', 'saldo_awal'))
+                        ->when($excludeJurnalId, fn ($q) => $q->where('jurnal_detail.id_jurnal', '!=', $excludeJurnalId))
                         ->whereDate('jurnal_umum.tanggal', '>=', $tgl1Bulan)
                         ->whereDate('jurnal_umum.tanggal', '<', $this->dari)
                         ->selectRaw('SUM(debit) - SUM(kredit) as net')
@@ -153,6 +173,7 @@ class BukuBesar extends Page
                 ->join('jurnal_umum', 'jurnal_detail.jurnal_umum_id', '=', 'jurnal_umum.id')
                 ->where(fn ($q) => $q->whereNull('jurnal_umum.ref_type')
                     ->orWhere('jurnal_umum.ref_type', '!=', 'saldo_awal'))
+                ->when($excludeJurnalId, fn ($q) => $q->where('jurnal_detail.id_jurnal', '!=', $excludeJurnalId))
                 ->when($this->dari, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '>=', $this->dari))
                 ->when($this->sampai, fn ($q) => $q->whereDate('jurnal_umum.tanggal', '<=', $this->sampai))
                 ->orderBy('jurnal_umum.tanggal')

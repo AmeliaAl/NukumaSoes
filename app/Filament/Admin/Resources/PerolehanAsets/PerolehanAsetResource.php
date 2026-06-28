@@ -19,6 +19,7 @@ use Filament\Infolist;
 use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\TextEntry;
+use Illuminate\Support\Facades\Auth;
 
 class PerolehanAsetResource extends Resource
 {
@@ -32,6 +33,16 @@ class PerolehanAsetResource extends Resource
     protected static ?string $pluralModelLabel = 'Pembelian Aset Tetap';
      protected static ?int $navigationSort = 30;
 
+      public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
     public static function form(Schema $schema): Schema
     {
         return PerolehanAsetForm::configure($schema);

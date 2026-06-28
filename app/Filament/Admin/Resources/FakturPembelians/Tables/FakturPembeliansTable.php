@@ -36,9 +36,9 @@ class FakturPembeliansTable
                     ->date('d M Y')
                     ->toggleable(),
 
-                 TextColumn::make('items')
+                 TextColumn::make('items_summary')
                     ->label('Nama Aset')
-                    ->formatStateUsing(function ($record) {
+                    ->getStateUsing(function ($record) {
                         if ($record->items->isEmpty()) {
                             return '-';
                         }
@@ -55,12 +55,11 @@ class FakturPembeliansTable
                         }
                         
                         // Jika lebih dari 1, tampilkan dengan bullet
-                        return $grouped->take(3)->join("\n• ", '• ') . 
-                               ($grouped->count() > 3 ? "\n• ..." : '');
+                        return '• ' . $grouped->take(3)->join('<br>• ') . 
+                               ($grouped->count() > 3 ? '<br>• ...' : '');
                     })
                     ->wrap()
-                    ->html()
-                    ->limit(50),
+                    ->html(),
         
                 TextColumn::make('total_tagihan')
                     ->label('Total Tagihan')
@@ -108,7 +107,7 @@ class FakturPembeliansTable
             ->bulkActions([
                 //
             ])
-            ->defaultSort('tanggal_faktur', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->striped()
             ->paginated([10, 25, 50, 100]);
 

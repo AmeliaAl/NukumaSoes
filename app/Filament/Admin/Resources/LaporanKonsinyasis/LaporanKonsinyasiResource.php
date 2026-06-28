@@ -17,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class LaporanKonsinyasiResource extends Resource
 {
@@ -29,6 +30,18 @@ class LaporanKonsinyasiResource extends Resource
     protected static ?string $navigationLabel = 'Laporan Penjualan Konsinyasi';
     protected static ?string $modelLabel = 'Laporan Penjualan Konsinyasi';
     protected static ?string $pluralModelLabel = 'Rekap Laporan Penjualan Konsinyasi dari mitra';
+    
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return LaporanKonsinyasiForm::configure($schema);

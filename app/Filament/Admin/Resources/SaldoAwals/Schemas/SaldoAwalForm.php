@@ -3,7 +3,7 @@
 namespace App\Filament\Admin\Resources\SaldoAwals\Schemas;
 
 use App\Filament\Support\MoneyInput;
-use App\Models\coa;
+use App\Models\akun;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -13,10 +13,10 @@ class SaldoAwalForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('coa_id')
+            Select::make('akun_id')
                 ->label('Akun (COA)')
-                ->options(fn () => coa::orderBy('kode_akun')->get()->mapWithKeys(fn ($c) => [
-                    $c->id => "[{$c->kode_akun}] {$c->nama_akun}",
+                ->options(fn () => akun::orderBy('no_akun')->get()->mapWithKeys(fn ($c) => [
+                    $c->id => "[{$c->no_akun}] {$c->nama_akun}",
                 ]))
                 ->searchable()
                 ->required(),
@@ -34,7 +34,7 @@ class SaldoAwalForm
             TextInput::make('tahun')
                 ->label('Tahun')
                 ->numeric()
-                ->minValue(2000)
+                ->minValue(2015)
                 ->maxValue(2100)
                 ->default(now()->year)
                 ->required(),

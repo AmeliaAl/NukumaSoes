@@ -15,6 +15,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
+use Illuminate\Support\Facades\Auth;
 
 class DetailPersediaanProdukResource extends Resource
 {
@@ -28,7 +29,13 @@ class DetailPersediaanProdukResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
     }
 
     public static function form(Schema $schema): Schema

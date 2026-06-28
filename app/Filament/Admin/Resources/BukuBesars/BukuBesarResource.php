@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class BukuBesarResource extends Resource
 {
@@ -23,6 +24,7 @@ class BukuBesarResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-rectangle-group';
     protected static UnitEnum|string|null $navigationGroup = 'Laporan';
+    protected static bool $shouldRegisterNavigation = true;
     protected static ?string $navigationLabel = 'Buku Besar';
     protected static ?string $pluralModelLabel = 'Buku Besar';
     protected static ?int $navigationSort = 302;
@@ -30,9 +32,15 @@ class BukuBesarResource extends Resource
     /**
      * Pemilik bisa akses Buku Besar (read-only)
      */
-    protected static function canAccessByPemilik(): bool
+     public static function canAccess(): bool
     {
-        return true;
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin() || $user->isPemilik() || $user->isPenjualans();
     }
 
     public static function form(Schema $schema): Schema

@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class PersediaanResource extends Resource
 {
@@ -27,6 +28,17 @@ class PersediaanResource extends Resource
     protected static ?string $navigationLabel = 'Tambah Persediaan';
     protected static ?string $pluralModelLabel = 'Pembelian Bahan Habis Pakai';
     protected static ?int $navigationSort = 40;
+
+     public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {

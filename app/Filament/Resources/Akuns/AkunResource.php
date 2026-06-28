@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\Akuns\Schemas\AkunForm;
 use App\Filament\Resources\Akuns\Tables\AkunsTable;
-
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Resources\Akuns\AkunResource\Pages\ListAkun;
 use App\Filament\Resources\Akuns\AkunResource\Pages\CreateAkun;
 use App\Filament\Resources\Akuns\AkunResource\Pages\EditAkun;
@@ -33,6 +33,17 @@ class AkunResource extends Resource
     protected static ?string $navigationLabel = 'Akun';
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
     protected static ?string $pluralModelLabel = 'Daftar Akun';
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {

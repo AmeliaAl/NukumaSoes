@@ -142,13 +142,13 @@ class PembayaranAsetForm
 
                                         $faktur = \App\Models\FakturPembelian::find($fakturId);
 
-                                        if ($faktur && $value < $faktur->tanggal_faktur) {
+                                        /*if ($faktur && $value < $faktur->tanggal_faktur) {
                                             $fail('Tanggal terima tidak boleh sebelum tanggal faktur.');
                                         }
 
                                         if ($value < $get('tanggal_bayar')) {
                                             $fail('Tanggal terima tidak boleh sebelum tanggal bayar.');
-                                        }
+                                        }*/
                                     };
                                 })
                                 ->columnSpan(1),

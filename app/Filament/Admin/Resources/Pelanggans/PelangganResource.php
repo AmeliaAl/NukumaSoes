@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class PelangganResource extends Resource
 {
@@ -25,7 +26,13 @@ class PelangganResource extends Resource
     
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
     }
 
     public static function form(Schema $schema): Schema

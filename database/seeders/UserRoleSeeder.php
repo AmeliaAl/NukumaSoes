@@ -38,6 +38,16 @@ class UserRoleSeeder extends Seeder
             $this->command->info('✅ Pemilik user created: pemilik@example.com / password');
         }
 
+        if (!User::where('email', 'aset@example.com')->exists()) {
+            User::create([
+                'name' => 'Admin Aset',
+                'email' => 'aset@example.com',
+                'password' => Hash::make('password'),
+                'role' => 'aset',
+            ]);
+            $this->command->info('✅ Admin Aset user created: aset@example.com / password');
+        }
+
         $this->command->info('🎉 User roles seeded successfully!');
     }
 }

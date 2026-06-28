@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\Action;
 use Filament\Tables\Actions\Action as TableAction;
+use Illuminate\Support\Facades\Auth;
 
 class SalesOrderResource extends Resource
 {
@@ -39,7 +40,13 @@ class SalesOrderResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isAdmin() ?? false;
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isPenjualans() || $user->isAdmin();
     }
 
     public static function form(Schema $schema): Schema

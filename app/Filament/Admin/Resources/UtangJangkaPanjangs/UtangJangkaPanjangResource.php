@@ -14,6 +14,8 @@ use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
 
 class UtangJangkaPanjangResource extends Resource
 {
@@ -26,6 +28,17 @@ class UtangJangkaPanjangResource extends Resource
     protected static ?string $navigationLabel = 'Utang Jangka Panjang';
     protected static ?string $pluralModelLabel = 'Daftar Utang Jangka Panjang';
     protected static ?int $navigationSort = 201;
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {

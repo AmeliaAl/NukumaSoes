@@ -27,6 +27,11 @@ class UsersTable
                     ->color(fn (string $state): string => match ($state) {
                         'admin' => 'danger',
                         'pemilik' => 'success',
+                        'aset' => 'primary',
+                        'penjualan' => 'warning',
+                        'persediaan' => 'info',
+                        'produksi' => 'secondary',
+                        'pembelian' => 'success',
                         default => 'gray',
                     }),
                 \Filament\Tables\Columns\TextColumn::make('created_at')

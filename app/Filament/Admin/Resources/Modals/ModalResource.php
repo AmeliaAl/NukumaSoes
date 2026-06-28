@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class ModalResource extends Resource
 {
@@ -27,6 +28,17 @@ class ModalResource extends Resource
     protected static ?string $navigationLabel = 'Modal';
     protected static ?string $pluralModelLabel = 'Modal';
     protected static ?int $navigationSort = 80;
+
+     public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
 
     public static function form(Schema $schema): Schema
     {

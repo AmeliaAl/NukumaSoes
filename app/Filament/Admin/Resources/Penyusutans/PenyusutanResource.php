@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class PenyusutanResource extends Resource
 {
@@ -29,6 +30,16 @@ class PenyusutanResource extends Resource
     protected static ?string $pluralModelLabel = 'Kartu Penyusutan Aset';
     protected static ?int $navigationSort = 50;
 
+     public static function canAccess(): bool
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+         return $user->isAsset() || $user->isAdmin();
+    }
     public static function form(Schema $schema): Schema
     {
         return PenyusutanForm::configure($schema);

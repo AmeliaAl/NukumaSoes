@@ -1,5 +1,5 @@
 <?php
-
+/*
 namespace App\Filament\Admin\Resources\SaldoAwals\Tables;
 
 use Filament\Actions\EditAction;
@@ -54,3 +54,4 @@ class SaldoAwalTable
             ]);
     }
 }
+*/

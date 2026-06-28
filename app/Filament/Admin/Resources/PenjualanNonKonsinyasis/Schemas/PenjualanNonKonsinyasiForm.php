@@ -72,6 +72,7 @@ class PenjualanNonKonsinyasiForm
                 ->options([
                     'MARKETPLACE' => 'Marketplace',
                     'NON_MARKETPLACE' => 'Bukan Marketplace',
+                    'MAKLOON' => 'Makloon',
                 ])
                 ->default('NON_MARKETPLACE')
                 ->required()

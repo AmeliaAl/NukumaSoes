@@ -103,4 +103,35 @@ class fakturPembelian extends Model
     {
         return $query->where('status', 'lunas');
     }
+
+    // Method untuk hitung proporsional (prorata) biaya lain
+    public function getAlokasiBiayaLain(): array
+    {
+        $items = $this->items()->orderBy('id')->get();
+        $totalHargaSemua = $items->sum('total_harga');
+        
+        $alokasi = [];
+        $biayaLain = (float) ($this->biaya_lain ?? 0);
+
+        if ($totalHargaSemua <= 0 || $biayaLain <= 0 || $items->isEmpty()) {
+            foreach ($items as $item) {
+                $alokasi[$item->id] = 0;
+            }
+            return $alokasi;
+        }
+
+        $totalAlokasi = 0;
+        foreach ($items as $index => $item) {
+            if ($index === $items->count() - 1) {
+                // Selisih pembulatan dilempar ke item terakhir biar jurnal balance
+                $alokasi[$item->id] = round($biayaLain - $totalAlokasi, 2);
+            } else {
+                $bagian = round(($item->total_harga / $totalHargaSemua) * $biayaLain, 2);
+                $alokasi[$item->id] = $bagian;
+                $totalAlokasi += $bagian;
+            }
+        }
+
+        return $alokasi;
+    }
 }
