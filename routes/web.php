@@ -19,6 +19,7 @@ use App\Http\Controllers\AsetController;
 use App\Http\Controllers\KategoriAsetController;
 use App\Http\Controllers\FlavorController;
 use App\Http\Controllers\SalesOrderPdfController;
+use App\Http\Controllers\JurnalUmumController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -77,6 +78,12 @@ Route::middleware(['auth'])->group(function () {
     
     // Laporan
     Route::get('laporan/jurnal-umum', [LaporanController::class, 'jurnalUmum'])->name('laporan.jurnal-umum');
+    Route::delete('/laporan/jurnal-umum/{id}', [LaporanController::class, 'destroy'])
+    ->name('laporan.jurnal-umum.destroy');
+    Route::get('/laporan/jurnal-umum/export/pdf', [LaporanController::class, 'exportPdf'])
+    ->name('laporan.jurnal-umum.export.pdf');
+    Route::get('/laporan/jurnal-umum/export/excel', [LaporanController::class, 'exportExcel'])
+    ->name('laporan.jurnal-umum.export.excel');
     Route::get('laporan/buku-besar', [LaporanController::class, 'bukuBesar'])->name('laporan.buku-besar');
     Route::get('laporan/laba-rugi', [LaporanController::class, 'labaRugi'])->name('laporan.laba-rugi');
     

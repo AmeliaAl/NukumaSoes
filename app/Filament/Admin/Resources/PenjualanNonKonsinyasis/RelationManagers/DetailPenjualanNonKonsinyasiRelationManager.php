@@ -229,14 +229,12 @@ class DetailPenjualanNonKonsinyasiRelationManager extends RelationManager
             ->actions([
                 EditAction::make()
                     ->using(function ($record, array $data) {
-                        $qtyLama = (int) DetailPenjualanNonKonsinyasi::query()
-                            ->where('id', $record->id)
-                            ->value('qty');
-
+                        // Ambil qty lama dari record
+                        $qtyLama = (int) $record->qty;
                         $qtyBaru = (int) $data['qty'];
                         $selisih = $qtyBaru - $qtyLama;
 
-                        DB::transaction(function () use ($record, $data, $selisih, $qtyBaru) {
+                        DB::transaction(function () use ($record, $data, $selisih, $qtyBaru, $qtyLama) {
                             if ($selisih > 0) {
                                 // Qty bertambah → kurangi stok tambahan, ambil HPP selisih
                                 $hppSelisih = DetailPersediaanProduk::kurangiStokFefo(
@@ -280,6 +278,9 @@ class DetailPenjualanNonKonsinyasiRelationManager extends RelationManager
                     })
                     ->after(function ($record) {
                         $record->penjualan->hitungTotal();
+                        $record->penjualan->refresh();
+                        // Regenerate jurnal setelah edit detail barang
+                        \App\Services\JurnalPerpetualService::penjualanNonKonsinyasi($record->penjualan);
                     }),
 
                 DeleteAction::make()
@@ -294,6 +295,9 @@ class DetailPenjualanNonKonsinyasiRelationManager extends RelationManager
                     })
                     ->after(function ($record) {
                         $record->penjualan->hitungTotal();
+                        $record->penjualan->refresh();
+                    // Tambahkan ini:
+                    \App\Services\JurnalPerpetualService::penjualanNonKonsinyasi($record->penjualan);
                     }),
             ]);
     }

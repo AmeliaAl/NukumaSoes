@@ -202,27 +202,27 @@
                 </div>
 
                 @php
-    $totalTambahBulan = $aset->pemeliharaan()
-        ->where('jenis_perbaikan', 'peningkatan')
-        ->whereNotNull('tambah_umur')
-        ->sum('tambah_umur');
+                    $totalTambahBulan = $aset->pemeliharaan()
+                        ->where('jenis_perbaikan', 'peningkatan')
+                        ->whereNotNull('tambah_umur')
+                        ->sum('tambah_umur');
 
-    $totalBulan = ($aset->masa_manfaat * 12) + $totalTambahBulan;
-    $tahunManfaat = floor($totalBulan / 12);
-    $bulanSisa = $totalBulan % 12;
+                    $totalBulan = ($aset->masa_manfaat * 12) + $totalTambahBulan;
+                    $tahunManfaat = floor($totalBulan / 12);
+                    $bulanSisa = $totalBulan % 12;
 
-    $labelMasaManfaat = $tahunManfaat . ' Thn' . ($bulanSisa > 0 ? ' ' . $bulanSisa . ' Bln' : '');
+                    $labelMasaManfaat = $tahunManfaat . ' Thn' . ($bulanSisa > 0 ? ' ' . $bulanSisa . ' Bln' : '');
 
-    $masaManfaatDesimal = $totalBulan / 12;
-    $bebanTahunan = $masaManfaatDesimal > 0
-        ? ($aset->nilai_perolehan - ($aset->nilai_residu ?? 0)) / $masaManfaatDesimal
-        : 0;
-@endphp
+                    $masaManfaatDesimal = $totalBulan / 12;
+                    $bebanTahunan = $masaManfaatDesimal > 0
+                        ? ($aset->nilai_perolehan - ($aset->nilai_residu ?? 0)) / $masaManfaatDesimal
+                        : 0;
+                @endphp
 
-<div class="kartu-row">
-    <span class="kartu-key">Masa Manfaat</span>
-    <span class="kartu-val">{{ $labelMasaManfaat }}</span>
-</div>
+                <div class="kartu-row">
+                    <span class="kartu-key">Masa Manfaat</span>
+                    <span class="kartu-val">{{ $labelMasaManfaat }}</span>
+                </div>
             </div>
 
             {{-- Kolom kanan --}}
@@ -246,11 +246,11 @@
                     </span>
                 </div>
                 <div class="kartu-row">
-    <span class="kartu-key">Beban/Tahun</span>
-    <span class="kartu-val kartu-val-money">
-        Rp {{ number_format($bebanTahunan, 0, ',', '.') }}
-    </span>
-</div>
+                    <span class="kartu-key">Beban/Tahun</span>
+                    <span class="kartu-val kartu-val-money">
+                        Rp {{ number_format($bebanTahunan, 0, ',', '.') }}
+                    </span>
+                </div>
             </div>
 
         </div>

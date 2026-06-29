@@ -15,12 +15,12 @@ class FakturPembelianService
     private static function getMappingKategoriAset(): array
     {
         return [
-            'Mesin'                => 172, // Akun Mesin (172)
-            'Peralatan'            => 171, // Akun Peralatan (171)
-            'Bangunan'             => 179, // Akun Bangunan (179)
-            'Kendaraan'            => 178, // Akun Kendaraan (178)
-            'Peralatan Kantor'     => 171, // Akun Peralatan (171)
-            'Peralatan Produksi'   => 172, // Akun Mesin (172)
+            'Mesin'                => 172, 
+            'Peralatan'            => 171, 
+            'Bangunan'             => 179, 
+            'Kendaraan'            => 178, 
+            'Peralatan Kantor'     => 171, 
+            'Peralatan Produksi'   => 172,
         ];
     }
 

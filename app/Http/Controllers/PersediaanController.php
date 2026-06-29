@@ -228,7 +228,7 @@ class PersediaanController extends Controller
                 'ref' => '140',
                 'debit' => $total_harga,
                 'kredit' => 0,
-                'id_transaksi' => $request->id_transaksi,
+                //'id_transaksi' => $request->id_transaksi,
             ]);
             \App\Models\JurnalUmum::create([
                 'tanggal' => $request->tanggal,
@@ -236,7 +236,7 @@ class PersediaanController extends Controller
                 'ref' => '143',
                 'debit' => 0,
                 'kredit' => $total_harga,
-                'id_transaksi' => $request->id_transaksi,
+               // 'id_transaksi' => $request->id_transaksi,
             ]);
         });
 

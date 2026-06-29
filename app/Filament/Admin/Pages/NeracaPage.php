@@ -354,7 +354,7 @@ class NeracaPage extends Page
             if ($saldo != 0) {
                 $this->ekuitas[] = $akun;
             }
-            $this->totalEkuitas += $saldo;
+            $this->totalEkuitas += round($saldo, 0); // Bulatkan per akun
 
             // Debug info
             if ($debit != 0 || $credit != 0) {
@@ -425,8 +425,8 @@ class NeracaPage extends Page
         ];
         $this->debugInfo['laba_rugi'] = $laba;
 
-        // Tambahkan ke ekuitas
-        $this->totalEkuitas += $laba;
+        // Tambahkan ke ekuitas dengan pembulatan
+        $this->totalEkuitas += round($laba, 0);
 
         // Tampilkan di tabel hanya jika ada laba/rugi
         if ($laba != 0) {

@@ -2,156 +2,113 @@
 
 namespace App\Filament\Admin\Pages;
 
-use App\Models\Coa;
-use App\Models\JurnalDetail;
+use App\Models\Akun;
+use App\Models\Jurnal;
+use Carbon\Carbon;
 use Filament\Pages\Page;
-use Filament\Forms\Components\DatePicker;
-use Filament\Schemas\Schema;
-use Illuminate\Support\Collection;
+use Livewire\Attributes\On;
+use BackedEnum;
 
 class BukuBesar extends Page
 {
-    protected string $view = 'filament.admin.pages.buku-besar';
+    protected  string $view = 'filament.admin.resources.buku-besars.widgets.buku-besar-table-overview';
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
-
-   protected static ?string $navigationLabel = 'Buku Besar';
-
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
+    protected static ?string $navigationLabel = 'Buku Besar';
     protected static ?string $title = 'Buku Besar';
-
-   protected static \UnitEnum|string|null $navigationGroup = 'Akuntansi';
-   protected static bool $shouldRegisterNavigation = false;
-
+    protected static string|\UnitEnum|null $navigationGroup = 'Akuntansi';
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?int $navigationSort = 2;
 
-    public ?string $dari = null;
-    public ?string $sampai = null;
-    public ?string $inputDari = null;
-    public ?string $inputSampai = null;
-    public ?int $filterAkunId = null; // null = semua akun
+    // Livewire properties (seperti di Widget)
+    public ?string $periode_awal = null;
+    public ?string $periode_akhir = null;
+    public $id_akun = null;
 
-    public function applyFilter(): void
+    public $jurnals;
+    public $saldoAwal = 0;
+    public $posisiSaldo = 'debit';
+
+    public function mount(): void
     {
-        $this->dari   = $this->inputDari;
-        $this->sampai = $this->inputSampai;
+        $now = Carbon::now();
+        $this->periode_awal = $now->format('Y-m');
+        $this->periode_akhir = $now->format('Y-m');
+        
+        $this->filterJurnal();
     }
 
-    public function resetFilter(): void
+    #[On('filterJurnal')]
+    public function filterJurnal(): void
     {
-        $this->dari        = null;
-        $this->sampai      = null;
-        $this->inputDari   = null;
-        $this->inputSampai = null;
-        $this->filterAkunId = null;
-    }
+        // Parse periode
+        $periodeAwal = $this->periode_awal 
+            ? Carbon::createFromFormat('Y-m', $this->periode_awal)->startOfMonth()
+            : Carbon::now()->startOfMonth();
+        
+        $periodeAkhir = $this->periode_akhir
+            ? Carbon::createFromFormat('Y-m', $this->periode_akhir)->endOfMonth()
+            : Carbon::now()->endOfMonth();
 
-    public function getAkunOptions(): array
-    {
-        return Coa::orderBy('kode_akun')
-            ->get()
-            ->mapWithKeys(fn ($c) => [$c->id => $c->nama_akun])
-            ->toArray();
-    }
+        // Ambil jurnal dalam periode dan filter by akun jika dipilih
+        $query = Jurnal::whereBetween('tanggal', [$periodeAwal, $periodeAkhir])
+            ->where(function($q) {
+                $q->where('no_referensi', 'not like', 'SALDO-%')
+                  ->orWhereNull('no_referensi');
+            })
+            ->with('jurnaldetail.akun')
+            ->orderBy('tanggal')
+            ->orderBy('id');
 
-    public function filterForm(Schema $schema): Schema
-    {
-        return $schema->components([
-            DatePicker::make('dari')
-                ->label('Tanggal Dari')
-                ->placeholder('Pilih tanggal awal')
-                ->live(),
-
-            DatePicker::make('sampai')
-                ->label('Tanggal Sampai')
-                ->placeholder('Pilih tanggal akhir')
-                ->live(),
-        ])->columns(2);
-    }
-
-    public function getBukuBesarData(): Collection
-    {
-        $akunQuery = Coa::orderBy('kode_akun');
-        if ($this->filterAkunId) {
-            $akunQuery->where('id', $this->filterAkunId);
-        }
-        $akuns = $akunQuery->get();
-
-        return $akuns->map(function ($akun) {
-            $awalKode = substr((string)$akun->kode_akun, 0, 1);
-            $isDebitNormal = in_array($awalKode, ['1', '5', '6', '8', '9']);
-
-            // Hitung saldo awal dari jurnal saldo awal (deskripsi mengandung 'saldo awal')
-            $querySaldoAwal = JurnalDetail::query()
-                ->where('no_akun', $akun->id)
-                ->join('jurnal', 'jurnal_detail.id_jurnal', '=', 'jurnal.id')
-                ->where('jurnal.deskripsi', 'like', '%saldo awal%');
+        // Jika akun dipilih, filter jurnal yang memiliki detail untuk akun tersebut
+        if ($this->id_akun) {
+            $akunDipilih = Akun::where('no_akun', $this->id_akun)->first();
             
-            if ($this->dari) {
-                $querySaldoAwal->where(function($q) {
-                    $q->whereDate('jurnal.tanggal', '<', $this->dari)
-                      ->orWhere(function($subQ) {
-                          $subQ->whereDate('jurnal.tanggal', '=', $this->dari);
-                      });
+            if ($akunDipilih) {
+                $query->whereHas('jurnaldetail', function ($q) use ($akunDipilih) {
+                    $q->where('no_akun', $akunDipilih->id);
                 });
-            }
 
-            $saldoAwalDebit = $querySaldoAwal->sum('jurnal_detail.debit');
-            $saldoAwalKredit = $querySaldoAwal->sum('jurnal_detail.credit');
-            
-            $saldoAwal = $isDebitNormal 
-                ? ($saldoAwalDebit - $saldoAwalKredit) 
-                : ($saldoAwalKredit - $saldoAwalDebit);
+                // Hitung saldo awal (sebelum periode) - TERMASUK SALDO-xxx
+                $transaksiSebelum = Jurnal::where('tanggal', '<', $periodeAwal)
+                    ->whereHas('jurnaldetail', function ($q) use ($akunDipilih) {
+                        $q->where('no_akun', $akunDipilih->id);
+                    })
+                    ->with(['jurnaldetail' => function ($query) use ($akunDipilih) {
+                        $query->where('no_akun', $akunDipilih->id);
+                    }])
+                    ->get();
 
-            // Ambil transaksi KECUALI jurnal saldo awal
-            $queryTransaksi = JurnalDetail::query()
-                ->with('jurnal')
-                ->where('no_akun', $akun->id)
-                ->join('jurnal', 'jurnal_detail.id_jurnal', '=', 'jurnal.id')
-                ->where('jurnal.deskripsi', 'not like', '%saldo awal%');
-            
-            if ($this->dari) {
-                $queryTransaksi->whereDate('jurnal.tanggal', '>=', $this->dari);
-            }
-            if ($this->sampai) {
-                $queryTransaksi->whereDate('jurnal.tanggal', '<=', $this->sampai);
-            }
-            
-            $details = $queryTransaksi
-                ->orderBy('jurnal.tanggal')
-                ->orderBy('jurnal.id')
-                ->select('jurnal_detail.*')
-                ->get();
+                $debitAwal = $transaksiSebelum->flatMap->jurnaldetail->sum('debit');
+                $kreditAwal = $transaksiSebelum->flatMap->jurnaldetail->sum('credit');
 
-            $saldo = $saldoAwal;
-            $rows = $details->map(function ($detail) use (&$saldo, $isDebitNormal) {
+                // Deteksi saldo normal akun berdasarkan header_akun
+                // Header 1,5,6,7 = Debit Normal | Header 2,3,4 = Kredit Normal
+                $isDebitNormal = in_array($akunDipilih->header_akun, [1, 5, 6, 7]);
+
                 if ($isDebitNormal) {
-                    $saldo += $detail->debit - $detail->credit;
+                    $this->saldoAwal = $debitAwal - $kreditAwal;
+                    $this->posisiSaldo = 'debit';
                 } else {
-                    $saldo += $detail->credit - $detail->debit;
+                    $this->saldoAwal = $kreditAwal - $debitAwal;
+                    $this->posisiSaldo = 'kredit';
                 }
-                
-                return [
-                    'tanggal'    => $detail->jurnal?->tanggal,
-                    'keterangan' => $detail->jurnal?->deskripsi,
-                    'ref'        => $detail->jurnal?->no_referensi,
-                    'debit'      => $detail->debit,
-                    'kredit'     => $detail->credit,
-                    'saldo'      => $saldo,
-                ];
-            });
 
-            return [
-                'kode_akun'     => $akun->kode_akun,
-                'nama_akun'     => $akun->nama_akun,
-                'is_debit_normal'=> $isDebitNormal,
-                'saldo_awal'    => $saldoAwal,
-                'rows'          => $rows,
-                'total_debit'   => $details->sum('debit'),
-                'total_kredit'  => $details->sum('credit'),
-                'saldo_akhir'   => $saldo,
-            ];
-        })->filter(function ($akun) {
-            return count($akun['rows']) > 0 || $akun['saldo_awal'] != 0;
-        })->values();
+                // Jika belum ada histori transaksi, ambil dari tabel saldoawal
+                if ((float) $this->saldoAwal == 0) {
+                    $saldoAwalManual = \App\Models\SaldoAwal::where('akun_id', $akunDipilih->id)
+                        ->where('bulan', (int) $periodeAwal->month)
+                        ->where('tahun', (int) $periodeAwal->year)
+                        ->value('nominal');
+
+                    $this->saldoAwal = $saldoAwalManual ?? 0;
+                }
+            }
+        } else {
+            $this->saldoAwal = 0;
+            $this->posisiSaldo = 'debit';
+        }
+
+        $this->jurnals = $query->get();
     }
 }
