@@ -3,40 +3,64 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Carbon\Carbon;
+use App\Models\BahanBaku;
+use App\Models\BatchProduksi;
+use App\Models\PermintaanProduksi;
 
 class DashboardController extends Controller
 {
-        public function index()
+    /**
+     * Tampilkan dashboard
+     */
+    public function index()
     {
-        $startDate = Carbon::now();
+        $jobPending = PermintaanProduksi::where('status', 'pending')->count();
+        $jobProses = PermintaanProduksi::where('status', 'proses')->count();
+        $jobSelesai = PermintaanProduksi::where('status', 'selesai')->count();
+        $jobAktif = $jobPending + $jobProses;
 
-        $totalProduk = 0;
-        $produkAman = 0;
-        $produkAkanExpired = 0;
-        $produkExpired = 0;
-        $totalTransaksi = 0;
+        $batchHariIni = BatchProduksi::whereDate('tanggal_mulai', today())
+            ->whereNotIn('status', ['selesai', 'dibatalkan'])
+            ->count();
 
-        $statusChartData = [
-            'labels' => ['Aman', 'Warning', 'Expired'],
-            'data' => [0, 0, 0],
-        ];
+        $stokMenipis = BahanBaku::where('status', 'aktif')
+            ->whereColumn('stok_saat_ini', '<', 'stok_minimum')
+            ->count();
 
-        $transactionChartData = [
-            'labels' => [],
-            'masuk' => [],
-            'keluar' => [],
-        ];
+        $jobTerbaru = PermintaanProduksi::with(['produk', 'admin'])
+            ->orderByDesc('created_at')
+            ->limit(6)
+            ->get();
+
+        $totalBiayaBulanIni = PermintaanProduksi::whereMonth('tanggal_mulai', now()->month)
+            ->whereYear('tanggal_mulai', now()->year)
+            ->sum('total_biaya_produksi');
 
         return view('dashboard', compact(
-            'startDate',
-            'totalProduk',
-            'produkAman',
-            'produkAkanExpired',
-            'produkExpired',
-            'totalTransaksi',
-            'statusChartData',
-            'transactionChartData'
+            'jobAktif',
+            'jobPending',
+            'jobProses',
+            'jobSelesai',
+            'batchHariIni',
+            'stokMenipis',
+            'jobTerbaru',
+            'totalBiayaBulanIni'
         ));
+    }
+
+    /**
+     * Get alert untuk stok menipis
+     */
+    public function getStokAlert()
+    {
+        $stokMenipis = BahanBaku::where('status', 'aktif')
+                                ->whereColumn('stok_saat_ini', '<', 'stok_minimum')
+                                ->select('nama_bahan', 'stok_saat_ini', 'stok_minimum', 'satuan')
+                                ->get();
+
+        return response()->json([
+            'count' => $stokMenipis->count(),
+            'data' => $stokMenipis
+        ]);
     }
 }

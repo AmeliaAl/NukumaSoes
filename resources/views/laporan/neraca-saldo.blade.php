@@ -1,90 +1,226 @@
-<x-app-layout>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    
-                    <div class="flex justify-between items-center mb-6">
-                    </div>
+@extends('layouts.app')
 
-                    <div class="flex flex-col md:flex-row justify-between items-center border-b-2 border-gray-800 pb-4 mb-8">
-                        <div class="mb-4 md:mb-0 w-full md:w-1/4">
-                            <form method="GET" action="{{ route('laporan.neraca-saldo') }}" class="flex items-end space-x-2" id="filterForm">
-                                <div class="w-full max-w-xs">
-                                    <label for="periode" class="block text-sm font-medium text-gray-700">Pilih Periode</label>
-                                    <input type="month" name="periode" id="periode" value="{{ $periode }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" onchange="document.getElementById('filterForm').submit()">
-                                </div>
-                            </form>
-                        </div>
+@section('title', 'Laporan Neraca Lajur')
+@section('page-title', 'Laporan Neraca Lajur')
 
-                        <!-- Konten Laporan (Kanan) -->
-                        <div class="text-center w-full md:w-1/2 flex-grow">
-                            <h2 class="text-3xl font-bold text-gray-900 uppercase tracking-widest">NUKUMA SOES</h2>
-                            <h2 class="text-xl font-bold text-gray-800 uppercase mt-2">NERACA SALDO</h2>
-                            @php
-                                $parts = explode('-', $periode);
-                                $bulanNum = (int) ($parts[1] ?? date('m'));
-                                $tahunNum = $parts[0] ?? date('Y');
-                                $bulanList = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember');
-                                $namaPeriode = $bulanList[$bulanNum] . ' ' . $tahunNum;
-                            @endphp
-                            <h3 class="text-md text-gray-600 mt-1 uppercase font-semibold tracking-wide">PERIODE: {{ $namaPeriode }}</h3>
-                        </div>
+@push('styles')
+<style>
+    .neraca-lajur-table {
+        font-size: 11px;
+        min-width: 1200px;
+    }
+    .neraca-lajur-table thead th {
+        vertical-align: middle;
+        text-align: center;
+        font-size: 10px;
+        white-space: nowrap;
+        padding: 6px 4px;
+    }
+    .neraca-lajur-table tbody td {
+        padding: 4px 6px;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+    .neraca-lajur-table tfoot td {
+        padding: 6px 4px;
+        font-size: 11px;
+    }
+    .col-group-ns   { background-color: #f1f5f9; }
+    .col-group-peny { background-color: #fef9c3; }
+    .col-group-nsd  { background-color: #e0f2fe; }
+    .col-group-lr   { background-color: #dcfce7; }
+    .col-group-n    { background-color: #ede9fe; }
 
-                        <div class="w-full md:w-1/4 hidden md:block"></div>
-                    </div>
+    .col-group-ns-td   { background-color: #f8fafc; }
+    .col-group-peny-td { background-color: #fffde7; }
+    .col-group-nsd-td  { background-color: #f0faff; }
+    .col-group-lr-td   { background-color: #f0fdf4; }
+    .col-group-n-td    { background-color: #f5f3ff; }
 
-                    <div class="w-full">
-                        <div class="overflow-x-auto">
-                                <table class="min-w-full bg-white border border-gray-300 text-sm">
-                                    <thead>
-                                        <tr class="bg-orange-100 border-b border-gray-300">
-                                            <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300">No</th>
-                                            <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300">Akun</th>
-                                            <th class="px-4 py-3 text-right font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300">Debit</th>
-                                            <th class="px-4 py-3 text-right font-bold text-gray-700 uppercase tracking-wider">Kredit</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        @forelse($entries as $entry)
-                                        <tr>
-                                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 border-r border-gray-200">{{ $entry['ref'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 border-r border-gray-200">{{ $entry['keterangan'] }}</td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-right text-gray-900 border-r border-gray-200">
-                                                {{ $entry['debit'] > 0 ? number_format($entry['debit'], 0, ',', '.') : '-' }}
-                                            </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-right text-gray-900">
-                                                {{ $entry['kredit'] > 0 ? number_format($entry['kredit'], 0, ',', '.') : '-' }}
-                                            </td>
-                                        </tr>
-                                        @empty
-                                        <tr>
-                                            <td colspan="4" class="px-4 py-8 text-center text-gray-500 italic">Belum ada data untuk periode ini.</td>
-                                        </tr>
-                                        @endforelse
-                                    </tbody>
-                                    <tfoot class="bg-gray-200 font-bold border-t-2 border-gray-300">
-                                        <tr>
-                                            <td colspan="2" class="px-4 py-3 text-center uppercase border-r border-gray-300">Total</td>
-                                            <td class="px-4 py-3 text-right border-r border-gray-300">{{ number_format($totalDebit, 0, ',', '.') }}</td>
-                                            <td class="px-4 py-3 text-right">{{ number_format($totalKredit, 0, ',', '.') }}</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+    .text-num { font-family: 'Courier New', monospace; }
 
-                            <div class="mt-6 flex justify-end space-x-4">
-                                <a href="{{ route('laporan.neraca-saldo.export.pdf', ['periode' => $periode]) }}" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded shadow-sm transition-colors">
-                                    Export PDF
-                                </a>
-                                <a href="{{ route('laporan.neraca-saldo.export.excel', ['periode' => $periode]) }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow-sm transition-colors">
-                                    Export Excel
-                                </a>
-                            </div>
-                    </div>
+    .laba-row td { background-color: #bbf7d0 !important; font-weight: bold; }
+    .rugi-row td { background-color: #fee2e2 !important; font-weight: bold; }
+    .total-row td { background-color: #dde1e7 !important; font-weight: bold; border-top: 2px solid #374151; }
+</style>
+@endpush
 
-                </div>
+@section('content')
+<div class="container-fluid">
+
+    <!-- Header & Filter -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+        <div>
+            <h1 class="h4 mb-1">📋 Neraca Lajur <span class="text-muted fs-6 fw-normal">(Worksheet 10 Kolom)</span></h1>
+            <p class="text-muted mb-0 small">Kertas kerja pembantu penyusunan HPP & Laporan Laba Rugi</p>
+        </div>
+        <form method="GET" action="{{ route('laporan.neraca-saldo') }}" id="filterForm" class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <label for="periode" class="form-label mb-0 fw-semibold text-nowrap">Periode:</label>
+            <input type="month" name="periode" id="periode" value="{{ $periode }}"
+                   class="form-control form-control-sm" style="width:160px;"
+                   onchange="document.getElementById('filterForm').submit()">
+        </form>
+    </div>
+
+    <!-- Title Card -->
+    <div class="card shadow-sm mb-0">
+        <div class="card-body py-2 text-center bg-light border-bottom">
+            @php
+                $parts    = explode('-', $periode);
+                $bulanNum = (int)($parts[1] ?? date('m'));
+                $tahunNum = $parts[0] ?? date('Y');
+                $namaBln  = ['','Januari','Februari','Maret','April','Mei','Juni',
+                             'Juli','Agustus','September','Oktober','November','Desember'];
+                $namaPeriode = $namaBln[$bulanNum] . ' ' . $tahunNum;
+            @endphp
+            <div class="fw-bold text-uppercase" style="font-size:13px;">NUKUMA SOES</div>
+            <div class="fw-bold text-uppercase text-secondary" style="font-size:12px;">NERACA LAJUR — PERIODE: {{ $namaPeriode }}</div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0 neraca-lajur-table" id="tblLajur">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" width="5%" class="border-end">Kode</th>
+                            <th rowspan="2" width="18%" class="border-end">Nama Akun</th>
+
+                            <th colspan="2" class="col-group-ns border-end">Neraca Saldo</th>
+                            <th colspan="2" class="col-group-peny border-end">Penyesuaian</th>
+                            <th colspan="2" class="col-group-nsd border-end">N.S.D</th>
+                            <th colspan="2" class="col-group-lr border-end">Laba Rugi</th>
+                            <th colspan="2" class="col-group-n">Neraca</th>
+                        </tr>
+                        <tr>
+                            <th class="col-group-ns">D</th>
+                            <th class="col-group-ns border-end">K</th>
+                            <th class="col-group-peny">D</th>
+                            <th class="col-group-peny border-end">K</th>
+                            <th class="col-group-nsd">D</th>
+                            <th class="col-group-nsd border-end">K</th>
+                            <th class="col-group-lr">D</th>
+                            <th class="col-group-lr border-end">K</th>
+                            <th class="col-group-n">D</th>
+                            <th class="col-group-n">K</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($neracaData as $data)
+                        <tr>
+                            <td class="font-monospace fw-bold text-center border-end" style="font-size:10px;">{{ $data->kode_akun }}</td>
+                            <td class="border-end" style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="{{ $data->nama_akun }}">{{ $data->nama_akun }}</td>
+
+                            {{-- Neraca Saldo --}}
+                            <td class="text-end text-num col-group-ns-td">{{ $data->ns_debit  > 0 ? number_format($data->ns_debit,  0,',','.') : '-' }}</td>
+                            <td class="text-end text-num col-group-ns-td border-end">{{ $data->ns_kredit > 0 ? number_format($data->ns_kredit, 0,',','.') : '-' }}</td>
+
+                            {{-- Penyesuaian --}}
+                            <td class="text-end text-num col-group-peny-td text-muted">{{ $data->peny_debit  > 0 ? number_format($data->peny_debit,  0,',','.') : '-' }}</td>
+                            <td class="text-end text-num col-group-peny-td text-muted border-end">{{ $data->peny_kredit > 0 ? number_format($data->peny_kredit, 0,',','.') : '-' }}</td>
+
+                            {{-- NSD --}}
+                            <td class="text-end text-num col-group-nsd-td">{{ $data->nsd_debit  > 0 ? number_format($data->nsd_debit,  0,',','.') : '-' }}</td>
+                            <td class="text-end text-num col-group-nsd-td border-end">{{ $data->nsd_kredit > 0 ? number_format($data->nsd_kredit, 0,',','.') : '-' }}</td>
+
+                            {{-- Laba Rugi --}}
+                            <td class="text-end text-num col-group-lr-td {{ $data->lr_debit  > 0 ? 'fw-semibold text-success' : '' }}">{{ $data->lr_debit  > 0 ? number_format($data->lr_debit,  0,',','.') : '-' }}</td>
+                            <td class="text-end text-num col-group-lr-td border-end {{ $data->lr_kredit > 0 ? 'fw-semibold text-success' : '' }}">{{ $data->lr_kredit > 0 ? number_format($data->lr_kredit, 0,',','.') : '-' }}</td>
+
+                            {{-- Neraca --}}
+                            <td class="text-end text-num col-group-n-td {{ $data->n_debit  > 0 ? 'fw-semibold text-primary' : '' }}">{{ $data->n_debit  > 0 ? number_format($data->n_debit,  0,',','.') : '-' }}</td>
+                            <td class="text-end text-num col-group-n-td  {{ $data->n_kredit > 0 ? 'fw-semibold text-primary' : '' }}">{{ $data->n_kredit > 0 ? number_format($data->n_kredit, 0,',','.') : '-' }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="12" class="text-center py-5 text-muted fst-italic">
+                                Tidak ada data akun aktif untuk periode ini.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+
+                    <tfoot>
+                        {{-- Baris Jumlah --}}
+                        <tr class="fw-bold" style="font-size:11px; border-top: 2px solid #374151;">
+                            <td colspan="2" class="text-center text-uppercase border-end">Jumlah</td>
+                            <td class="text-end text-num col-group-ns">{{ number_format($totalNsDebit,  0,',','.') }}</td>
+                            <td class="text-end text-num col-group-ns  border-end">{{ number_format($totalNsKredit, 0,',','.') }}</td>
+                            <td class="text-end text-num col-group-peny text-muted">-</td>
+                            <td class="text-end text-num col-group-peny text-muted border-end">-</td>
+                            <td class="text-end text-num col-group-nsd">{{ number_format($totalNsdDebit,  0,',','.') }}</td>
+                            <td class="text-end text-num col-group-nsd border-end">{{ number_format($totalNsdKredit, 0,',','.') }}</td>
+                            <td class="text-end text-num col-group-lr text-success">{{ number_format($totalLrDebit,  0,',','.') }}</td>
+                            <td class="text-end text-num col-group-lr text-success border-end">{{ number_format($totalLrKredit, 0,',','.') }}</td>
+                            <td class="text-end text-num col-group-n text-primary">{{ number_format($totalNDebit,  0,',','.') }}</td>
+                            <td class="text-end text-num col-group-n text-primary">{{ number_format($totalNKredit, 0,',','.') }}</td>
+                        </tr>
+
+                        {{-- Baris Laba/Rugi Bersih --}}
+                        @if($labaBersih > 0)
+                        <tr class="laba-row" style="font-size:11px;">
+                            <td colspan="2" class="text-center text-uppercase border-end">Laba Bersih</td>
+                            <td colspan="6" class="border-end text-center text-muted fst-italic small">—</td>
+                            <td class="text-end text-num">{{ number_format($labaBersih, 0,',','.') }}</td>
+                            <td class="text-end text-num border-end">-</td>
+                            <td class="text-end text-num">-</td>
+                            <td class="text-end text-num">{{ number_format($labaBersih, 0,',','.') }}</td>
+                        </tr>
+                        @elseif($rugiBersih > 0)
+                        <tr class="rugi-row" style="font-size:11px;">
+                            <td colspan="2" class="text-center text-uppercase border-end">Rugi Bersih</td>
+                            <td colspan="6" class="border-end text-center text-muted fst-italic small">—</td>
+                            <td class="text-end text-num">-</td>
+                            <td class="text-end text-num border-end">{{ number_format($rugiBersih, 0,',','.') }}</td>
+                            <td class="text-end text-num">{{ number_format($rugiBersih, 0,',','.') }}</td>
+                            <td class="text-end text-num">-</td>
+                        </tr>
+                        @endif
+
+                        {{-- Baris Total Akhir --}}
+                        <tr class="total-row" style="font-size:11px;">
+                            <td colspan="2" class="text-center text-uppercase border-end">Total Akhir</td>
+                            <td class="text-end text-num">{{ number_format($totalNsDebit,  0,',','.') }}</td>
+                            <td class="text-end text-num border-end">{{ number_format($totalNsKredit, 0,',','.') }}</td>
+                            <td class="text-end text-num text-muted">-</td>
+                            <td class="text-end text-num text-muted border-end">-</td>
+                            <td class="text-end text-num">{{ number_format($totalNsdDebit,  0,',','.') }}</td>
+                            <td class="text-end text-num border-end">{{ number_format($totalNsdKredit, 0,',','.') }}</td>
+                            <td class="text-end text-num">{{ number_format($totalLrDebit  + ($labaBersih > 0 ? $labaBersih : 0), 0,',','.') }}</td>
+                            <td class="text-end text-num border-end">{{ number_format($totalLrKredit + ($rugiBersih > 0 ? $rugiBersih : 0), 0,',','.') }}</td>
+                            <td class="text-end text-num">{{ number_format($totalNDebit  + ($rugiBersih > 0 ? $rugiBersih : 0), 0,',','.') }}</td>
+                            <td class="text-end text-num">{{ number_format($totalNKredit + ($labaBersih > 0 ? $labaBersih : 0), 0,',','.') }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
+
+        {{-- Status Seimbang --}}
+        @if($labaBersih > 0 || $rugiBersih > 0 || ($totalNsDebit == $totalNsKredit))
+        <div class="card-footer py-2">
+            @if($labaBersih > 0)
+            <div class="alert alert-success mb-0 py-2 d-flex align-items-center">
+                <i class="fas fa-check-circle me-2 text-success"></i>
+                <span class="small"><strong>Neraca Lajur Seimbang!</strong> Laba Bersih periode ini: <strong>Rp {{ number_format($labaBersih, 0, ',', '.') }}</strong></span>
+            </div>
+            @elseif($rugiBersih > 0)
+            <div class="alert alert-danger mb-0 py-2 d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                <span class="small"><strong>Neraca Lajur Seimbang!</strong> Rugi Bersih periode ini: <strong>Rp {{ number_format($rugiBersih, 0, ',', '.') }}</strong></span>
+            </div>
+            @else
+            <div class="alert alert-info mb-0 py-2 d-flex align-items-center">
+                <i class="fas fa-info-circle me-2 text-info"></i>
+                <span class="small">Tidak ada akun nominal (Laba Rugi) yang memiliki saldo pada periode ini.</span>
+            </div>
+            @endif
+        </div>
+        @endif
     </div>
-</x-app-layout>
+
+    <p class="text-muted small mt-2">
+        <i class="fas fa-info-circle"></i>
+        <strong>Keterangan:</strong> Kolom Laba Rugi diisi otomatis oleh akun bertipe <span class="badge bg-success">Pendapatan</span> atau <span class="badge bg-warning text-dark">Beban</span>. Kolom Neraca diisi oleh akun bertipe <span class="badge bg-primary">Aset</span>, <span class="badge bg-secondary">Kewajiban</span>, dan <span class="badge bg-dark">Ekuitas</span>.
+    </p>
+</div>
+@endsection

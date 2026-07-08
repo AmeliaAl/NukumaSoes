@@ -1,231 +1,169 @@
-<x-app-layout>
-    <div class="py-12">
-    <div class="py-8 w-full">
-        <div class="px-4 sm:px-6 lg:px-8">
-            <!-- Filter Section -->
-            <div class="mb-6 bg-white p-4 rounded-2xl shadow-md border border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <form method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-end gap-4 w-full">
-                    <div class="flex-1 min-w-[200px]">
-                        <label for="periode" class="block text-sm font-medium text-gray-700 mb-1">Pilih Periode</label>
-                        <input type="month" name="periode" id="periode" value="{{ request('periode', $startDate->format('Y-m')) }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm">
-                    </div>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button type="submit" class="flex-1 sm:flex-none bg-red-800 text-white px-6 py-2.5 rounded-lg hover:bg-red-900 transition-colors shadow-sm font-medium text-sm flex justify-center items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                            Filter
-                        </button>
-                        <a href="{{ route('dashboard') }}" class="flex-1 sm:flex-none bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg hover:bg-gray-200 transition-colors shadow-sm font-medium text-sm flex justify-center items-center">
-                            Reset
-                        </a>
-                    </div>
-                </form>
-            </div>
+@extends('layouts.app')
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
-                <!-- Card 1: Total Produk -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-red-800 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Total Produk</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $totalProduk }}</h3>
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <svg class="w-6 h-6 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+@section('title', 'Dashboard Produksi')
+@section('page-title', 'Dashboard Produksi')
 
-                <!-- Card 2: Produk Aman -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-green-600 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Produk Aman</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $produkAman }}</h3>
-                        </div>
-                        <div class="p-3 bg-green-50 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+@section('content')
+<div class="dashboard-simple">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="h4 fw-bold mb-1">Dashboard Produksi</h1>
+            <p class="text-muted mb-0">Kondisi operasional produksi per {{ now()->translatedFormat('d F Y') }}</p>
+        </div>
+        <a href="{{ route('permintaan-produksi.index') }}" class="btn btn-primary px-3">
+            <i class="fas fa-clipboard-list me-2"></i>Lihat Job Order
+        </a>
+    </div>
 
-                <!-- Card 3: Akan Expired -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-yellow-500 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Hampir Expired</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $produkAkanExpired }}</h3>
-                            <p class="text-xs text-yellow-600 font-medium mt-1">Dalam 30 hari</p>
-                        </div>
-                        <div class="p-3 bg-yellow-50 rounded-lg">
-                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 4: Expired -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-red-600 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Produk Expired</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $produkExpired }}</h3>
-                            <p class="text-xs text-red-600 font-medium mt-1">Perlu tindakan</p>
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 5: Total Transaksi -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-blue-600 transition-transform hover:scale-[1.02]">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Total Transaksi</p>
-                            <h3 class="text-3xl font-serif font-bold text-gray-900">{{ $totalTransaksi }}</h3>
-                            <p class="text-xs text-blue-600 font-medium mt-1">Masuk & Keluar</p>
-                        </div>
-                        <div class="p-3 bg-blue-50 rounded-lg">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                        </div>
-                    </div>
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card h-100">
+                <div class="summary-icon text-primary bg-primary-subtle"><i class="fas fa-industry"></i></div>
+                <div>
+                    <div class="summary-label">Job Order Aktif</div>
+                    <div class="summary-value">{{ $jobAktif }}</div>
+                    <small class="text-muted">{{ $jobPending }} pending, {{ $jobProses }} proses</small>
                 </div>
             </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card h-100">
+                <div class="summary-icon text-info bg-info-subtle"><i class="fas fa-layer-group"></i></div>
+                <div>
+                    <div class="summary-label">Batch Hari Ini</div>
+                    <div class="summary-value">{{ $batchHariIni }}</div>
+                    <small class="text-muted">Rencana atau sedang diproses</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card h-100">
+                <div class="summary-icon text-success bg-success-subtle"><i class="fas fa-coins"></i></div>
+                <div>
+                    <div class="summary-label">Biaya Bulan Ini</div>
+                    <div class="summary-value summary-currency">Rp {{ number_format($totalBiayaBulanIni, 0, ',', '.') }}</div>
+                    <small class="text-muted">Akumulasi biaya job order</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card h-100">
+                <div class="summary-icon {{ $stokMenipis > 0 ? 'text-danger bg-danger-subtle' : 'text-success bg-success-subtle' }}">
+                    <i class="fas {{ $stokMenipis > 0 ? 'fa-triangle-exclamation' : 'fa-circle-check' }}"></i>
+                </div>
+                <div>
+                    <div class="summary-label">Stok Perlu Perhatian</div>
+                    <div class="summary-value">{{ $stokMenipis }}</div>
+                    <small class="text-muted">Bahan di bawah stok minimum</small>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                <!-- Pie Chart -->
-                <div class="bg-white rounded-2xl shadow-xl p-8 border-t-8 border-red-900">
-                    <h3 class="text-2xl font-serif font-bold text-gray-800 mb-6 text-center border-b pb-4">Status Produk Expired</h3>
-                    <div class="relative h-72 w-full flex justify-center">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                    <div class="mt-8 grid grid-cols-3 gap-4 text-center">
-                        <div class="p-3 bg-green-50 rounded-xl shadow-inner">
-                            <span class="block text-2xl font-bold text-green-700">{{ $produkAman }}</span>
-                            <span class="text-xs text-green-600 font-medium uppercase">Aman</span>
-                        </div>
-                        <div class="p-3 bg-yellow-50 rounded-xl shadow-inner">
-                            <span class="block text-2xl font-bold text-yellow-700">{{ $produkAkanExpired }}</span>
-                            <span class="text-xs text-yellow-600 font-medium uppercase">Warning</span>
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-xl shadow-inner">
-                            <span class="block text-2xl font-bold text-red-700">{{ $produkExpired }}</span>
-                            <span class="text-xs text-red-600 font-medium uppercase">Expired</span>
-                        </div>
+    <div class="row g-3">
+        <div class="col-lg-3">
+            <div class="panel-card h-100">
+                <h2 class="h6 fw-bold mb-3">Status Job Order</h2>
+                <div class="status-row">
+                    <span><span class="status-dot bg-secondary"></span>Pending</span>
+                    <strong>{{ $jobPending }}</strong>
+                </div>
+                <div class="status-row">
+                    <span><span class="status-dot bg-primary"></span>Proses</span>
+                    <strong>{{ $jobProses }}</strong>
+                </div>
+                <div class="status-row">
+                    <span><span class="status-dot bg-success"></span>Selesai</span>
+                    <strong>{{ $jobSelesai }}</strong>
+                </div>
+                <hr>
+                <p class="small text-muted mb-0">Angka ini menunjukkan posisi seluruh job order produksi saat ini.</p>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="h6 fw-bold mb-1">Job Order Terbaru</h2>
+                        <p class="small text-muted mb-0">Enam job order yang terakhir dicatat.</p>
                     </div>
                 </div>
 
-                <!-- Transaction Chart -->
-                <div class="bg-white rounded-2xl shadow-xl p-8 border-t-8 border-red-900">
-                    <h3 class="text-2xl font-serif font-bold text-gray-800 mb-6 text-center border-b pb-4">Grafik Transaksi Produk<br><span class="text-sm font-normal text-gray-500">Periode {{ $startDate->format('F Y') }}</span></h3>
-                    <div class="relative h-72 w-full">
-                        <canvas id="transactionChart"></canvas>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 simple-table">
+                        <thead>
+                            <tr>
+                                <th>Nomor Job</th>
+                                <th>Produk</th>
+                                <th class="text-end">Target</th>
+                                <th>Status</th>
+                                <th class="text-end">Biaya</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($jobTerbaru as $job)
+                                @php
+                                    $statusClass = match($job->status) {
+                                        'proses' => 'text-bg-primary',
+                                        'selesai' => 'text-bg-success',
+                                        default => 'text-bg-secondary',
+                                    };
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">{{ $job->nomor_job }}</div>
+                                        <small class="text-muted">{{ $job->tanggal_mulai?->format('d/m/Y') ?? '-' }}</small>
+                                    </td>
+                                    <td>{{ $job->produk->nama_produk ?? '-' }}</td>
+                                    <td class="text-end">{{ number_format($job->jumlah_produksi, 2, ',', '.') }}</td>
+                                    <td><span class="badge {{ $statusClass }}">{{ ucfirst($job->status) }}</span></td>
+                                    <td class="text-end">Rp {{ number_format($job->total_biaya_produksi, 0, ',', '.') }}</td>
+                                    <td class="text-end">
+                                        <a href="{{ route('permintaan-produksi.show', $job->id_permintaan_produksi) }}" class="btn btn-sm btn-light" title="Lihat detail">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="text-center text-muted py-5">Belum ada job order produksi.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 </div>
+@endsection
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-
-<script>
-    document.addEventListener('turbo:load', function () {
-        console.log('Dashboard Blade Script: Turbo load detected');
-        
-        // Data from PHP
-        const statusData = {!! json_encode($statusChartData) !!};
-        const transactionData = {!! json_encode($transactionChartData ?? []) !!};
-
-        // --- 1. Status Produk Chart ---
-        const statusCtx = document.getElementById('statusChart');
-        if (statusCtx) {
-            new Chart(statusCtx, {
-                type: 'pie',
-                data: {
-                    labels: statusData.labels,
-                    datasets: [{
-                        data: statusData.data,
-                        backgroundColor: ['#3498db', '#f39c12', '#e74c3c'],
-                        borderColor: '#ffffff',
-                        borderWidth: 2
-                    }]
-                },
-                plugins: [typeof ChartDataLabels !== 'undefined' ? ChartDataLabels : {}],
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            color: '#fff',
-                            font: { weight: 'bold', size: 14 },
-                            formatter: (value, context) => {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                return percentage > 0 ? `${context.chart.data.labels[context.dataIndex]}\n${percentage}%` : '';
-                            },
-                            textAlign: 'center'
-                        }
-                    }
-                }
-            });
-        }
-
-        // --- 2. Transaction Chart ---
-        const transCtx = document.getElementById('transactionChart');
-        if (transCtx) {
-            new Chart(transCtx, {
-                type: 'line',
-                data: {
-                    labels: transactionData.labels,
-                    datasets: [
-                        {
-                            label: 'Produk Masuk',
-                            data: transactionData.masuk || [],
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 4
-                        },
-                        {
-                            label: 'Produk Keluar',
-                            data: transactionData.keluar || [],
-                            borderColor: '#EF4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                    }
-                }
-            });
-        }
-    });
-</script>
-</x-app-layout>
+@push('styles')
+<style>
+    .dashboard-simple { max-width: 1500px; margin: 0 auto; }
+    .summary-card, .panel-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(16, 24, 40, .04);
+    }
+    .summary-card { display: flex; align-items: center; gap: 14px; padding: 18px; }
+    .panel-card { padding: 20px; }
+    .summary-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex: 0 0 42px;
+    }
+    .summary-label { color: #6c757d; font-size: .8rem; font-weight: 600; }
+    .summary-value { color: #212529; font-size: 1.55rem; line-height: 1.2; font-weight: 700; }
+    .summary-currency { font-size: 1.15rem; }
+    .status-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f3f5; }
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+    .simple-table thead th { color: #6c757d; font-size: .75rem; text-transform: uppercase; border-bottom-width: 1px; }
+    .simple-table td { font-size: .875rem; border-color: #f1f3f5; }
+    @media (max-width: 575.98px) {
+        .panel-card { padding: 16px; }
+        .summary-currency { font-size: 1rem; }
+    }
+</style>
+@endpush

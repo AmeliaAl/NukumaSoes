@@ -1,104 +1,247 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>{{ config('app.name', 'Laravel') }}</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>@yield('title', 'Dashboard') - Sistem Biaya Produksi</title>
     
-    <!-- Alpine.js (CDN for reliability) -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-
-<body class="font-sans antialiased">
-    <div x-data="{ sidebarOpen: true }" class="flex h-screen bg-[url('/images/background_fluid.png')] bg-cover bg-fixed bg-center relative overflow-hidden">
-        <div class="absolute inset-0 bg-red-900/10 pointer-events-none z-0"></div>
-
-        <!-- SIDEBAR (Dynamic Width) -->
-        <div :class="sidebarOpen ? 'w-64 lg:w-72 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0'" class="fixed inset-y-0 left-0 z-30 transition-all duration-300 ease-in-out lg:relative overflow-hidden flex-shrink-0">
-            <x-sidebar />
-        </div>
-
-        <!-- MAIN CONTENT WRAPPER -->
-        <div class="flex-1 flex flex-col h-screen overflow-hidden relative z-10 transition-all duration-300" :class="sidebarOpen ? 'lg:ml-0' : 'lg:ml-0'">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --navbar-height: 60px;
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            z-index: 1000;
+            transition: all 0.3s;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+        }
+        
+        /* Navbar */
+        .main-navbar {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--navbar-height);
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: all 0.3s;
+        }
+        
+        /* Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--navbar-height);
+            padding: 25px;
+            min-height: calc(100vh - var(--navbar-height));
+            transition: all 0.3s;
+        }
+        
+        /* Cards */
+        .stat-card {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        /* Page Header */
+        .page-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                left: -var(--sidebar-width);
+            }
             
-            <!-- TOP BAR (Toggle & Profile) -->
-            <header class="flex justify-between items-center py-4 px-6 bg-white/80 backdrop-blur-md shadow-sm border-b border-white/20">
-                <!-- Left: Sidebar Toggle + Filament Link -->
-                <div class="flex items-center gap-3">
-                    <button @click="sidebarOpen = !sidebarOpen" class="text-red-900 hover:bg-red-50 p-2 rounded-lg transition-colors focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                    
-                    <!-- Link to Filament Admin -->
-                    <a href="/admin" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        Admin Panel
-                    </a>
-                </div>
-
-                <!-- Right: Profile Dropdown (Hover) -->
-                <div x-data="{ profileOpen: false }" @mouseenter="profileOpen = true" @mouseleave="profileOpen = false" class="relative">
-                    <button class="flex items-center space-x-3 focus:outline-none">
-                        <div class="text-right hidden md:block">
-                            <p class="text-sm font-bold text-gray-800">{{ Auth::user()->name }}</p>
-                            <p class="text-xs text-red-600 font-medium capitalize">{{ Auth::user()->role }}</p>
-                        </div>
-                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white font-bold shadow-md border-2 border-white">
-                            {{ substr(Auth::user()->name, 0, 1) }}
-                        </div>
-                    </button>
-
-                    <!-- Dropdown Menu -->
-                    <div x-show="profileOpen" 
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 scale-95"
-                         x-transition:enter-end="opacity-100 scale-100"
-                         x-transition:leave="transition ease-in duration-75"
-                         x-transition:leave-start="opacity-100 scale-100"
-                         x-transition:leave-end="opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 border border-gray-100 z-50">
-                        
-                        <div class="px-4 py-2 border-b border-gray-100 md:hidden">
-                            <p class="text-sm font-bold text-gray-800">{{ Auth::user()->name }}</p>
-                            <p class="text-xs text-red-600 capitalize">{{ Auth::user()->role }}</p>
-                        </div>
-
-                        <!-- Profile Link -->
-                        <a href="{{ route('profile.edit') }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-800 transition-colors flex items-center gap-2 border-b border-gray-100">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            Profile
-                        </a>
-
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-800 transition-colors flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                </svg>
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </header>
-
-            <!-- SCROLLABLE CONTENT AREA -->
-            <main class="flex-1 overflow-x-hidden overflow-y-auto w-full p-6">
-                {{ $slot }}
-            </main>
-        </div>
+            .sidebar.active {
+                left: 0;
+            }
+            
+            .main-navbar,
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+    </style>
+    @stack('styles')
+</head>
+<body>
+    <!-- Sidebar -->
+    @include('partials.sidebar')
+    
+    <!-- Navbar -->
+    @include('partials.navbar')
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        @yield('content')
     </div>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // ========================================
+        // PREVENT BACK BUTTON AFTER LOGOUT
+        // ========================================
+        
+        // Deteksi jika halaman dimuat dari cache browser (bfcache)
+        window.addEventListener('pageshow', function(event) {
+            // event.persisted = true berarti halaman dimuat dari bfcache
+            // performance.navigation.type === 2 berarti user menekan tombol back
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                // Cek apakah user masih terautentikasi dengan melakukan AJAX request
+                fetch('/dashboard', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (response.status === 401 || response.redirected) {
+                        // Jika tidak terautentikasi, reload halaman
+                        window.location.reload();
+                    }
+                })
+                .catch(() => {
+                    // Jika terjadi error, reload halaman untuk keamanan
+                    window.location.reload();
+                });
+            }
+        });
+
+        // Deteksi browser back/forward button
+        window.addEventListener('popstate', function(event) {
+            // Cek autentikasi saat navigasi back/forward
+            fetch('/dashboard', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.status === 401 || response.redirected) {
+                    window.location.href = '/login';
+                }
+            })
+            .catch(() => {
+                window.location.href = '/login';
+            });
+        });
+
+        // ========================================
+        // EXISTING SCRIPTS
+        // ========================================
+        
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+        
+        // Auto hide alerts
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+        
+        // DataTable default config
+        $.extend(true, $.fn.dataTable.defaults, {
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json'
+            },
+            responsive: true
+        });
+
+        // Disable browser cache untuk form
+        if (window.performance && window.performance.navigation.type === 1) {
+            // Type 1 = reload
+            console.log('Page was reloaded');
+        }
+    </script>
+    
+    @yield('scripts')
 </body>
 </html>

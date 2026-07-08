@@ -3,8 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Models\FakturPembelian;  // ← TAMBAHKAN INI
-use App\Observers\FakturPembelianObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        FakturPembelian::observe(FakturPembelianObserver::class);
+        //
     }
 }

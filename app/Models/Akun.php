@@ -7,48 +7,88 @@ use Illuminate\Database\Eloquent\Model;
 
 class Akun extends Model
 {
-     use HasFactory;
+    use HasFactory;
 
-    protected $table = 'akun'; // Nama tabel eksplisit
+    protected $table = 'akun';
+    protected $primaryKey = 'id_akun';
 
-    protected $guarded = [];
     protected $fillable = [
-        'header_akun',
-        'no_akun',
+        'kode_akun',
         'nama_akun',
+        'tipe_akun',
+        'saldo_normal',
         'saldo',
+        'status',
+        'keterangan',
     ];
 
-    
+    protected $casts = [
+        'saldo' => 'decimal:2',
+    ];
 
+    // Relasi: Akun punya banyak detail jurnal
     public function jurnalDetail()
     {
-        return $this->hasMany(JurnalDetail::class, 'no_akun', 'id');
+        return $this->hasMany(JurnalUmumDetail::class, 'id_akun', 'id_akun');
     }
 
-    public function kategoriAset()
-{
-    return $this->belongsTo(KategoriAset::class, 'id_kategori');
-}
+    // Helper: Hitung total debit
+    public function getDebitTotal($tanggalMulai = null, $tanggalAkhir = null)
+    {
+        $query = $this->jurnalDetail();
+        if ($tanggalMulai && $tanggalAkhir) {
+            $query->whereHas('jurnalUmum', function ($q) use ($tanggalMulai, $tanggalAkhir) {
+                $q->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
+            });
+        }
+        return $query->sum('debit');
+    }
 
-public function pembayaran()
-{
-    return $this->hasMany(PembayaranAset::class, 'id_akun');
-}
+    // Helper: Hitung total kredit
+    public function getKreditTotal($tanggalMulai = null, $tanggalAkhir = null)
+    {
+        $query = $this->jurnalDetail();
+        if ($tanggalMulai && $tanggalAkhir) {
+            $query->whereHas('jurnalUmum', function ($q) use ($tanggalMulai, $tanggalAkhir) {
+                $q->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
+            });
+        }
+        return $query->sum('kredit');
+    }
 
-public function pemeliharaan()
-{
-    return $this->hasMany(Pemeliharaan::class, 'id_akun');
-}
+    // Helper: Hitung saldo berjalan
+    public function hitungSaldo($tanggalMulai = null, $tanggalAkhir = null)
+    {
+        $totalDebit = $this->getDebitTotal($tanggalMulai, $tanggalAkhir);
+        $totalKredit = $this->getKreditTotal($tanggalMulai, $tanggalAkhir);
 
-public function utangJangkaPanjangKredit()
-{
-    return $this->hasMany(UtangJangkaPanjang::class, 'akun_id');
-}
+        if ($this->saldo_normal === 'debit') {
+            return $totalDebit - $totalKredit;
+        }
+        return $totalKredit - $totalDebit;
+    }
 
-public function utangJangkaPanjangDebit()
-{
-    return $this->hasMany(UtangJangkaPanjang::class, 'akun_debit_id');
-}
+    // Scope: By tipe
+    public function scopeByTipe($query, $tipe)
+    {
+        return $query->where('tipe_akun', $tipe);
+    }
 
+    // Scope: Aktif
+    public function scopeAktif($query)
+    {
+        return $query->where('status', 'aktif');
+    }
+
+    // Helper: Get tipe akun list
+    public static function getTipeAkunList()
+    {
+        return [
+            'aset' => 'Aset',
+            'kewajiban' => 'Kewajiban',
+            'ekuitas' => 'Ekuitas',
+            'pendapatan' => 'Pendapatan',
+            'beban' => 'Beban',
+        ];
+    }
 }
