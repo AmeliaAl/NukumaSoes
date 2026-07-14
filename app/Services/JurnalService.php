@@ -2,246 +2,267 @@
 
 namespace App\Services;
 
-use App\Models\JurnalUmum;
+use App\Models\Jurnal;
 use App\Models\JurnalDetail;
 use App\Models\Akun;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * JurnalService
+ *
+ * Bertanggung jawab membuat satu record jurnal + detail debit/kredit
+ * untuk setiap transaksi. Dipanggil dari controller setelah menyimpan
+ * transaksi utama (Pembelian, Overhead, SaldoAwal).
+ *
+ * Cara menambah modul baru:
+ *   Buat method static baru di class ini, panggil buatJurnal() di dalam.
+ */
 class JurnalService
 {
     /**
-     * Generate nomor jurnal otomatis
+     * Buat satu jurnal + N detail.
+     *
+     * @param  string $tanggal      Y-m-d
+     * @param  string $noReferensi  PB-001 / OH-001 / SA-001
+     * @param  string $deskripsi    Ringkasan transaksi
+     * @param  array  $entries      [['no_akun'=>'111','deskripsi'=>'...','debit'=>X,'credit'=>Y], ...]
+     * @return Jurnal
      */
-    /*public function generateNoJurnal(): string
-    {
-        $tanggal = Carbon::now()->format('Ymd');
-        $lastJurnal = JurnalUmum::whereDate('created_at', Carbon::today())
-            ->latest('id')
-            ->first();
-        
-        $urutan = $lastJurnal ? (int) substr($lastJurnal->no_jurnal, -3) + 1 : 1;
-        
-        return 'JRN-' . $tanggal . '-' . str_pad($urutan, 3, '0', STR_PAD_LEFT);
-    }
+    public static function buatJurnal(
+        string $tanggal,
+        string $noReferensi,
+        string $deskripsi,
+        array  $entries
+    ): Jurnal {
+        $jurnal = Jurnal::create([
+            'tanggal'      => $tanggal,
+            'no_referensi' => $noReferensi,
+            'deskripsi'    => $deskripsi,
+        ]);
 
-    /**
-     * Buat jurnal baru
-     * 
-     * @param array $data
-     * @param array $items [['id_akun' => 1, 'debit' => 1000, 'kredit' => 0], ...]
-     * @return JurnalUmum
-     */
-    /*public function buatJurnal(array $data, array $items): JurnalUmum
-    {
-        return DB::transaction(function () use ($data, $items) {
-            // Validasi balance
-            $totalDebit = collect($items)->sum('debit');
-            $totalKredit = collect($items)->sum('kredit');
-            
-            if ($totalDebit != $totalKredit) {
-                throw new \Exception("Jurnal tidak balance! Debit: {$totalDebit}, Kredit: {$totalKredit}");
-            }
-
-            // Buat header jurnal
-            $jurnal = Jurnal::create([
-                'tanggal' => $data['tanggal'] ?? Carbon::now(),
-                'no_referensi' => $data['no_referensi'] ?? null,
-                'deskripsi' => $data['deskripsi'],
-                'created_by' => auth()->id(),
+        foreach ($entries as $entry) {
+            $jurnal->details()->create([
+                'no_akun'    => $entry['no_akun'],
+                'deskripsi'  => $entry['deskripsi'] ?? null,
+                'debit'      => $entry['debit']  ?? 0,
+                'credit'     => $entry['credit'] ?? 0,
             ]);
-
-            // Buat detail jurnal & update saldo akun
-            foreach ($items as $index => $item) {
-                JurnalDetail::create([
-                    'id_jurnal' => $jurnal->id,
-                    'no_akun' => $item['no_akun'],
-                    'deskripsi' => $item['deskripsi'] ?? null,
-                    'debit' => $item['debit'] ?? 0,
-                    'kredit' => $item['kredit'] ?? 0,
-                    'urutan' => $index + 1,
-                ]);
-
-                // Update saldo akun
-                $akun = Akun::find($item['no_akun']);
-                if ($akun) {
-                    $akun->updateSaldo($item['debit'] ?? 0, $item['kredit'] ?? 0);
-                }
-            }
-
-            return $jurnal->load('details.akun');
-        });
-    }
-
-    /**
-     * Jurnal untuk Pembelian Aset
-     */
-    /**
- * Jurnal untuk Pembelian Aset (Cash Basis)
- */
-/*public function jurnalPembelianAset($fakturPembelian): JurnalUmum
-{
-    // ✅ Cek dulu status pembayaran
-    if ($fakturPembelian->status !== 'lunas') {
-        throw new \Exception('Faktur belum lunas, jurnal tidak dapat dibuat');
-    }
-
-    $items = [];
-
-    foreach ($fakturPembelian->items as $item) {
-        $items[] = [
-            // Debit: Aset Tetap
-            'no_akun' => $this->getAkunByKode('121'),
-            'debit' => $item->total_harga,
-            'kredit' => 0,
-            'keterangan' => "Pembelian {$item->nama_aset}",
-        ];
-    }
-
-    // Kredit: Kas (karena sudah bayar tunai)
-    $items[] = [
-        'no_akun' => $this->getAkunByKode('111'), // Kas
-        'debit' => 0,
-        'kredit' => $fakturPembelian->total_tagihan,
-        'keterangan' => "Pembayaran ke {$fakturPembelian->vendor->nama_vendor}",
-    ];
-
-    return $this->buatJurnal([
-        'tanggal' => now(), // Tanggal saat dibayar
-        'no_referensi' => $fakturPembelian->id,
-        'keterangan' => "Pembelian Aset (LUNAS) - {$fakturPembelian->no_faktur}",
-    ], $items);
-}
-
-    /**
-     * Jurnal untuk Penyusutan Bulanan
-     */
-    /*public function jurnalPenyusutan($penyusutan): JurnalUmum
-    {
-        $items = [
-            [
-                // Debit: Beban Penyusutan
-                'id_akun' => $this->getAkunByKode('5-1004'),
-                'debit' => $penyusutan->beban_penyusutan,
-                'kredit' => 0,
-                'keterangan' => "Penyusutan {$penyusutan->aset->nama_aset}",
-            ],
-            [
-                // Kredit: Akumulasi Penyusutan
-                'id_akun' => $this->getAkunByKode('1-2900'),
-                'debit' => 0,
-                'kredit' => $penyusutan->beban_penyusutan,
-                'keterangan' => "Akumulasi Penyusutan {$penyusutan->aset->nama_aset}",
-            ],
-        ];
-
-        return $this->buatJurnal([
-            'tanggal_transaksi' => Carbon::parse($penyusutan->periode)->endOfMonth(),
-            'jenis_transaksi' => 'penyusutan',
-            'referensi_id' => $penyusutan->id,
-            'referensi_tipe' => 'App\Models\Penyusutan',
-            'keterangan' => "Penyusutan Periode {$penyusutan->periode}",
-        ], $items);
-    }
-
-    /**
-     * Jurnal untuk Pemakaian Persediaan
-     */
-    /*public function jurnalPemakaianPersediaan($pemakaian): JurnalUmum
-    {
-        $aset = $pemakaian->asetLancar;
-        $totalNilai = $pemakaian->jumlah * $aset->harga_satuan_rata;
-
-        $items = [
-            [
-                // Debit: Beban Persediaan
-                'id_akun' => $this->getAkunByKode('5-1005'),
-                'debit' => $totalNilai,
-                'kredit' => 0,
-                'keterangan' => "Pemakaian {$aset->nama_barang}",
-            ],
-            [
-                // Kredit: Persediaan
-                'id_akun' => $this->getAkunByKode('1-1100'),
-                'debit' => 0,
-                'kredit' => $totalNilai,
-                'keterangan' => "Pengurangan stok {$aset->nama_barang}",
-            ],
-        ];
-
-        return $this->buatJurnal([
-            'tanggal_transaksi' => $pemakaian->tanggal,
-            'jenis_transaksi' => 'pemakaian_persediaan',
-            'referensi_id' => $pemakaian->id,
-            'referensi_tipe' => 'App\Models\PemakaianPersediaan',
-            'keterangan' => "Pemakaian Persediaan {$aset->nama_barang}",
-        ], $items);
-    }
-
-    /**
-     * Jurnal untuk Pembelian Persediaan
-     */
-    /*public function jurnalPembelianPersediaan($persediaan): JurnalUmum
-    {
-        $items = [
-            [
-                // Debit: Persediaan
-                'id_akun' => $this->getAkunByKode('1-1100'),
-                'debit' => $persediaan->total,
-                'kredit' => 0,
-                'keterangan' => "Pembelian {$persediaan->nama_barang}",
-            ],
-            [
-                // Kredit: Kas
-                'id_akun' => $this->getAkunByKode('1-1001'),
-                'debit' => 0,
-                'kredit' => $persediaan->total,
-                'keterangan' => "Pembayaran persediaan",
-            ],
-        ];
-
-        return $this->buatJurnal([
-            'tanggal_transaksi' => $persediaan->tanggal_masuk,
-            'jenis_transaksi' => 'pembelian_persediaan',
-            'referensi_id' => $persediaan->id,
-            'referensi_tipe' => 'App\Models\Persediaan',
-            'keterangan' => "Pembelian Persediaan {$persediaan->nama_barang}",
-        ], $items);
-    }
-
-    /**
-     * Helper: Get ID akun by kode
-     */
-    /*protected function getAkunByKode(string $kode): int
-    {
-        $akun = Akun::where('kode_akun', $kode)->first();
-        
-        if (!$akun) {
-            throw new \Exception("Akun dengan kode {$kode} tidak ditemukan!");
         }
-        
-        return $akun->id;
+
+        return $jurnal;
     }
 
+    // ──────────────────────────────────────────────────────────────────────
+    // SETORAN MODAL AWAL
+    // ──────────────────────────────────────────────────────────────────────
+
     /**
-     * Void/batalkan jurnal
+     * Jurnal Setoran Modal Awal — Double Entry yang benar:
+     *   Debit  → Kas/Bank (akun yang dipilih)
+     *   Kredit → Modal Pemilik (311)
+     *
+     * CATATAN untuk Buku Besar:
+     * - Buku Besar Kas/Bank: saldo awal dari saldo_awals (bukan dari jurnal ini)
+     *   sehingga entri debit di sini TIDAK dihitung ulang di hitungSaldoSebelumPeriode()
+     *   untuk menghindari double counting.
+     * - Buku Besar 311: saldo dari kredit jurnal ini (tidak ada di saldo_awals)
+     *
+     * CATATAN untuk Jurnal Umum:
+     * - Kedua sisi wajib ada agar jurnal balance (double-entry accounting)
      */
-    /*public function voidJurnal(JurnalUmum $jurnal): bool
+    public static function jurnalSetoranModal(
+        string $tanggal,
+        string $noBukti,
+        string $noAkunKas,
+        string $namaAkunKas,
+        float  $nominal
+    ): Jurnal {
+        return self::buatJurnal(
+            $tanggal,
+            $noBukti,
+            'Setoran Modal Awal',
+            [
+                ['no_akun' => $noAkunKas, 'deskripsi' => $namaAkunKas, 'debit' => $nominal, 'credit' => 0],
+                ['no_akun' => '311',      'deskripsi' => 'Modal Pemilik', 'debit' => 0, 'credit' => $nominal],
+            ]
+        );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // PEMBELIAN BAHAN BAKU
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Jurnal Pembelian Bahan Baku:
+     *   Debit  → 552 Pembelian Bahan Baku (subtotal)
+     *   Debit  → 553 Ongkos Angkut (jika ada)
+     *   Kredit → 554 Potongan Pembelian (jika ada)
+     *   Kredit → Kas/Bank (grand_total)
+     */
+    public static function jurnalPembelian(
+        string $tanggal,
+        string $noPembelian,
+        float  $subtotal,
+        float  $diskon,
+        float  $ongkir,
+        float  $grandTotal,
+        string $noAkunBayar,
+        string $namaAkunBayar
+    ): Jurnal {
+        $entries = [];
+
+        // Debit: Pembelian Bahan Baku
+        $entries[] = [
+            'no_akun'   => '552',
+            'deskripsi' => 'Pembelian Bahan Baku',
+            'debit'     => $subtotal,
+            'credit'    => 0,
+        ];
+
+        // Debit: Ongkos Angkut
+        if ($ongkir > 0) {
+            $entries[] = [
+                'no_akun'   => '553',
+                'deskripsi' => 'Ongkos Angkut Pembelian',
+                'debit'     => $ongkir,
+                'credit'    => 0,
+            ];
+        }
+
+        // Kredit: Potongan Pembelian
+        if ($diskon > 0) {
+            $entries[] = [
+                'no_akun'   => '554',
+                'deskripsi' => 'Potongan Pembelian',
+                'debit'     => 0,
+                'credit'    => $diskon,
+            ];
+        }
+
+        // Kredit: Kas/Bank
+        $entries[] = [
+            'no_akun'   => $noAkunBayar,
+            'deskripsi' => 'Pembayaran Pembelian Bahan Baku',
+            'debit'     => 0,
+            'credit'    => $grandTotal,
+        ];
+
+        return self::buatJurnal($tanggal, $noPembelian, 'Pembelian Bahan Baku', $entries);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // OVERHEAD
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Jurnal Overhead (per detail item):
+     *   Debit  → Akun Beban Overhead
+     *   Kredit → Akun Pembayaran (Kas/Bank)
+     *
+     * @param array $details [['no_akun_beban'=>'612','nama_beban'=>'...','no_akun_bayar'=>'111','nominal'=>X], ...]
+     */
+    public static function jurnalOverhead(
+        string $tanggal,
+        string $noOverhead,
+        array  $details
+    ): Jurnal {
+        $entries = [];
+
+        foreach ($details as $d) {
+            // Debit: akun beban
+            $entries[] = [
+                'no_akun'   => $d['no_akun_beban'],
+                'deskripsi' => $d['nama_beban'] ?? 'Biaya Overhead',
+                'debit'     => (float) $d['nominal'],
+                'credit'    => 0,
+            ];
+
+            // Kredit: akun pembayaran
+            $entries[] = [
+                'no_akun'   => $d['no_akun_bayar'],
+                'deskripsi' => 'Pembayaran Biaya Overhead',
+                'debit'     => 0,
+                'credit'    => (float) $d['nominal'],
+            ];
+        }
+
+        return self::buatJurnal($tanggal, $noOverhead, 'Biaya Overhead', $entries);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // MIGRASI DATA LAMA → JURNAL
+    // Dipanggil dari migration atau seeder untuk isi tabel jurnal dari data lama.
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Isi tabel jurnal dari seluruh data transaksi yang sudah ada.
+     * Idempotent: skip jika no_referensi sudah ada di tabel jurnal.
+     */
+    public static function migrasiDataLama(): void
     {
-        return DB::transaction(function () use ($jurnal) {
-            // Reverse saldo akun
-            foreach ($jurnal->details as $detail) {
-                $akun = $detail->akun;
-                if ($akun) {
-                    // Balik nilai debit kredit untuk reverse
-                    $akun->updateSaldo($detail->kredit, $detail->debit);
+        // ── Saldo Awal ────────────────────────────────────────────────────
+        $saldoAwals = \App\Models\SaldoAwal::with('coa')->get();
+        foreach ($saldoAwals as $sa) {
+            if (Jurnal::where('no_referensi', $sa->no_bukti)->exists()) continue;
+
+            $noAkunKas = $sa->coa->no_akun ?? $sa->coa->kode_akun ?? '111';
+            self::jurnalSetoranModal(
+                $sa->tanggal,
+                $sa->no_bukti,
+                $noAkunKas,
+                $sa->coa->nama_akun ?? 'Kas',
+                (float) $sa->nominal
+            );
+        }
+
+        // ── Pembelian ─────────────────────────────────────────────────────
+        $pembelians = \App\Models\Pembelian::with('coa')->get();
+        foreach ($pembelians as $pb) {
+            $noRef = 'PB-' . str_pad($pb->id, 3, '0', STR_PAD_LEFT);
+            if (Jurnal::where('no_referensi', $noRef)->exists()) continue;
+
+            $subtotal    = (float) ($pb->subtotal ?: ($pb->qty * $pb->harga));
+            $diskon      = (float) ($pb->diskon ?? 0);
+            $ongkir      = (float) ($pb->ongkir ?? 0);
+            $totalBersih = (float) ($pb->total_bersih ?? ($subtotal - $diskon));
+            $grandTotal  = (float) ($pb->grand_total  ?? ($totalBersih + $ongkir));
+
+            $noAkunBayar  = $pb->coa->no_akun ?? $pb->coa->kode_akun ?? '111';
+            $namaAkunBayar = $pb->coa->nama_akun ?? 'Kas';
+
+            self::jurnalPembelian(
+                $pb->tanggal, $noRef,
+                $subtotal, $diskon, $ongkir, $grandTotal,
+                $noAkunBayar, $namaAkunBayar
+            );
+        }
+
+        // ── Overhead ──────────────────────────────────────────────────────
+        $overheads = \App\Models\Overhead::with(['details.coa', 'details.paymentCoa', 'coa', 'paymentCoa'])->get();
+        foreach ($overheads as $oh) {
+            $noRef = 'OH-' . str_pad($oh->id, 3, '0', STR_PAD_LEFT);
+            if (Jurnal::where('no_referensi', $noRef)->exists()) continue;
+
+            $details = [];
+
+            if ($oh->details->count() > 0) {
+                foreach ($oh->details as $det) {
+                    $details[] = [
+                        'no_akun_beban' => $det->coa->no_akun ?? $det->coa->kode_akun ?? '',
+                        'nama_beban'    => $det->coa->nama_akun ?? 'Biaya Overhead',
+                        'no_akun_bayar' => $det->paymentCoa->no_akun ?? $det->paymentCoa->kode_akun ?? '111',
+                        'nominal'       => $det->nominal,
+                    ];
                 }
+            } else {
+                $details[] = [
+                    'no_akun_beban' => $oh->coa->no_akun ?? $oh->coa->kode_akun ?? '',
+                    'nama_beban'    => $oh->coa->nama_akun ?? 'Biaya Overhead',
+                    'no_akun_bayar' => $oh->paymentCoa->no_akun ?? $oh->paymentCoa->kode_akun ?? '111',
+                    'nominal'       => $oh->nominal,
+                ];
             }
 
-            // Update status
-            $jurnal->update(['status' => 'void']);
-            
-            return true;
-        });
-    }*/
+            self::jurnalOverhead($oh->tanggal, $noRef, $details);
+        }
+    }
 }

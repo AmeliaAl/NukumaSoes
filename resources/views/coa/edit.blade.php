@@ -1,54 +1,60 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit COA (Daftar Akun)') }}
-        </h2>
-    </x-slot>
+@extends('adminlte::page')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6 lg:p-8 bg-white border-b border-gray-200">
-                    <form method="POST" action="{{ route('coa.update', $coa) }}">
-                        @csrf
-                        @method('PUT')
+@section('title', 'Edit COA')
 
-                        <div class="mb-4">
-                            <x-input-label for="kode_akun" :value="__('Kode Akun')" />
-                            <x-text-input id="kode_akun" class="block mt-1 w-full" type="text" name="kode_akun" :value="old('kode_akun', $coa->kode_akun)" required autofocus autocomplete="kode_akun" />
-                            <x-input-error :messages="$errors->get('kode_akun')" class="mt-2" />
-                        </div>
+@section('content_header')
+    <h1>Edit COA</h1>
+@stop
 
-                        <div class="mb-4">
-                            <x-input-label for="header_akun" :value="__('Header Akun')" />
-                            <select id="header_akun" name="header_akun" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="">Pilih Header Akun</option>
-                                <option value="Aset" {{ old('header_akun', $coa->header_akun) == 'Aset' ? 'selected' : '' }}>Aset</option>
-                                <option value="Liabilitas" {{ old('header_akun', $coa->header_akun) == 'Liabilitas' ? 'selected' : '' }}>Liabilitas</option>
-                                <option value="Ekuitas" {{ old('header_akun', $coa->header_akun) == 'Ekuitas' ? 'selected' : '' }}>Ekuitas</option>
-                                <option value="Pendapatan" {{ old('header_akun', $coa->header_akun) == 'Pendapatan' ? 'selected' : '' }}>Pendapatan</option>
-                                <option value="Beban" {{ old('header_akun', $coa->header_akun) == 'Beban' ? 'selected' : '' }}>Beban</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('header_akun')" class="mt-2" />
-                        </div>
+@section('content')
 
-                        <div class="mb-4">
-                            <x-input-label for="nama_akun" :value="__('Nama Akun')" />
-                            <x-text-input id="nama_akun" class="block mt-1 w-full" type="text" name="nama_akun" :value="old('nama_akun', $coa->nama_akun)" required autocomplete="nama_akun" />
-                            <x-input-error :messages="$errors->get('nama_akun')" class="mt-2" />
-                        </div>
+<div class="card">
+    <div class="card-body">
 
-                        <div class="flex items-center justify-end mt-6">
-                            <a href="{{ route('coa.index') }}" class="mr-4 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                Batal
-                            </a>
-                            <x-primary-button>
-                                {{ __('Update') }}
-                            </x-primary-button>
-                        </div>
-                    </form>
-                </div>
+        <form action="{{ route('coa.update', $coa->id) }}" method="POST" novalidate>
+            @csrf
+            @method('PUT')
+
+            <div class="form-group">
+                <label>No Akun <span class="text-danger">*</span></label>
+                <input type="text" name="no_akun"
+                       class="form-control @error('no_akun') is-invalid @enderror"
+                       value="{{ old('no_akun', $coa->no_akun) }}" required>
+                @error('no_akun')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
-        </div>
+
+            <div class="form-group">
+                <label>Nama Akun <span class="text-danger">*</span></label>
+                <input type="text" name="nama_akun"
+                       class="form-control @error('nama_akun') is-invalid @enderror"
+                       value="{{ old('nama_akun', $coa->nama_akun) }}" required>
+                @error('nama_akun')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label>Kelompok Akun <span class="text-danger">*</span></label>
+                <select name="header_akun"
+                        class="form-control @error('header_akun') is-invalid @enderror" required>
+                    <option value="">-- Pilih Kelompok Akun --</option>
+                    @foreach(['Aktiva Lancar','Kewajiban Lancar','Pemakaian Bahan Baku','Overhead Produksi','Biaya Beban Operasional Umum','Ekuitas'] as $h)
+                    <option value="{{ $h }}" {{ old('header_akun', $coa->header_akun) === $h ? 'selected' : '' }}>{{ $h }}</option>
+                    @endforeach
+                </select>
+                @error('header_akun')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <button type="submit" class="btn btn-success">Update</button>
+            <a href="{{ url('coa') }}" class="btn btn-secondary">Cancel</a>
+
+        </form>
+
     </div>
-</x-app-layout>
+</div>
+
+@stop

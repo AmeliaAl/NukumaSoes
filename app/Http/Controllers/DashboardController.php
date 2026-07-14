@@ -2,41 +2,82 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pembelian;
+use App\Models\Overhead;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-        public function index()
+    public function index(Request $request)
     {
-        $startDate = Carbon::now();
+        /*
+        |--------------------------------------------------------------------------
+        | FILTER TAHUN
+        |--------------------------------------------------------------------------
+        */
 
-        $totalProduk = 0;
-        $produkAman = 0;
-        $produkAkanExpired = 0;
-        $produkExpired = 0;
-        $totalTransaksi = 0;
+        $tahun = $request->tahun ?? date('Y');
 
-        $statusChartData = [
-            'labels' => ['Aman', 'Warning', 'Expired'],
-            'data' => [0, 0, 0],
-        ];
+        /*
+        |--------------------------------------------------------------------------
+        | CARD DASHBOARD
+        |--------------------------------------------------------------------------
+        */
 
-        $transactionChartData = [
-            'labels' => [],
-            'masuk' => [],
-            'keluar' => [],
+        $totalPembelian = Pembelian::whereYear('tanggal', $tahun)
+            ->sum('grand_total');
+
+        $totalOverhead = Overhead::whereYear('tanggal', $tahun)
+            ->sum('nominal');
+
+        $totalTransaksi =
+            Pembelian::whereYear('tanggal', $tahun)->count()
+            +
+            Overhead::whereYear('tanggal', $tahun)->count();
+
+        $jumlahSupplier = Supplier::count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | GRAFIK PEMBELIAN PER BULAN
+        |--------------------------------------------------------------------------
+        */
+
+        $grafikPembelian = [];
+
+        for ($bulan = 1; $bulan <= 12; $bulan++) {
+
+            $total = Pembelian::whereYear('tanggal', $tahun)
+                ->whereMonth('tanggal', $bulan)
+                ->sum('grand_total');
+
+            $grafikPembelian[] = $total;
+        }
+
+        $bulanLabel = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'Mei',
+            'Jun',
+            'Jul',
+            'Ags',
+            'Sep',
+            'Okt',
+            'Nov',
+            'Des'
         ];
 
         return view('dashboard', compact(
-            'startDate',
-            'totalProduk',
-            'produkAman',
-            'produkAkanExpired',
-            'produkExpired',
+            'tahun',
+            'totalPembelian',
+            'totalOverhead',
             'totalTransaksi',
-            'statusChartData',
-            'transactionChartData'
+            'jumlahSupplier',
+            'grafikPembelian',
+            'bulanLabel'
         ));
     }
 }

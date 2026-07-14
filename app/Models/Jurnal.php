@@ -4,43 +4,32 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model Jurnal — header transaksi jurnal.
+ * Tabel: jurnal
+ * Kolom: id, tanggal, no_referensi, deskripsi, created_at, updated_at
+ */
 class Jurnal extends Model
 {
     protected $table = 'jurnal';
+
     protected $fillable = [
         'tanggal',
         'no_referensi',
         'deskripsi',
     ];
 
-    public function jurnalDetail()
-    {
-        return $this->hasMany(JurnalDetail::class, 'id_jurnal');
-    }
-
-     public function isBalanced()
-    {
-        $debit = $this->detailjurnal->sum('debit');
-        $kredit = $this->detailjurnal->sum('credit');
-        return $debit == $kredit;
-    }
-
     protected $casts = [
-    'tanggal' => 'date',
+        'tanggal' => 'date',
     ];
 
+    // ── Relasi ────────────────────────────────────────────────────────────
+
+    /**
+     * Jurnal hasMany JurnalDetail
+     */
     public function details()
     {
         return $this->hasMany(JurnalDetail::class, 'id_jurnal');
-    }
-
-    public function utangJangkaPanjang()
-    {
-        return $this->hasOne(UtangJangkaPanjang::class, 'jurnal_id');
-    }
-
-    public function saldoAwals()
-    {
-        return $this->hasMany(\App\Models\saldoawal::class, 'jurnal_id');
     }
 }

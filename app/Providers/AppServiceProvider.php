@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Models\FakturPembelian;  // ← TAMBAHKAN INI
-use App\Observers\FakturPembelianObserver;
+use Illuminate\Support\Facades\Blade;
+use App\Helpers\FormatHelper;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        FakturPembelian::observe(FakturPembelianObserver::class);
+        // Blade directive: @rupiah($value)  →  Rp 15.000,00
+        Blade::directive('rupiah', function ($expression) {
+            return "<?php echo \\App\\Helpers\\FormatHelper::rupiah($expression); ?>";
+        });
     }
 }
