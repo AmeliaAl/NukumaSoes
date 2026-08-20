@@ -11,6 +11,13 @@
                 </div>
             @endif
 
+            @if($errors->has('kode_produk'))
+                <div class="bg-red-100 border-2 border-red-500 text-red-800 font-bold px-6 py-4 rounded-2xl shadow-lg flex items-center gap-3">
+                    <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>{{ $errors->first('kode_produk') }}</span>
+                </div>
+            @endif
+
             <!-- Glassmorphism Card for Form -->
             <div class="bg-white/95 backdrop-blur-md border-2 border-[#d4af37]/60 rounded-[40px] shadow-[0_30px_80px_rgba(0,0,0,0.4)] p-10">
                 <div class="mb-10 text-center border-b border-[#d4af37]/20 pb-8">
@@ -28,17 +35,37 @@
                     <input type="hidden" name="harga" id="harga_hidden" value="">
                     <input type="hidden" name="total_harga" id="total_harga_hidden" value="">
 
+                    <!-- KATEGORI PRODUK -->
+                    <div class="grid grid-cols-1 md:grid-cols-1 gap-8 mb-8">
+                        <div>
+                            <label for="kategori_filter" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">KATEGORI PRODUK</label>
+                            <div class="relative group">
+                                <select id="kategori_filter" class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none">
+                                    <option value="">Semua Kategori</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->nama_kategori }}">{{ $cat->nama_kategori }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-[#d4af37]">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- PRODUK ID -->
                         <div>
                             <label for="kode_produk" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">PRODUK ID <span class="text-red-500 font-black">*</span></label>
                             <div class="relative group">
                                 <select id="kode_produk" 
+                                        name="inventory_id_select"
                                         class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none @error('kode_produk') border-red-400 @enderror" 
                                         required autofocus>
-                                    <option value="">Pilih Produk ID</option>
+                                    <option value="" data-kategori="">Pilih Produk ID</option>
                                     @foreach($inventories as $inv)
                                         <option value="{{ $inv->id }}" 
+                                                data-kategori="{{ $inv->kategori }}"
                                                 data-nama="{{ $inv->nama_produk }}" 
                                                 data-harga="{{ $inv->harga ?? 0 }}" 
                                                 data-stok="{{ $inv->jumlah }}"
@@ -48,7 +75,7 @@
                                                 data-btkl="{{ $inv->product->btkl ?? 0 }}"
                                                 data-bop="{{ $inv->product->bop ?? 0 }}"
                                                 data-hpp="{{ $inv->product->hpp ?? 0 }}">
-                                            {{ $inv->kode_produk }} - {{ $inv->nama_produk }} - {{ $inv->no_batch ?? '-' }} ({{ $inv->kategori ?? '-' }})
+                                            {{ $inv->kode_produk }} - {{ $inv->nama_produk }} - {{ $inv->no_batch ?? '-' }} ({{ $inv->kategori ?? '-' }}) | Exp: {{ $inv->tgl_expired ? \Carbon\Carbon::parse($inv->tgl_expired)->format('d/m/Y') : '-' }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -100,9 +127,9 @@
                             <x-input-error :messages="$errors->get('jumlah_masuk')" class="mt-2" />
                         </div>
 
-                        <!-- HARGA POKOK PRODUKSI -->
+                        <!-- HP Produksi -->
                         <div>
-                            <label for="harga_pokok_produksi" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HARGA POKOK PRODUKSI</label>
+                            <label for="harga_pokok_produksi" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HP Produksi</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-[#d4af37] font-bold">Rp</span>
@@ -115,49 +142,6 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <!-- BIAYA BAHAN BAKU (BBB) -->
-                        <div>
-                            <label for="bbb" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">BIAYA BAHAN BAKU (BBB)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <span class="text-[#d4af37] font-bold">Rp</span>
-                                </div>
-                                <input id="bbb" type="text" name="bbb" value="{{ old('bbb') }}" 
-                                       class="w-full bg-[#f4ebd0] border-2 border-[#d4af37]/20 rounded-2xl pl-12 pr-5 py-4 text-[#7a0e14] font-black shadow-inner" 
-                                       readonly />
-                            </div>
-                            <x-input-error :messages="$errors->get('bbb')" class="mt-2" />
-                        </div>
-
-                        <!-- BIAYA TENAGA KERJA LANGSUNG (BTKL) -->
-                        <div>
-                            <label for="btkl" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">BIAYA TENAGA KERJA LANGSUNG (BTKL)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <span class="text-[#d4af37] font-bold">Rp</span>
-                                </div>
-                                <input id="btkl" type="text" name="btkl" value="{{ old('btkl') }}" 
-                                       class="w-full bg-[#f4ebd0] border-2 border-[#d4af37]/20 rounded-2xl pl-12 pr-5 py-4 text-[#7a0e14] font-black shadow-inner" 
-                                       readonly />
-                            </div>
-                            <x-input-error :messages="$errors->get('btkl')" class="mt-2" />
-                        </div>
-
-                        <!-- BIAYA OVERHEAD PABRIK (BOP) -->
-                        <div>
-                            <label for="bop" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">BIAYA OVERHEAD PABRIK (BOP)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <span class="text-[#d4af37] font-bold">Rp</span>
-                                </div>
-                                <input id="bop" type="text" name="bop" value="{{ old('bop') }}" 
-                                       class="w-full bg-[#f4ebd0] border-2 border-[#d4af37]/20 rounded-2xl pl-12 pr-5 py-4 text-[#7a0e14] font-black shadow-inner" 
-                                       readonly />
-                            </div>
-                            <x-input-error :messages="$errors->get('bop')" class="mt-2" />
-                        </div>
-                    </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- HARGA PER PCS -->
@@ -232,7 +216,7 @@
                                 @forelse($entries as $index => $entry)
                                     <tr class="{{ $index % 2 == 0 ? 'bg-[#fdf9eb]' : 'bg-[#f4ebd0]' }} hover:bg-[#ffeec2] transition-colors group">
                                         <td class="py-5 px-6 text-sm font-bold text-gray-700 border-r border-[#d4af37]/10">{{ $entry->id_transaksi }}</td>
-                                        <td class="py-5 px-6 text-sm font-medium text-gray-600 border-r border-[#d4af37]/10">{{ \Carbon\Carbon::parse($entry->tanggal)->format('d M Y') }}</td>
+                                        <td class="py-5 px-6 text-sm font-medium text-gray-600 border-r border-[#d4af37]/10">{{ \Carbon\Carbon::parse($entry->tanggal)->format('d/m/Y') }}</td>
                                         <td class="py-5 px-6 text-sm font-bold text-[#7a0e14] border-r border-[#d4af37]/10">{{ $entry->no_batch ?? $entry->kode_produk }}</td>
                                         <td class="py-5 px-6 text-sm font-bold text-gray-900 border-r border-[#d4af37]/10 uppercase">{{ $entry->nama_produk }}</td>
                                         <td class="py-5 px-6 text-sm font-bold text-[#7a0e14] border-r border-[#d4af37]/10 uppercase">{{ $entry->inventory->kategori ?? '-' }}</td>
@@ -323,20 +307,50 @@
                 const hargaInput = document.getElementById('harga_display');
                 const jumlahMasukInput = document.getElementById('jumlah_masuk');
                 const totalHargaInput = document.getElementById('total_harga_display');
+                const inventoryIdHidden = document.getElementById('inventory_id_hidden');
                 const noBatchInput = document.getElementById('no_batch');
                 const stokSaatIniInput = document.getElementById('stok_saat_ini');
 
-                const bbbInput = document.getElementById('bbb');
-                const btklInput = document.getElementById('btkl');
-                const bopInput = document.getElementById('bop');
                 const hargaPokokProduksiInput = document.getElementById('harga_pokok_produksi');
+                
+                const kategoriFilter = document.getElementById('kategori_filter');
+                const productOptions = Array.from(idProdukSelect.options);
+
+                kategoriFilter.addEventListener('change', function() {
+                    const selectedKategori = this.value;
+                    idProdukSelect.value = "";
+                    
+                    let hasOptions = false;
+                    productOptions.forEach(option => {
+                        if (option.value === "") return;
+                        
+                        const optionKategori = option.getAttribute('data-kategori');
+                        const matchKategori = !selectedKategori || optionKategori === selectedKategori;
+                        
+                        if (matchKategori) {
+                            option.style.display = "";
+                            hasOptions = true;
+                        } else {
+                            option.style.display = "none";
+                        }
+                    });
+                    
+                    if (!selectedKategori) {
+                        idProdukSelect.options[0].text = "Pilih Produk ID";
+                    } else if (hasOptions) {
+                        idProdukSelect.options[0].text = "Silakan Pilih Produk ID";
+                    } else {
+                        idProdukSelect.options[0].text = "Tidak Ada Produk Tersedia";
+                    }
+
+                    idProdukSelect.dispatchEvent(new Event('change'));
+                });
 
                 function calculateTotalHarga() {
-                    const bbb = parseFloat(bbbInput.dataset.raw) || 0;
-                    const btkl = parseFloat(btklInput.dataset.raw) || 0;
-                    const bop = parseFloat(bopInput.dataset.raw) || 0;
+                    const selectedOption = idProdukSelect.options[idProdukSelect.selectedIndex];
+                    const hpp = selectedOption && selectedOption.value ? parseFloat(selectedOption.getAttribute('data-hpp')) || 0 : 0;
                     const jumlah = parseInt(jumlahMasukInput.value) || 0;
-                    const total = (bbb + btkl + bop) * jumlah;
+                    const total = hpp * jumlah;
                     
                     totalHargaHidden.value = total;
                     if (total > 0) {
@@ -364,36 +378,24 @@
                     const batch = selectedOption.getAttribute('data-batch');
                     const kode = selectedOption.getAttribute('data-kode');
                     
-                    const bbb = selectedOption.getAttribute('data-bbb');
-                    const btkl = selectedOption.getAttribute('data-btkl');
-                    const bop = selectedOption.getAttribute('data-bop');
                     const hpp = selectedOption.getAttribute('data-hpp');
 
                     if (nama) {
+                        inventoryIdHidden.value = selectedOption.value; // simpan inventory id
                         namaProdukHidden.value = nama;
                         kodeProdukHidden.value = kode || '';
                         hargaHidden.value = harga;
                         hargaInput.value = parseFloat(harga).toLocaleString('id-ID');
                         noBatchInput.value = batch || '';
                         
-                        const bbbVal = bbb && parseFloat(bbb) > 0 ? parseFloat(bbb) : 0;
-                        const btklVal = btkl && parseFloat(btkl) > 0 ? parseFloat(btkl) : 0;
-                        const bopVal = bop && parseFloat(bop) > 0 ? parseFloat(bop) : 0;
                         const hppVal = hpp && parseFloat(hpp) > 0 ? parseFloat(hpp) : 0;
 
-                        bbbInput.value = bbbVal > 0 ? bbbVal.toLocaleString('id-ID') : '';
-                        btklInput.value = btklVal > 0 ? btklVal.toLocaleString('id-ID') : '';
-                        bopInput.value = bopVal > 0 ? bopVal.toLocaleString('id-ID') : '';
                         hargaPokokProduksiInput.value = hppVal > 0 ? hppVal.toLocaleString('id-ID') : '';
-                        
-                        // Store raw values for calculation
-                        bbbInput.dataset.raw = bbbVal;
-                        btklInput.dataset.raw = btklVal;
-                        bopInput.dataset.raw = bopVal;
                         
                         updateStokDisplay();
                         calculateTotalHarga();
                     } else {
+                        inventoryIdHidden.value = '';
                         namaProdukHidden.value = '';
                         kodeProdukHidden.value = '';
                         hargaHidden.value = '';
@@ -403,9 +405,6 @@
                         totalHargaInput.value = '';
                         noBatchInput.value = '';
                         
-                        bbbInput.value = '';
-                        btklInput.value = '';
-                        bopInput.value = '';
                         hargaPokokProduksiInput.value = '';
                     }
                 });
@@ -419,13 +418,12 @@
                     calculateTotalHarga();
                     updateStokDisplay();
                 });
-                bbbInput.addEventListener('input', calculateTotalHarga);
-                btklInput.addEventListener('input', calculateTotalHarga);
-                bopInput.addEventListener('input', calculateTotalHarga);
 
                 hargaPokokProduksiInput.addEventListener('input', function() {
                     // readonly, no action needed
                 });
+
+
             });
         </script>
     </div>

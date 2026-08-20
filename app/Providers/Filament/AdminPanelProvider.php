@@ -114,7 +114,7 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-o-home'),
             ])
             ->navigationItems([
-                NavigationItem::make('Dashboard Laravel')
+                NavigationItem::make('Dashboard Persediaan')
                     ->url('/dashboard')
                     ->icon('heroicon-o-home')
                     ->group('Persediaan')

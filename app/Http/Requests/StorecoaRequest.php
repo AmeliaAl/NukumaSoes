@@ -11,7 +11,7 @@ class StorecoaRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,17 @@ class StorecoaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'kode_akun' => ['required', 'numeric'],
+            'header_akun' => ['nullable', 'string', 'max:100'],
+            'nama_akun' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'kode_akun.numeric' => 'Kode akun harus berupa angka.',
+            'nama_akun.regex' => 'Nama akun hanya boleh berisi huruf.',
         ];
     }
 }

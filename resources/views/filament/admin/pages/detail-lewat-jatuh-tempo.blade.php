@@ -34,7 +34,7 @@
                             </td>
                             <td style="padding:10px 16px; color:#374151; font-family:monospace; font-size:0.8rem;">{{ $row->referensi }}</td>
                             <td style="padding:10px 16px; text-align:center; font-weight:600; color:#dc2626;">
-                                {{ \Carbon\Carbon::parse($row->jatuh_tempo)->translatedFormat('d M Y') }}
+                                {{ \Carbon\Carbon::parse($row->jatuh_tempo)->translatedformat('d/m/Y') }}
                             </td>
                             <td style="padding:10px 16px; text-align:center;">
                                 <span style="display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.72rem; font-weight:600; background:#fee2e2; color:#dc2626;">

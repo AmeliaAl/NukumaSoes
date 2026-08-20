@@ -39,12 +39,24 @@ class InventoryEntryController extends Controller
             'rasa_produk' => 'nullable|string|max:255',
             'kategori' => 'required|string|max:255',
             'stok_awal' => 'nullable|integer|min:0',
-            'jumlah' => 'required|integer|min:0',
-            'jumlah_per_batch' => 'required|integer|min:0',
             'harga_jual' => 'required|numeric|min:0',
             'tgl_masuk' => 'required|date',
             'masa_simpan' => 'required|integer|min:0',
         ]);
+
+        // Cek duplikasi: kombinasi kode_produk + no_batch tidak boleh ada di inventories
+        if ($request->filled('kode_produk') && $request->filled('no_batch')) {
+            $duplikat = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
+                ->where('no_batch', $request->no_batch)
+                ->exists();
+
+            if ($duplikat) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['no_batch' => 'No batch ini sudah digunakan untuk ID produk yang sama.']);
+            }
+        }
+
 
         $data = $request->all();
         // Get jenis_produk from the selected product
@@ -78,9 +90,10 @@ class InventoryEntryController extends Controller
         }
 
         $data['harga'] = (float) $data['harga_jual'];
-        // Ensure jumlah is synced with jumlah_per_batch for new entries
-        $data['jumlah'] = $data['jumlah_per_batch'];
-        $totalHarga = $data['jumlah_per_batch'] * $data['harga'];
+        $data['stok_awal'] = $data['stok_awal'] ?? 0;
+        $data['jumlah_per_batch'] = $data['stok_awal'];
+        $data['jumlah'] = $data['stok_awal'];
+        $totalHarga = $data['jumlah'] * $data['harga'];
 
         // Save to inventories table
         $inventory = Inventory::create($data);
@@ -119,12 +132,25 @@ class InventoryEntryController extends Controller
             'rasa_produk' => 'nullable|string|max:255',
             'kategori' => 'required|string|max:255',
             'stok_awal' => 'nullable|integer|min:0',
-            'jumlah' => 'required|integer|min:0',
-            'jumlah_per_batch' => 'required|integer|min:0',
             'harga_jual' => 'required|numeric|min:0',
             'tgl_masuk' => 'required|date',
             'masa_simpan' => 'required|integer|min:0',
         ]);
+
+        // Cek duplikasi: kombinasi kode_produk + no_batch tidak boleh ada di inventories selain dirinya sendiri
+        if ($request->filled('kode_produk') && $request->filled('no_batch')) {
+            $duplikat = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
+                ->where('no_batch', $request->no_batch)
+                ->where('id', '!=', $inventory->id)
+                ->exists();
+
+            if ($duplikat) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['no_batch' => 'No batch ini sudah digunakan untuk ID produk yang sama.']);
+            }
+        }
+
 
         $data = $request->all();
         // Get jenis_produk from the selected product
@@ -158,8 +184,9 @@ class InventoryEntryController extends Controller
         }
 
         $data['harga'] = (float) $data['harga_jual'];
-        // Ensure jumlah is synced with jumlah_per_batch for updates
-        $data['jumlah'] = $data['jumlah_per_batch'];
+        $data['stok_awal'] = $data['stok_awal'] ?? 0;
+        $data['jumlah_per_batch'] = $data['stok_awal'];
+        $data['jumlah'] = $data['stok_awal'];
 
         $inventory->update($data);
 
@@ -180,6 +207,7 @@ class InventoryEntryController extends Controller
         if ($inventory->status === 'Expired') {
             \App\Models\ExpiredProductHistory::create([
                 'no_batch'         => $inventory->no_batch ?? '-',
+                'kode_produk'      => $inventory->kode_produk ?? null,
                 'nama_produk'      => $inventory->nama_produk ?? 'Tidak Diketahui',
                 'rasa_produk'      => $inventory->rasa_produk ?? null,
                 'kategori'         => $inventory->kategori ?? '-',

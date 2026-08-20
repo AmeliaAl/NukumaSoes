@@ -15,9 +15,14 @@ class CoaForm
                     ->required()
                     ->numeric(),
                 TextInput::make('kode_akun')
-                    ->required(),
+                    ->required()
+                    ->numeric(),
                 TextInput::make('nama_akun')
-                    ->required(),
+                    ->required()
+                    ->rule('regex:/^[a-zA-Z\s]+$/')
+                    ->validationMessages([
+                        'regex' => 'Nama akun hanya boleh berisi huruf.',
+                    ]),
             ]);
     }
 }

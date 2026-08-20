@@ -25,7 +25,7 @@
                     </div>
 
                     <div style="font-size:13px; color:#fff; margin-top:6px;">
-                        Perolehan {{ \Carbon\Carbon::parse($aset->tanggal_perolehan)->format('d M Y') }}
+                        Perolehan {{ \Carbon\Carbon::parse($aset->tanggal_perolehan)->format('d/m/Y') }}
                     </div>
                 </div>
 

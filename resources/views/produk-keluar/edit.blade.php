@@ -60,7 +60,7 @@
                         <!-- Spacer -->
                         <div class="hidden md:block"></div>
 
-                        <!-- HARGA POKOK PER PACK -->
+                        <!-- HP Produksi -->
                         <div>
                             <label class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HARGA POKOK/PACK</label>
                             <div class="relative">

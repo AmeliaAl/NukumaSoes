@@ -32,7 +32,7 @@
                                 {{ $item['kode_aset'] }}
                             </p>
                             <p style="font-size:12px; color:#9ca3af; margin:0;">
-                                Perolehan: {{ \Carbon\Carbon::parse($item['tanggal_perolehan'])->format('d M Y') }}
+                                Perolehan: {{ \Carbon\Carbon::parse($item['tanggal_perolehan'])->format('d/m/Y') }}
                             </p>
                         </div>
 
@@ -53,7 +53,7 @@
                             @endif
 
                             <p style="font-size:11px; color:#9ca3af; margin:0;">
-                                {{ \Carbon\Carbon::parse($item['next_pemeliharaan'])->format('d M Y') }}
+                                {{ \Carbon\Carbon::parse($item['next_pemeliharaan'])->format('d/m/Y') }}
                             </p>
 
                             <x-filament::button

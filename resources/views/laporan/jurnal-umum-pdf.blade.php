@@ -30,7 +30,7 @@
         <thead>
             <tr>
                 <th>TANGGAL</th>
-                <th>KETERANGAN</th>
+                <th>AKUN</th>
                 <th>REF</th>
                 <th>DEBIT</th>
                 <th>KREDIT</th>

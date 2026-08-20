@@ -160,9 +160,9 @@
                             <x-input-error :messages="$errors->get('bop')" class="mt-2" />
                         </div>
 
-                        <!-- HARGA POKOK PRODUKSI (HPP) -->
+                        <!-- HP Produksi -->
                         <div>
-                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3">HARGA POKOK PRODUKSI (HPP)</label>
+                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3">HP Produksi</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
                                     <span class="text-gray-500 font-bold">Rp</span>

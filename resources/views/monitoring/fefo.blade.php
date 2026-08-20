@@ -97,8 +97,8 @@
                                         <span class="text-base font-bold text-gray-900 group-hover:text-[#7a0e14] transition-colors line-clamp-1 uppercase tracking-tight">{{ $product->nama_produk }}</span>
                                     </td>
                                     <td class="px-6 py-5 text-sm text-[#7a0e14] font-black border-r border-[#d4af37]/10 truncate max-w-[150px] uppercase tracking-tighter">{{ $product->kategori }}</td>
-                                    <td class="px-6 py-5 text-sm text-gray-700 border-r border-[#d4af37]/10 text-center font-bold">{{ $product->tgl_masuk ? $product->tgl_masuk->format('d/m/y') : '-' }}</td>
-                                    <td class="px-6 py-5 text-sm text-black border-r border-[#d4af37]/10 text-center font-black">{{ $product->tgl_expired ? $product->tgl_expired->format('d/m/y') : '-' }}</td>
+                                    <td class="px-6 py-5 text-sm text-gray-700 border-r border-[#d4af37]/10 text-center font-bold">{{ $product->tgl_masuk ? $product->tgl_masuk->format('d/m/Y') : '-' }}</td>
+                                    <td class="px-6 py-5 text-sm text-black border-r border-[#d4af37]/10 text-center font-black">{{ $product->tgl_expired ? $product->tgl_expired->format('d/m/Y') : '-' }}</td>
                                     <td class="px-6 py-5 text-sm text-[#7a0e14] font-black border-r border-[#d4af37]/10 text-center uppercase tracking-tighter">{{ $product->sisa_hari ?? '-' }} Hr</td>
                                     <td class="px-6 py-5 text-center border-r border-[#d4af37]/10">
                                         @if($product->tgl_expired)
@@ -188,7 +188,7 @@
                                 </div>
                                 <div class="space-y-3">
                                     <label for="entry_date" class="block text-[10px] font-black text-[#f3d9a2] uppercase tracking-[0.2em] ml-1">Tgl Kemas</label>
-                                    <input type="text" id="entry_date" placeholder="dd/mm/yyyy" class="w-full bg-white border-2 border-white/20 rounded-[22px] px-6 py-5 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37]">
+                                    <input type="date" id="entry_date" class="w-full bg-white border-2 border-white/20 rounded-[22px] px-6 py-5 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37]">
                                 </div>
                             </div>
 
@@ -250,7 +250,7 @@
         @if(isset($selectedProduct) && $selectedProduct)
             document.addEventListener('DOMContentLoaded', function() {
                 const entryDateInput = document.getElementById('entry_date');
-                const entryDate = '{{ $selectedProduct->tgl_masuk ? $selectedProduct->tgl_masuk->format('d/m/Y') : '' }}';
+                const entryDate = '{{ $selectedProduct->tgl_masuk ? $selectedProduct->tgl_masuk->format('Y-m-d') : '' }}';
                 if (entryDate) {
                     entryDateInput.value = entryDate;
                 }
@@ -289,8 +289,11 @@
 
             const entryDate = selectedOption.getAttribute('data-entry-date');
             if (entryDate) {
-                const [y, m, d] = entryDate.split('-');
-                entryDateInput.value = `${d}/${m}/${y}`;
+                if (entryDateInput._flatpickr) {
+                    entryDateInput._flatpickr.setDate(entryDate);
+                } else {
+                    entryDateInput.value = entryDate;
+                }
             }
 
             const expiryDate = selectedOption.getAttribute('data-expiry-date');
@@ -357,15 +360,15 @@
                 return;
             }
 
-            const dateParts = entryDateInput.value.split('/');
+            const dateParts = entryDateInput.value.split('-');
             if (dateParts.length !== 3) {
-                alert('Format tanggal harus dd/mm/yyyy');
+                alert('Pilih tanggal pengemasan terlebih dahulu.');
                 return;
             }
             
-            const entryDay = parseInt(dateParts[0]);
+            const entryYear = parseInt(dateParts[0]);
             const entryMonth = parseInt(dateParts[1]) - 1;
-            const entryYear = parseInt(dateParts[2]);
+            const entryDay = parseInt(dateParts[2]);
             const entryDate = new Date(entryYear, entryMonth, entryDay);
             
             if (isNaN(entryDate.getTime())) {

@@ -43,11 +43,15 @@
                     <table class="min-w-full bg-white table-auto border-2 border-gray-800">
                         <thead class="bg-orange-100 border-b-2 border-gray-800">
                             <tr>
-                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400">Tanggal</th>
-                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400">Keterangan</th>
-                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400">Debit</th>
-                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400">Kredit</th>
-                                <th rowspan="2" class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400">Saldo</th>
+                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400 border-b border-gray-400">Tanggal</th>
+                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400 border-b border-gray-400">Keterangan</th>
+                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400 border-b border-gray-400">Debit</th>
+                                <th rowspan="2" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400 border-b border-gray-400">Kredit</th>
+                                <th colspan="2" class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400 border-b border-gray-400">Saldo</th>
+                            </tr>
+                            <tr>
+                                <th class="px-6 py-3 text-right text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400">Debit</th>
+                                <th class="px-6 py-3 text-right text-xs font-bold text-black uppercase tracking-wider border-r border-gray-400">Kredit</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-400">
@@ -55,13 +59,24 @@
                                 @if(isset($entry['is_saldo_akhir']) && $entry['is_saldo_akhir'])
                                     <tr class="bg-gray-200 text-black font-bold">
                                         <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm border-r border-gray-400 uppercase">SALDO AKHIR</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm border-r border-gray-400">
-                                            {{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm border-r border-gray-400 font-bold">
+                                            @if(!$isCreditNormal && $entry['saldo'] >= 0 || $isCreditNormal && $entry['saldo'] < 0)
+                                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm border-r border-gray-400 font-bold">
+                                            @if($isCreditNormal && $entry['saldo'] >= 0 || !$isCreditNormal && $entry['saldo'] < 0)
+                                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                     </tr>
                                 @else
                                     <tr class="{{ isset($entry['is_saldo_awal']) && $entry['is_saldo_awal'] ? 'bg-gray-50' : '' }}">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black border-r border-gray-400">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d M Y') }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black border-r border-gray-400">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-black border-r border-gray-400">{{ $entry['keterangan'] }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-black border-r border-gray-400">
                                             {{ $entry['debit'] > 0 ? 'Rp ' . number_format($entry['debit'], 0, ',', '.') : '-' }}
@@ -70,13 +85,24 @@
                                             {{ $entry['kredit'] > 0 ? 'Rp ' . number_format($entry['kredit'], 0, ',', '.') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-black border-r border-gray-400">
-                                            {{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                            @if(!$isCreditNormal && $entry['saldo'] >= 0 || $isCreditNormal && $entry['saldo'] < 0)
+                                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-black border-r border-gray-400">
+                                            @if($isCreditNormal && $entry['saldo'] >= 0 || !$isCreditNormal && $entry['saldo'] < 0)
+                                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                     </tr>
                                 @endif
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">Tidak ada entry ditemukan.</td>
+                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">Tidak ada entry ditemukan.</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -77,10 +77,7 @@
                                 <th class="px-6 py-6 text-center text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Satuan</th>
                                 <th class="px-6 py-6 text-center text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Kategori</th>
                                 <th class="px-6 py-6 text-center text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Harga</th>
-                                <th class="px-6 py-6 text-right text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">BBB</th>
-                                <th class="px-6 py-6 text-right text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">BTKL</th>
-                                <th class="px-6 py-6 text-right text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">BOP</th>
-                                <th class="px-6 py-6 text-right text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">HPP</th>
+                                <th class="px-6 py-6 text-right text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">HP PRODUKSI</th>
                                 <th class="px-6 py-6 text-center text-sm font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Jenis Produk</th>
                                 <th class="px-6 py-6 text-center text-sm font-black text-black uppercase tracking-wider">Aksi</th>
                             </tr>
@@ -109,15 +106,6 @@
                                         Rp {{ number_format($product->harga, 0, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-5 text-base text-gray-800 font-bold border-r border-[#d4af37]/10 text-right whitespace-nowrap">
-                                        Rp {{ number_format($product->bbb ?? 0, 0, ',', '.') }}
-                                    </td>
-                                    <td class="px-6 py-5 text-base text-gray-800 font-bold border-r border-[#d4af37]/10 text-right whitespace-nowrap">
-                                        Rp {{ number_format($product->btkl ?? 0, 0, ',', '.') }}
-                                    </td>
-                                    <td class="px-6 py-5 text-base text-gray-800 font-bold border-r border-[#d4af37]/10 text-right whitespace-nowrap">
-                                        Rp {{ number_format($product->bop ?? 0, 0, ',', '.') }}
-                                    </td>
-                                    <td class="px-6 py-5 text-base text-gray-800 font-bold border-r border-[#d4af37]/10 text-right whitespace-nowrap">
                                         Rp {{ number_format($product->hpp ?? 0, 0, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-5 text-center border-r border-[#d4af37]/10">
@@ -143,7 +131,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="12" class="px-6 py-20 text-center">
+                                    <td colspan="9" class="px-6 py-20 text-center">
                                         <div class="flex flex-col items-center gap-4">
                                             <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                             <p class="text-gray-400 italic font-medium">Belum ada produk yang ditambahkan dalam sistem.</p>

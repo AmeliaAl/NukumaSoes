@@ -73,7 +73,7 @@ class DetailPersediaanProdukForm
                             ->minValue(0)
                             ->required()
                             ->prefix('Rp')
-                            ->helperText('Harga pokok produksi per pack — bukan harga jual.'),
+                            ->helperText('HP produksi per pack — bukan harga jual.'),
 
                         // ── Baris 5: Tanggal Expired ──────────────────────
                         DatePicker::make('tanggal_expired')

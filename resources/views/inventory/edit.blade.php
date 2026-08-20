@@ -15,6 +15,13 @@
                     @method('PUT')
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        @if($errors->has('no_batch'))
+                            <div id="error-banner" class="col-span-full bg-red-100 border-2 border-red-500 text-red-800 font-bold px-6 py-4 rounded-2xl shadow-lg flex items-center gap-3">
+                                <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                <span>{{ $errors->first('no_batch') }}</span>
+                            </div>
+                        @endif
+
                         <!-- PRODUK ID -->
                         <div>
                             <label for="kode_produk" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">PRODUK ID</label>
@@ -106,29 +113,15 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- JUMLAH PER BATCH -->
-                        <input type="hidden" name="jumlah" value="{{ old('jumlah', $inventory->jumlah) }}">
-                        <div>
-                            <label for="jumlah_per_batch" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">JUMLAH PER BATCH <span class="text-red-500 font-black">*</span></label>
-                            <div class="relative">
-                                <input id="jumlah_per_batch" type="number" name="jumlah_per_batch" value="{{ old('jumlah_per_batch', $inventory->jumlah_per_batch) }}" 
-                                       class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-black text-center text-xl focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all" 
-                                       required min="0" />
-                                <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
-                                    <span class="text-gray-400 font-bold">pack</span>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- STOK AWAL -->
-                        <div>
-                            <label for="stok_awal" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">STOK AWAL</label>
+                        <div class="col-span-full md:col-span-2">
+                            <label for="stok_awal" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">STOK AWAL / JUMLAH BATCH AWAL</label>
                             <div class="relative">
                                 <input id="stok_awal" type="number" name="stok_awal" value="{{ old('stok_awal', $inventory->stok_awal) }}" 
                                        class="w-full bg-white border-2 border-white/50 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300" 
                                        min="0">
                                 <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
-                                    <span class="text-gray-400 font-bold">unit</span>
+                                    <span class="text-gray-400 font-bold">pack</span>
                                 </div>
                             </div>
                             <x-input-error :messages="$errors->get('stok_awal')" class="mt-2" />
@@ -149,9 +142,9 @@
                             </div>
                         </div>
 
-                        <!-- HPP (Harga Pokok Produksi) -->
+                        <!-- HP Produksi -->
                         <div class="md:col-span-2">
-                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">HPP (Harga Pokok Produksi)</label>
+                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3 uppercase tracking-wider">HP Produksi</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-gray-400 font-bold">Rp</span>
@@ -220,7 +213,7 @@
             // Master prices removed
             // Function to calculate and display total
             function calculateTotal() {
-                const jumlahInput = document.getElementById('jumlah_per_batch');
+                const jumlahInput = document.getElementById('stok_awal');
                 const hargaInput = document.getElementById('harga_jual');
                 const totalDisplay = document.getElementById('total_estimasi');
 
@@ -447,7 +440,7 @@
             });
 
             // Recalculate on input change
-            document.getElementById('jumlah_per_batch').addEventListener('input', calculateTotal);
+            document.getElementById('stok_awal').addEventListener('input', calculateTotal);
             document.getElementById('harga_jual').addEventListener('input', calculateTotal);
 
             // Jenis Mitra change trigger removed as field is removed

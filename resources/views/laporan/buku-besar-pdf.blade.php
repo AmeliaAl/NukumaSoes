@@ -29,40 +29,83 @@
     <table>
         <thead>
             <tr>
-                <th>TANGGAL</th>
-                <th>KETERANGAN</th>
+                <th rowspan="2">TANGGAL</th>
+                <th rowspan="2">KETERANGAN</th>
+                <th rowspan="2">DEBIT</th>
+                <th rowspan="2">KREDIT</th>
+                <th colspan="2">SALDO</th>
+            </tr>
+            <tr>
                 <th>DEBIT</th>
                 <th>KREDIT</th>
-                <th>SALDO</th>
             </tr>
         </thead>
         <tbody>
             @forelse($entries as $entry)
                 @if(isset($entry['is_saldo_awal']) && $entry['is_saldo_awal'])
                     <tr style="background-color: #f9f9f9; font-style: italic;">
-                        <td class="text-center">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d M Y') }}</td>
+                        <td class="text-center">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}</td>
                         <td><strong>{{ $entry['keterangan'] }}</strong></td>
                         <td class="text-right">-</td>
                         <td class="text-right">-</td>
-                        <td class="text-right">{{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}</td>
+                        <td class="text-right">
+                            @if(!$isCreditNormal && $entry['saldo'] >= 0 || $isCreditNormal && $entry['saldo'] < 0)
+                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="text-right">
+                            @if($isCreditNormal && $entry['saldo'] >= 0 || !$isCreditNormal && $entry['saldo'] < 0)
+                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
                 @elseif(isset($entry['is_saldo_akhir']) && $entry['is_saldo_akhir'])
                     <tr style="background-color: #f2f2f2; font-weight: bold;">
                         <td colspan="4" style="text-align: left; border: 1px solid #000;">SALDO AKHIR</td>
-                        <td class="text-right" style="border: 1px solid #000;">{{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}</td>
+                        <td class="text-right" style="border: 1px solid #000;">
+                            @if(!$isCreditNormal && $entry['saldo'] >= 0 || $isCreditNormal && $entry['saldo'] < 0)
+                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="text-right" style="border: 1px solid #000;">
+                            @if($isCreditNormal && $entry['saldo'] >= 0 || !$isCreditNormal && $entry['saldo'] < 0)
+                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
                 @else
                     <tr>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d M Y') }}</td>
+                        <td class="text-center">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}</td>
                         <td>{{ $entry['keterangan'] }}</td>
                         <td class="text-right">{{ $entry['debit'] > 0 ? 'Rp ' . number_format($entry['debit'], 0, ',', '.') : '-' }}</td>
                         <td class="text-right">{{ $entry['kredit'] > 0 ? 'Rp ' . number_format($entry['kredit'], 0, ',', '.') : '-' }}</td>
-                        <td class="text-right">{{ ($entry['saldo'] < 0 ? '-' : '') . 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}</td>
+                        <td class="text-right">
+                            @if(!$isCreditNormal && $entry['saldo'] >= 0 || $isCreditNormal && $entry['saldo'] < 0)
+                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="text-right">
+                            @if($isCreditNormal && $entry['saldo'] >= 0 || !$isCreditNormal && $entry['saldo'] < 0)
+                                {{ 'Rp ' . number_format(abs($entry['saldo']), 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        </td>
                     </tr>
                 @endif
             @empty
             <tr>
-                <td colspan="5" class="text-center">Tidak ada data buku besar.</td>
+                <td colspan="6" class="text-center">Tidak ada data buku besar.</td>
             </tr>
             @endforelse
         </tbody>

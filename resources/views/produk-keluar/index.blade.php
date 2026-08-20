@@ -70,31 +70,33 @@
                             </div>
                         </div>
 
-                        <!-- INFO PRODUK OTOMATIS -->
+                        <!-- PILIH NO BATCH -->
                         <div id="col_produk" class="md:col-span-2">
-                            <label class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">DETAIL PRODUK (STOK TERSEDIA)</label>
-                            <div id="product_info_box" class="w-full bg-[#f4ebd0]/50 border-2 border-[#d4af37]/30 rounded-2xl px-6 py-4 min-h-[60px] flex items-center">
-                                <span id="product_info_text" class="text-gray-500 italic font-medium">Pilih Kategori dan Rasa untuk melihat stok...</span>
+                            <label for="kode_produk" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">PILIH NO BATCH <span class="text-red-500 font-black">*</span></label>
+                            <div class="relative group">
+                                <select id="kode_produk" name="kode_produk" class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none" required>
+                                    <option value="" data-kategori="" data-rasa="">Pilih Kategori dan Rasa Terlebih Dahulu</option>
+                                    @foreach($inventoriesForSelect as $inventory)
+                                        <option value="{{ $inventory->kode_produk }}" 
+                                                data-id="{{ $inventory->id }}" 
+                                                data-nama="{{ $inventory->nama_produk }}" 
+                                                data-jumlah="{{ $inventory->jumlah }}" 
+                                                data-harga="{{ $inventory->selling_price }}"
+                                                data-cost="{{ $inventory->harga }}"
+                                                data-hpp="{{ $inventory->hpp_master }}"
+                                                data-kategori="{{ $inventory->kategori }}"
+                                                data-rasa="{{ $inventory->rasa_produk }}"
+                                                data-batch="{{ $inventory->no_batch }}"
+                                                data-exp="{{ $inventory->tgl_expired ? \Carbon\Carbon::parse($inventory->tgl_expired)->format('d/m/Y') : 'No Exp' }}"
+                                                class="hidden_option" style="display: none;">
+                                            Exp: {{ $inventory->tgl_expired ? \Carbon\Carbon::parse($inventory->tgl_expired)->format('d/m/Y') : 'No Exp' }} | No Batch: {{ $inventory->no_batch ?? '-' }} | Tersedia: {{ $inventory->jumlah }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-[#d4af37]">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
                             </div>
-                            <!-- Hidden select for form submission logic -->
-                            <select id="kode_produk" name="kode_produk" class="hidden">
-                                <option value="" data-kategori="" data-rasa="">Pilih Produk</option>
-                                @foreach($inventoriesForSelect as $inventory)
-                                    <option value="{{ $inventory->kode_produk }}" 
-                                            data-id="{{ $inventory->oldest_id }}" 
-                                            data-nama="{{ $inventory->nama_produk }}" 
-                                            data-jumlah="{{ $inventory->total_jumlah }}" 
-                                            data-harga="{{ $inventory->selling_price }}"
-                                            data-cost="{{ $inventory->cost_price }}"
-                                            data-hpp="{{ $inventory->hpp }}"
-                                            data-kategori="{{ $inventory->kategori }}"
-                                            data-rasa="{{ $inventory->rasa_produk }}"
-                                            data-batch="{{ $inventory->oldest_batch }}"
-                                            data-exp="{{ $inventory->oldest_exp ? \Carbon\Carbon::parse($inventory->oldest_exp)->format('d/m/Y') : 'No Exp' }}">
-                                        {{ $inventory->nama_produk }}
-                                    </option>
-                                @endforeach
-                            </select>
                             <x-input-error :messages="$errors->get('kode_produk')" class="mt-2" />
                         </div>
                     </div>
@@ -130,9 +132,9 @@
 
 
 
-                        <!-- HARGA POKOK PRODUKSI -->
+                        <!-- HP Produksi -->
                         <div>
-                            <label for="harga_pokok_per_pack_display" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HARGA POKOK PRODUKSI</label>
+                            <label for="harga_pokok_per_pack_display" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HP Produksi</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-[#d4af37] font-bold">Rp</span>
@@ -207,9 +209,9 @@
                                     <th class="py-6 px-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Tanggal</th>
                                     <th class="py-6 px-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Produk</th>
                                     <th class="py-6 px-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Kategori</th>
-
+                                    <th class="py-6 px-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Tgl Expired & No Batch</th>
                                     <th class="py-6 px-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Jumlah Pack Keluar</th>
-                                    <th class="py-6 px-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Harga Pokok Per Pack</th>
+                                    <th class="py-6 px-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">HP Produksi</th>
                                     <th class="py-6 px-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">Persediaan Produk Keluar</th>
                                     <th class="py-6 px-6 text-center text-[13px] font-black text-black uppercase tracking-wider whitespace-nowrap">Aksi</th>
                                 </tr>
@@ -218,13 +220,20 @@
                                 @forelse($entries as $index => $entry)
                                     <tr class="{{ $index % 2 == 0 ? 'bg-[#fdf9eb]' : 'bg-[#f4ebd0]' }} hover:bg-[#ffeec2] transition-colors group">
                                         <td class="py-5 px-6 text-sm font-bold text-gray-700 border-r border-[#d4af37]/10">{{ $entry->id_transaksi }}</td>
-                                        <td class="py-5 px-6 text-sm font-medium text-gray-600 border-r border-[#d4af37]/10">{{ \Carbon\Carbon::parse($entry->tanggal)->format('d M Y') }}</td>
+                                        <td class="py-5 px-6 text-sm font-medium text-gray-600 border-r border-[#d4af37]/10">{{ \Carbon\Carbon::parse($entry->tanggal)->format('d/m/Y') }}</td>
                                         <td class="py-5 px-6 border-r border-[#d4af37]/10">
                                             <div class="text-sm font-bold text-gray-900 uppercase">{{ $entry->nama_produk }}</div>
                                             <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{{ $entry->kode_produk }}</div>
                                         </td>
                                         <td class="py-5 px-6 text-sm text-[#7a0e14] font-black border-r border-[#d4af37]/10 uppercase tracking-tighter">{{ $entry->kategori ?? '-' }}</td>
-
+                                        <td class="py-5 px-6 border-r border-[#d4af37]/10">
+                                            @if($entry->inventory)
+                                                <div class="text-sm font-bold text-[#7a0e14] uppercase">Exp: {{ $entry->inventory->tgl_expired ? \Carbon\Carbon::parse($entry->inventory->tgl_expired)->format('d/m/Y') : '-' }}</div>
+                                                <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Batch: {{ $entry->inventory->no_batch ?? '-' }}</div>
+                                            @else
+                                                <div class="text-sm text-gray-400 font-bold">-</div>
+                                            @endif
+                                        </td>
                                         <td class="py-5 px-6 text-base font-black text-blue-600 border-r border-[#d4af37]/10 text-center">{{ $entry->jumlah_pack_keluar ?? $entry->jumlah_keluar }}</td>
                                         <td class="py-5 px-6 text-base font-black text-[#7a0e14] border-r border-[#d4af37]/10 text-right font-mono">Rp {{ number_format($entry->harga_pokok_per_pack, 2, ',', '.') }}</td>
                                         <td class="py-5 px-6 text-base font-black text-[#7a0e14] border-r border-[#d4af37]/10 text-right font-mono text-orange-600">Rp {{ number_format(($entry->jumlah_pack_keluar ?? $entry->jumlah_keluar) * $entry->harga_pokok_per_pack, 2, ',', '.') }}</td>
@@ -315,60 +324,36 @@
                 kategoriFilter.addEventListener('change', function() {
                     const selectedKategori = this.value;
                     const selectedRasa = document.getElementById('rasa_filter').value;
-                    const infoBox = document.getElementById('product_info_box');
-                    const infoText = document.getElementById('product_info_text');
                     
-                    let foundProduct = null;
+                    idProdukSelect.value = "";
+                    let hasOptions = false;
                     
                     productOptions.forEach(option => {
+                        if (option.value === "") return;
+                        
                         const optionKategori = option.getAttribute('data-kategori');
                         const optionRasa = option.getAttribute('data-rasa');
                         
-                        const matchKategori = !selectedKategori || optionKategori === selectedKategori || !option.value;
-                        const matchRasa = !selectedRasa || optionRasa === selectedRasa || !option.value;
+                        const matchKategori = !selectedKategori || optionKategori === selectedKategori;
+                        const matchRasa = !selectedRasa || optionRasa === selectedRasa;
                         
-                        if (matchKategori && matchRasa && option.value) {
-                            if (!foundProduct) foundProduct = option;
+                        if (matchKategori && matchRasa) {
+                            option.style.display = "";
+                            hasOptions = true;
+                        } else {
+                            option.style.display = "none";
                         }
                     });
 
-                    if (foundProduct && selectedKategori && selectedRasa) {
-                        idProdukSelect.value = foundProduct.value;
-                        const stok = foundProduct.getAttribute('data-jumlah');
-                        const exp = foundProduct.getAttribute('data-exp');
-                        const nama = foundProduct.getAttribute('data-nama');
-                        const batch = foundProduct.getAttribute('data-batch');
-                        
-                        infoBox.classList.add('bg-green-50', 'border-green-200');
-                        infoBox.classList.remove('bg-[#f4ebd0]/50', 'border-[#d4af37]/30', 'bg-red-50', 'border-red-200', 'bg-gray-100', 'border-gray-300');
-                        infoText.innerHTML = `<div class="flex flex-col">
-                            <span class="text-[#7a0e14] font-black uppercase text-sm">${nama} (Batch: ${batch})</span>
-                            <span class="text-xs font-bold text-gray-600 uppercase tracking-tighter">Stok Tersedia: <b class="text-green-600">${stok}</b> | Exp Terdekat: <b class="text-red-500">${exp}</b></span>
-                        </div>`;
-                    } else if (selectedKategori && selectedRasa) {
-                        const masterProd = allProductsData.find(p => p.kategori === selectedKategori && p.rasa_produk === selectedRasa);
-                        
-                        idProdukSelect.value = "";
-                        if (masterProd) {
-                            infoBox.classList.remove('bg-green-50', 'border-green-200', 'bg-[#f4ebd0]/50', 'border-[#d4af37]/30', 'bg-gray-100', 'border-gray-300');
-                            infoBox.classList.add('bg-red-50', 'border-red-200');
-                            infoText.innerHTML = `<div class="flex flex-col">
-                                <span class="text-[#7a0e14] font-black uppercase text-sm">${masterProd.nama_produk}</span>
-                                <span class="text-xs font-bold text-gray-600 uppercase tracking-tighter">Stok Tersedia: <b class="text-red-600">0</b> | Tidak dapat diproses</span>
-                            </div>`;
-                        } else {
-                            infoBox.classList.remove('bg-green-50', 'border-green-200', 'bg-red-50', 'border-red-200', 'bg-[#f4ebd0]/50', 'border-[#d4af37]/30');
-                            infoBox.classList.add('bg-gray-100', 'border-gray-300');
-                            infoText.innerHTML = `<span class="text-gray-500 font-bold text-sm">Varian produk tidak ditemukan di sistem.</span>`;
-                        }
+                    if (!selectedKategori && !selectedRasa) {
+                        idProdukSelect.options[0].text = "Pilih Kategori dan Rasa Terlebih Dahulu";
+                    } else if (hasOptions) {
+                        idProdukSelect.options[0].text = "Silakan Pilih No Batch";
                     } else {
-                        idProdukSelect.value = "";
-                        infoBox.classList.remove('bg-green-50', 'border-green-200', 'bg-red-50', 'border-red-200', 'bg-gray-100', 'border-gray-300');
-                        infoBox.classList.add('bg-[#f4ebd0]/50', 'border-[#d4af37]/30');
-                        infoText.innerText = "Pilih Kategori dan Rasa untuk melihat stok...";
+                        idProdukSelect.options[0].text = "Tidak Ada Batch Tersedia";
                     }
 
-                    // Update price automatically if no mitra is selected
+                    // Update price automatically if category selected
                     if (selectedKategori) {
                         const masterPrice = masterCategoryPrices[selectedKategori] || 0;
                         hargaInput.value = masterPrice;
@@ -410,8 +395,20 @@
                             hargaPokokDisplay.value = '';
                         }
                         
-                        jumlahKeluarInput.max = jumlah;
-                        jumlahKeluarInput.placeholder = 'Maks: ' + jumlah;
+                        // Remove max limit to allow FEFO spillover
+                        jumlahKeluarInput.removeAttribute('max');
+                        jumlahKeluarInput.placeholder = 'Ketik Jumlah Keluar...';
+                        
+                        // Add hint about FEFO
+                        let fefoHint = document.getElementById('fefo-hint');
+                        if (!fefoHint) {
+                            fefoHint = document.createElement('div');
+                            fefoHint.id = 'fefo-hint';
+                            fefoHint.className = 'text-xs text-orange-600 font-bold mt-1';
+                            jumlahKeluarInput.parentNode.appendChild(fefoHint);
+                        }
+                        fefoHint.innerHTML = `Stok batch ini: ${jumlah}. Jika melebihi, sisa akan otomatis memotong batch berikutnya (FEFO).`;
+
                         calculateTotal();
                         updatePersediaanKeluar();
                     } else {

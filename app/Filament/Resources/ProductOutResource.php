@@ -84,7 +84,7 @@ class ProductOutResource extends Resource
                     ->numeric()
                     ->prefix('Rp'),
                 Forms\Components\TextInput::make('harga_pokok_produksi')
-                    ->label('Harga Pokok Produksi (HPP)')
+                    ->label('')
                     ->numeric()
                     ->prefix('Rp')
                     ->helperText('Diisi manual oleh user'),

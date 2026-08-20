@@ -116,53 +116,10 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- BIAYA BAHAN BAKU (BBB) -->
-                        <div>
-                            <label for="bbb" class="block text-sm font-bold text-[#d4af37] mb-3">BIAYA BAHAN BAKU (BBB)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
-                                    <span class="text-gray-500 font-bold">Rp</span>
-                                </div>
-                                <input type="number" name="bbb" id="bbb" value="{{ old('bbb') }}" 
-                                       class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('bbb') border-red-400 @enderror" 
-                                       placeholder="0" min="0" step="0.01">
-                            </div>
-                            <x-input-error :messages="$errors->get('bbb')" class="mt-2" />
-                        </div>
 
-                        <!-- BIAYA TENAGA KERJA LANGSUNG (BTKL) -->
+                        <!-- HP Produksi -->
                         <div>
-                            <label for="btkl" class="block text-sm font-bold text-[#d4af37] mb-3">BIAYA TENAGA KERJA LANGSUNG (BTKL)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
-                                    <span class="text-gray-500 font-bold">Rp</span>
-                                </div>
-                                <input type="number" name="btkl" id="btkl" value="{{ old('btkl') }}" 
-                                       class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('btkl') border-red-400 @enderror" 
-                                       placeholder="0" min="0" step="0.01">
-                            </div>
-                            <x-input-error :messages="$errors->get('btkl')" class="mt-2" />
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- BIAYA OVERHEAD PABRIK (BOP) -->
-                        <div>
-                            <label for="bop" class="block text-sm font-bold text-[#d4af37] mb-3">BIAYA OVERHEAD PABRIK (BOP)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
-                                    <span class="text-gray-500 font-bold">Rp</span>
-                                </div>
-                                <input type="number" name="bop" id="bop" value="{{ old('bop') }}" 
-                                       class="w-full bg-white border-2 border-white/50 rounded-2xl pl-12 pr-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all placeholder-gray-300 @error('bop') border-red-400 @enderror" 
-                                       placeholder="0" min="0" step="0.01">
-                            </div>
-                            <x-input-error :messages="$errors->get('bop')" class="mt-2" />
-                        </div>
-
-                        <!-- HARGA POKOK PRODUKSI (HPP) -->
-                        <div>
-                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3">HARGA POKOK PRODUKSI (HPP)</label>
+                            <label for="hpp" class="block text-sm font-bold text-[#d4af37] mb-3">HP Produksi</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
                                     <span class="text-gray-500 font-bold">Rp</span>

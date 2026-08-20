@@ -21,7 +21,7 @@
         </tr>
         <tr>
             <th style="font-weight: bold; text-align: center; background-color: #ffedd5;">TANGGAL</th>
-            <th style="font-weight: bold; text-align: center; background-color: #ffedd5;">KETERANGAN</th>
+            <th style="font-weight: bold; text-align: center; background-color: #ffedd5;">AKUN</th>
             <th style="font-weight: bold; text-align: center; background-color: #ffedd5;">REF</th>
             <th style="font-weight: bold; text-align: center; background-color: #ffedd5;">DEBIT</th>
             <th style="font-weight: bold; text-align: center; background-color: #ffedd5;">KREDIT</th>

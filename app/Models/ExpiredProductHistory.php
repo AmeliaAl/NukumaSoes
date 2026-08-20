@@ -8,6 +8,7 @@ class ExpiredProductHistory extends Model
 {
     protected $fillable = [
         'no_batch',
+        'kode_produk',
         'nama_produk',
         'rasa_produk',
         'kategori',

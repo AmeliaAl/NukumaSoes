@@ -13,17 +13,13 @@
                         @csrf
 
                         <!-- Manual Fields (Optional) -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div>
                                 <x-input-label for="kode_akun" :value="__('Kode Akun')" />
                                 <x-text-input id="kode_akun" class="block mt-1 w-full" type="text" name="kode_akun" :value="old('kode_akun')" autocomplete="kode_akun" />
                                 <x-input-error :messages="$errors->get('kode_akun')" class="mt-2" />
                             </div>
-                            <div>
-                                <x-input-label for="header_akun" :value="__('Header Akun')" />
-                                <x-text-input id="header_akun" class="block mt-1 w-full" type="text" name="header_akun" :value="old('header_akun')" autocomplete="header_akun" />
-                                <x-input-error :messages="$errors->get('header_akun')" class="mt-2" />
-                            </div>
+
                             <div>
                                 <x-input-label for="nama_akun" :value="__('Nama Akun')" />
                                 <x-text-input id="nama_akun" class="block mt-1 w-full" type="text" name="nama_akun" :value="old('nama_akun')" autocomplete="nama_akun" />
@@ -56,7 +52,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel (.xlsx)</label>
                                 <input type="file" name="file" accept=".xlsx,.xls" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                                <p class="mt-1 text-xs text-gray-500">Format: kode_akun | header_akun | nama_akun (baris 1 = header)</p>
+                                <p class="mt-1 text-xs text-gray-500">Format: kode_akun | nama_akun</p>
                             </div>
                             <div class="flex flex-col gap-3">
                                 <label class="inline-flex items-center gap-2 text-sm text-gray-700">

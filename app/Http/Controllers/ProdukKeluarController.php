@@ -25,32 +25,20 @@ class ProdukKeluarController extends Controller
         ->orderBy('tanggal', 'desc')
         ->paginate(10);
 
-        // Fetch Products with total stock from Inventory (Grouped by Kode Produk)
+        // Fetch all active batches from Inventory
         $inventoriesForSelect = \App\Models\Inventory::where('jumlah', '>', 0)
             ->where('status', '!=', 'Expired')
-            ->select('kode_produk', 'nama_produk', 'kategori', 'rasa_produk', DB::raw('SUM(jumlah) as total_jumlah'))
-            ->groupBy('kode_produk', 'nama_produk', 'kategori', 'rasa_produk')
-            ->orderBy('nama_produk', 'asc')
+            ->orderByRaw('tgl_expired IS NULL, tgl_expired ASC')
+            ->orderBy('created_at', 'ASC')
             ->get()
             ->map(function($item) {
-                // Get the oldest batch for this product for display purposes
-                $oldestBatch = \App\Models\Inventory::where('kode_produk', $item->kode_produk)
-                    ->where('jumlah', '>', 0)
-                    ->where('status', '!=', 'Expired')
-                    ->orderByRaw('tgl_expired IS NULL, tgl_expired ASC')
-                    ->first();
-                
                 // Get selling price and HPP from product master
                 $mainProduct = \App\Models\Product::where('kode_produk', $item->kode_produk)->first();
                 $sellingPrice = $mainProduct ? $mainProduct->harga : 0;
                 $hpp = $mainProduct ? $mainProduct->hpp : 0;
 
-                $item->oldest_id = $oldestBatch->id;
-                $item->oldest_batch = $oldestBatch->no_batch;
                 $item->selling_price = $sellingPrice;
-                $item->cost_price = $oldestBatch->harga;
-                $item->oldest_exp = $oldestBatch->tgl_expired;
-                $item->hpp = $hpp;
+                $item->hpp_master = $hpp; // to avoid conflict with inventory's own hpp if any
                 return $item;
             });
 
@@ -74,7 +62,7 @@ class ProdukKeluarController extends Controller
         $inventoriesForSelect = \App\Models\Inventory::where('jumlah', '>', 0)
             ->where('status', '!=', 'Expired')
             ->orderByRaw('tgl_expired IS NULL, tgl_expired ASC')
-            ->orderBy('nama_produk', 'asc')
+            ->orderBy('created_at', 'ASC')
             ->get();
 
         return view('produk-keluar.create', compact('inventoriesForSelect'));
@@ -110,78 +98,89 @@ class ProdukKeluarController extends Controller
 
         $request->merge(['status' => 'lunas']);
 
-        $totalAvailable = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
+        $totalAvailableAll = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
             ->where('status', '!=', 'Expired')
             ->sum('jumlah');
         
-        if ($totalAvailable < $request->jumlah_keluar) {
-            return redirect()->back()->withErrors(['jumlah_keluar' => 'Total stok produk tidak mencukupi (Tersedia: ' . $totalAvailable . ').']);
+        if ($totalAvailableAll < $request->jumlah_keluar) {
+            return redirect()->back()->withErrors(['jumlah_keluar' => 'Total keseluruhan stok produk ini tidak mencukupi (Tersedia Keseluruhan: ' . $totalAvailableAll . ').']);
         }
 
         DB::transaction(function () use ($request) {
             $remainingToDeduct = $request->jumlah_keluar;
-            $batches = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
+            
+            // Prioritize the selected batch first
+            $selectedBatch = \App\Models\Inventory::where('id', $request->inventory_id)
+                ->where('jumlah', '>', 0)
+                ->where('status', '!=', 'Expired')
+                ->first();
+                
+            $batchesToDeduct = collect();
+            
+            if ($selectedBatch) {
+                $batchesToDeduct->push($selectedBatch);
+            }
+            
+            // Get other batches ordered by FEFO (tgl_expired ASC)
+            $otherBatches = \App\Models\Inventory::where('kode_produk', $request->kode_produk)
+                ->where('id', '!=', $request->inventory_id)
                 ->where('jumlah', '>', 0)
                 ->where('status', '!=', 'Expired')
                 ->orderByRaw('tgl_expired IS NULL, tgl_expired ASC')
+                ->orderBy('created_at', 'ASC')
                 ->get();
+                
+            $batchesToDeduct = $batchesToDeduct->concat($otherBatches);
+            
+            $mainProduct = \App\Models\Product::where('kode_produk', $request->kode_produk)->first();
+            $request->merge([
+                'kategori' => $mainProduct->kategori ?? null,
+                'jenis' => 'keluar'
+            ]);
 
-            foreach ($batches as $batch) {
+            foreach ($batchesToDeduct as $batch) {
                 if ($remainingToDeduct <= 0) break;
 
                 $deductFromThisBatch = min($remainingToDeduct, $batch->jumlah);
                 $batch->jumlah -= $deductFromThisBatch;
+                // Jika stok saat ini sudah habis, stok_awal juga dikosongkan
+                if ($batch->jumlah <= 0) {
+                    $batch->jumlah = 0;
+                    $batch->stok_awal = 0;
+                }
                 $batch->save();
 
                 $remainingToDeduct -= $deductFromThisBatch;
 
+                $proporsi = $deductFromThisBatch / $request->jumlah_keluar;
+                $totalHargaProporsional = $proporsi * $request->total_harga;
+                $hppProporsional = $batch->hpp ?? $request->harga_pokok_per_pack ?? 0;
+
                 KartuStokEntry::create([
                     'tanggal' => $request->tanggal,
-                    'keterangan' => 'Produk Keluar (Batch: ' . ($batch->tgl_masuk ? \Carbon\Carbon::parse($batch->tgl_masuk)->format('d/m/Y') : '-') . ')',
+                    'keterangan' => 'Produk Keluar (Batch: ' . ($batch->no_batch ?? '-') . ')',
                     'id_transaksi' => $request->id_transaksi,
                     'masuk' => 0,
                     'keluar' => $deductFromThisBatch,
                     'harga' => $request->harga,
-                    'total_harga' => ($deductFromThisBatch / $request->jumlah_keluar) * $request->total_harga,
+                    'total_harga' => $totalHargaProporsional,
                     'kode_produk' => $batch->kode_produk,
                     'nama_produk' => $batch->nama_produk,
+                    'no_batch' => $batch->no_batch,
                 ]);
+
+                // Create ProdukKeluarEntry for this specific batch
+                $entryData = $request->all();
+                $entryData['inventory_id'] = $batch->id;
+                $entryData['jumlah_keluar'] = $deductFromThisBatch;
+                $entryData['jumlah_pack_keluar'] = $deductFromThisBatch;
+                $entryData['total_harga'] = $totalHargaProporsional;
+                $entryData['harga_pokok_per_pack'] = $hppProporsional;
+                \App\Models\ProdukKeluarEntry::create($entryData);
             }
-            Product::syncQuantity($request->kode_produk);
+            \App\Models\Product::syncQuantity($request->kode_produk);
 
-            // Create ProdukKeluarEntry
-            $request->merge(['jenis' => 'keluar']);
-            $mainProduct = Product::where('kode_produk', $request->kode_produk)->first();
-            $request->merge(['kategori' => $mainProduct->kategori ?? null]);
-            ProdukKeluarEntry::create($request->all());
-
-            // 4. Create Jurnal Umum (Double Entry)
-            $coaHPP = \App\Models\Coa::where('nama_akun', 'LIKE', '%Harga Pokok Penjualan%')->first();
-            $refHPP = $coaHPP ? $coaHPP->kode_akun : '500';
-
-            $coaPersediaanJadi = \App\Models\Coa::where('nama_akun', 'LIKE', '%Persediaan%')->where('nama_akun', 'LIKE', '%Jadi%')->first();
-            $refPersediaanJadi = $coaPersediaanJadi ? $coaPersediaanJadi->kode_akun : '140';
-
-            $persediaanKeluar = $request->jumlah_keluar * $request->harga_pokok_per_pack;
-
-            if ($persediaanKeluar > 0) {
-                \App\Models\JurnalUmum::create([
-                    'tanggal' => $request->tanggal,
-                    'keterangan' => 'Persediaan Produk Keluar',
-                    'ref' => $refHPP,
-                    'debit' => $persediaanKeluar,
-                    'kredit' => 0,
-                    'id_transaksi' => $request->id_transaksi,
-                ]);
-                \App\Models\JurnalUmum::create([
-                    'tanggal' => $request->tanggal,
-                    'keterangan' => 'Persediaan Produk Jadi',
-                    'ref' => $refPersediaanJadi,
-                    'debit' => 0,
-                    'kredit' => $persediaanKeluar,
-                    'id_transaksi' => $request->id_transaksi,
-                ]);
-            }
+            // Jurnal Umum creation has been removed per user request
         });
 
         return redirect()->route('produk-keluar.index')->with('success', 'Entry berhasil dibuat. Stok dikurangi menggunakan sistem FEFO otomatis.');
@@ -260,12 +259,35 @@ class ProdukKeluarController extends Controller
                 ->orderByRaw('tgl_expired IS NULL, tgl_expired ASC')
                 ->get();
 
+            // Delete old KartuStokEntry
+            KartuStokEntry::where('id_transaksi', $entry->id_transaksi)->delete();
+
             foreach ($batches as $batch) {
                 if ($remainingToDeduct <= 0) break;
 
                 $deductAmount = min($batch->jumlah, $remainingToDeduct);
                 $batch->jumlah -= $deductAmount;
+                // Jika stok saat ini sudah habis, stok_awal juga dikosongkan
+                if ($batch->jumlah <= 0) {
+                    $batch->jumlah = 0;
+                    $batch->stok_awal = 0;
+                }
                 $batch->save();
+                
+                // Recreate KartuStokEntry
+                KartuStokEntry::create([
+                    'tanggal' => $request->tanggal,
+                    'keterangan' => 'Produk Keluar (Batch: ' . ($batch->no_batch ?? '-') . ')',
+                    'id_transaksi' => $entry->id_transaksi,
+                    'masuk' => 0,
+                    'keluar' => $deductAmount,
+                    'harga' => $request->harga_pokok_per_pack ?? 0,
+                    'total_harga' => ($deductAmount / $request->jumlah_keluar) * $request->total_harga,
+                    'kode_produk' => $batch->kode_produk,
+                    'nama_produk' => $batch->nama_produk,
+                    'no_batch' => $batch->no_batch,
+                ]);
+
                 $remainingToDeduct -= $deductAmount;
             }
             
@@ -274,33 +296,7 @@ class ProdukKeluarController extends Controller
             // 4. Update Jurnal Umum (Delete old and create new)
             \App\Models\JurnalUmum::where('id_transaksi', $entry->id_transaksi)->delete();
 
-            // Recording only Inventory Movement as per user request
-            $persediaanKeluar = $request->jumlah_keluar * $request->harga_pokok_per_pack;
-
-            if ($persediaanKeluar > 0) {
-                $coaHPP = \App\Models\Coa::where('nama_akun', 'LIKE', '%Harga Pokok Penjualan%')->first();
-                $refHPP = $coaHPP ? $coaHPP->kode_akun : '500';
-
-                $coaPersediaanJadi = \App\Models\Coa::where('nama_akun', 'LIKE', '%Persediaan%')->where('nama_akun', 'LIKE', '%Jadi%')->first();
-                $refPersediaanJadi = $coaPersediaanJadi ? $coaPersediaanJadi->kode_akun : '140';
-
-                \App\Models\JurnalUmum::create([
-                    'tanggal' => $request->tanggal,
-                    'keterangan' => 'Persediaan Produk Keluar',
-                    'ref' => $refHPP,
-                    'debit' => $persediaanKeluar,
-                    'kredit' => 0,
-                    'id_transaksi' => $entry->id_transaksi,
-                ]);
-                \App\Models\JurnalUmum::create([
-                    'tanggal' => $request->tanggal,
-                    'keterangan' => 'Persediaan Produk Jadi',
-                    'ref' => $refPersediaanJadi,
-                    'debit' => 0,
-                    'kredit' => $persediaanKeluar,
-                    'id_transaksi' => $entry->id_transaksi,
-                ]);
-            }
+            // Recording to Jurnal Umum has been removed per user request
         });
 
         return redirect()->route('produk-keluar.index')->with('success', 'Transaksi berhasil diperbarui.');
@@ -329,8 +325,9 @@ class ProdukKeluarController extends Controller
             // Sync total product quantity
             Product::syncQuantity($kode_produk);
 
-            // Delete related Jurnal Umum
+            // Delete related Jurnal Umum and Kartu Stok
             \App\Models\JurnalUmum::where('id_transaksi', $entry->id_transaksi)->delete();
+            KartuStokEntry::where('id_transaksi', $entry->id_transaksi)->delete();
         });
 
         return redirect()->route('produk-keluar.index')->with('success', 'Entry deleted successfully and stock restored.');

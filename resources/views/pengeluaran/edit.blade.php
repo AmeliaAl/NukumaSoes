@@ -35,7 +35,7 @@
                                 @enderror
                             </div>
                             <div>
-                                <label for="harga_pokok_per_pack" class="block text-sm font-medium text-gray-700">Harga Pokok Per Pack</label>
+                                <label for="harga_pokok_per_pack" class="block text-sm font-medium text-gray-700">HP Produksi</label>
                                 <div class="relative mt-1">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <span class="text-gray-500 sm:text-sm">Rp</span>

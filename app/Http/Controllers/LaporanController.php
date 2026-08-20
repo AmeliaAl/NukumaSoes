@@ -25,6 +25,9 @@ class LaporanController extends Controller
 
         $entries = \App\Models\JurnalUmum::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
+            ->where(function ($q) {
+                $q->where('debit', '>', 0)->orWhere('kredit', '>', 0);
+            })
             ->orderBy('tanggal', 'asc')
             ->orderBy('created_at', 'asc')
             ->get();
@@ -48,6 +51,9 @@ class LaporanController extends Controller
 
         $entries = \App\Models\JurnalUmum::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
+            ->where(function ($q) {
+                $q->where('debit', '>', 0)->orWhere('kredit', '>', 0);
+            })
             ->orderBy('tanggal', 'asc')
             ->orderBy('created_at', 'asc')
             ->get();
@@ -109,6 +115,7 @@ class LaporanController extends Controller
         $bulan = $parts[1] ?? date('m');
 
         $entries = [];
+        $isCreditNormal = false;
         
         if ($namaAkun) {
             $firstDayOfMonth = \Carbon\Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
@@ -194,7 +201,7 @@ class LaporanController extends Controller
             ];
         }
 
-        return view('laporan.buku-besar', compact('entries', 'akunJurnal', 'periode', 'namaAkun'));
+        return view('laporan.buku-besar', compact('entries', 'akunJurnal', 'periode', 'namaAkun', 'isCreditNormal'));
     }
 
     public function exportExcelBukuBesar(Request $request)
@@ -213,6 +220,7 @@ class LaporanController extends Controller
         $bulan = $parts[1] ?? date('m');
 
         $entries = [];
+        $isCreditNormal = false;
         
         if ($namaAkun) {
             $firstDayOfMonth = \Carbon\Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
@@ -296,7 +304,7 @@ class LaporanController extends Controller
             ];
         }
             
-        $pdf = Pdf::loadView('laporan.buku-besar-pdf', compact('entries', 'periode', 'namaAkun'));
+        $pdf = Pdf::loadView('laporan.buku-besar-pdf', compact('entries', 'periode', 'namaAkun', 'isCreditNormal'));
         return $pdf->download('buku_besar_'.date('YmdHis').'.pdf');
     }
 

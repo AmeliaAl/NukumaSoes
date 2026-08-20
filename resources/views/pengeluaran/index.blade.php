@@ -70,8 +70,8 @@
                                     <td class="px-6 py-5 text-sm text-[#7a0e14] font-black border-r border-[#d4af37]/10 truncate max-w-[150px] uppercase tracking-tighter">{{ $history->kategori }}</td>
                                     <td class="px-6 py-5 text-base text-red-600 font-black border-r border-[#d4af37]/10 text-center bg-red-50/50">{{ number_format($history->jumlah) }}</td>
                                     <td class="px-6 py-5 text-base text-[#7a0e14] font-black border-r border-[#d4af37]/10 text-right font-mono tracking-tighter">Rp {{ number_format($history->jumlah * ($history->hpp ?? 0), 0, ',', '.') }}</td>
-                                    <td class="px-6 py-5 text-sm text-gray-700 border-r border-[#d4af37]/10 text-center font-bold">{{ $history->tgl_masuk ? $history->tgl_masuk->format('d/m/y') : '-' }}</td>
-                                    <td class="px-6 py-5 text-sm text-red-600 border-r border-[#d4af37]/10 text-center font-black">{{ $history->tgl_expired ? $history->tgl_expired->format('d/m/y') : '-' }}</td>
+                                    <td class="px-6 py-5 text-sm text-gray-700 border-r border-[#d4af37]/10 text-center font-bold">{{ $history->tgl_masuk ? $history->tgl_masuk->format('d/m/Y') : '-' }}</td>
+                                    <td class="px-6 py-5 text-sm text-red-600 border-r border-[#d4af37]/10 text-center font-black">{{ $history->tgl_expired ? $history->tgl_expired->format('d/m/Y') : '-' }}</td>
                                     <td class="px-6 py-5 text-center border-r border-[#d4af37]/10">
                                         <div class="px-3 py-1 rounded-full bg-red-600 text-white text-[10px] font-black uppercase shadow-sm">Expired</div>
                                     </td>

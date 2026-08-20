@@ -39,9 +39,9 @@
             @if ($dari || $sampai)
                 <p style="font-size:13px;color:#c7d2fe;margin:6px 0 0;">
                     Periode:
-                    {{ $dari ? \Carbon\Carbon::parse($dari)->translatedFormat('d M Y') : '...' }}
+                    {{ $dari ? \Carbon\Carbon::parse($dari)->translatedformat('d/m/Y') : '...' }}
                     s/d
-                    {{ $sampai ? \Carbon\Carbon::parse($sampai)->translatedFormat('d M Y') : '...' }}
+                    {{ $sampai ? \Carbon\Carbon::parse($sampai)->translatedformat('d/m/Y') : '...' }}
                 </p>
             @else
                 <p style="font-size:13px;color:#c7d2fe;margin:6px 0 0;">Semua Periode</p>

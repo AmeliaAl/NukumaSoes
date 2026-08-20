@@ -43,7 +43,7 @@
                             <thead>
                                 <tr class="bg-orange-100 border-b-2 border-gray-800">
                                     <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">TANGGAL</th>
-                                    <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">KETERANGAN</th>
+                                    <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">AKUN</th>
                                     <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">REF</th>
                                     <th class="px-4 py-3 text-right font-bold text-gray-700 uppercase tracking-wider">DEBIT</th>
                                     <th class="px-4 py-3 text-right font-bold text-gray-700 uppercase tracking-wider">KREDIT</th>

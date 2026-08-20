@@ -22,21 +22,40 @@
                     <input type="hidden" name="harga" id="harga_hidden" value="">
                     <input type="hidden" name="total_harga" id="total_harga_hidden" value="">
 
+                    <!-- KATEGORI PRODUK -->
+                    <div class="grid grid-cols-1 md:grid-cols-1 gap-8 mb-8">
+                        <div>
+                            <label for="kategori_filter" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">KATEGORI PRODUK</label>
+                            <div class="relative group">
+                                <select id="kategori_filter" class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none">
+                                    <option value="">Semua Kategori</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->nama_kategori }}">{{ $cat->nama_kategori }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-[#d4af37]">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- PRODUK ID -->
                         <div>
                             <label for="kode_produk" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">PRODUK ID <span class="text-red-500 font-black">*</span></label>
                             <div class="relative group">
-                                <select id="kode_produk" name="kode_produk" 
-                                        class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none @error('kode_produk') border-red-400 @enderror" 
+                                <select id="kode_produk" name="inventory_id_select" 
+                                        class="w-full bg-[#fdf9eb] border-2 border-[#d4af37]/30 rounded-2xl px-5 py-4 text-gray-700 font-bold focus:ring-4 focus:ring-[#d4af37]/20 focus:border-[#d4af37] transition-all appearance-none @error('inventory_id_select') border-red-400 @enderror" 
                                         required autofocus>
-                                    <option value="">Pilih Produk ID</option>
+                                    <option value="" data-kategori="">Pilih Produk ID</option>
                                     @foreach($products as $product)
-                                        <option value="{{ $product->kode_produk }}" 
+                                        <option value="{{ $product->inventory_id }}" 
+                                                data-kategori="{{ $product->kategori }}"
                                                 data-nama="{{ $product->nama_produk }}" 
                                                 data-harga="{{ $product->harga_fefo }}" 
                                                 data-stok="{{ $product->jumlah }}">
-                                            {{ $product->kode_produk }} - {{ $product->nama_produk }} - {{ $product->no_batch }} ({{ $product->kategori }})
+                                            {{ $product->kode_produk }} - {{ $product->nama_produk }} - {{ $product->no_batch ?? '-' }} ({{ $product->kategori ?? '-' }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -99,9 +118,9 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- HARGA POKOK PRODUKSI -->
+                        <!-- HP Produksi -->
                         <div>
-                            <label for="harga_pokok_produksi" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HARGA POKOK PRODUKSI</label>
+                            <label for="harga_pokok_produksi" class="block text-sm font-bold text-[#7a0e14] mb-3 uppercase tracking-wider">HP Produksi</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <span class="text-[#d4af37] font-bold">Rp</span>
@@ -166,10 +185,45 @@
                 const totalHargaInput = document.getElementById('total_harga_display');
                 const stokSaatIniInput = document.getElementById('stok_saat_ini');
 
+                const hpProduksiInput = document.getElementById('harga_pokok_produksi');
+                
+                const kategoriFilter = document.getElementById('kategori_filter');
+                const productOptions = Array.from(idProdukSelect.options);
+
+                kategoriFilter.addEventListener('change', function() {
+                    const selectedKategori = this.value;
+                    idProdukSelect.value = "";
+                    
+                    let hasOptions = false;
+                    productOptions.forEach(option => {
+                        if (option.value === "") return;
+                        
+                        const optionKategori = option.getAttribute('data-kategori');
+                        const matchKategori = !selectedKategori || optionKategori === selectedKategori;
+                        
+                        if (matchKategori) {
+                            option.style.display = "";
+                            hasOptions = true;
+                        } else {
+                            option.style.display = "none";
+                        }
+                    });
+                    
+                    if (!selectedKategori) {
+                        idProdukSelect.options[0].text = "Pilih Produk ID";
+                    } else if (hasOptions) {
+                        idProdukSelect.options[0].text = "Silakan Pilih Produk ID";
+                    } else {
+                        idProdukSelect.options[0].text = "Tidak Ada Produk Tersedia";
+                    }
+
+                    idProdukSelect.dispatchEvent(new Event('change'));
+                });
+
                 function calculateTotalHarga() {
-                    const harga = parseFloat(hargaHidden.value) || 0;
+                    const hpProduksi = parseFloat(hpProduksiInput.value) || 0;
                     const jumlah = parseInt(jumlahMasukInput.value) || 0;
-                    const total = harga * jumlah;
+                    const total = hpProduksi * jumlah;
                     
                     totalHargaHidden.value = total;
                     if (total > 0) {
@@ -202,6 +256,7 @@
                 });
 
                 jumlahMasukInput.addEventListener('input', calculateTotalHarga);
+                hpProduksiInput.addEventListener('input', calculateTotalHarga);
             });
         </script>
     </div>

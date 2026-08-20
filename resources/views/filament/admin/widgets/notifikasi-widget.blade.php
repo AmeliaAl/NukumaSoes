@@ -59,7 +59,7 @@
                                 color:#b5b5b5;
                                 margin-top:2px;
                             ">
-                               {{ \Carbon\Carbon::parse($notif['tanggal'])->format('d M Y') }}
+                               {{ \Carbon\Carbon::parse($notif['tanggal'])->format('d/m/Y') }}
                             </div>
                         </div>
                     </div>

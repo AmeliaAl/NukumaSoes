@@ -48,16 +48,17 @@
                                 <th class="px-4 py-6 text-left text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">KATEGORI</th>
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">JENIS PRODUK</th>
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">STOK AWAL</th>
-                                <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">JUMLAH PER BATCH</th>
+
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">STOK SAAT INI</th>
                                 <th class="px-4 py-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">HARGA PER PCS</th>
-                                <th class="px-4 py-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">HPP</th>
+                                <th class="px-4 py-6 text-right text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">HP PRODUKSI</th>
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">KEMAS</th>
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">EXP</th>
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">STATUS</th>
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">SISA</th>
                                 <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">PERMINTAAN PRODUKSI</th>
-                                <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider">AKSI</th>
+                                <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider border-r border-[#d4af37]/10 whitespace-nowrap">PROSES EXPIRED</th>
+                                <th class="px-4 py-6 text-center text-[13px] font-black text-black uppercase tracking-wider whitespace-nowrap">AKSI</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#d4af37]/20">
@@ -87,14 +88,14 @@
                                     <td class="px-4 py-5 text-base text-[#7a0e14] font-black border-r border-[#d4af37]/10 text-center bg-[#d4af37]/10 group-hover:bg-[#ffeec2]">
                                         {{ $inventory->stok_awal ?? 0 }} pack
                                     </td>
-                                    <td class="px-4 py-5 text-base text-black font-black border-r border-[#d4af37]/10 text-center">{{ $inventory->jumlah_per_batch }} pack</td>
+
                                     <td class="px-4 py-5 text-base text-[#7a0e14] font-black border-r border-[#d4af37]/10 text-center bg-[#d4af37]/10">
                                         {{ $inventory->jumlah }} pack
                                     </td>
                                     <td class="px-4 py-5 text-base text-gray-800 font-bold border-r border-[#d4af37]/10 text-right font-mono tracking-tighter">Rp {{ number_format($inventory->harga_per_pcs ?? $inventory->harga, 0, ',', '.') }}</td>
                                     <td class="px-4 py-5 text-base text-gray-800 font-bold border-r border-[#d4af37]/10 text-right font-mono tracking-tighter">{{ $inventory->hpp !== null ? 'Rp ' . number_format($inventory->hpp, 0, ',', '.') : '-' }}</td>
-                                    <td class="px-4 py-5 text-sm text-gray-700 border-r border-[#d4af37]/10 text-center font-bold">{{ $inventory->tgl_masuk ? \Carbon\Carbon::parse($inventory->tgl_masuk)->format('d/m/y') : '-' }}</td>
-                                    <td class="px-4 py-5 text-sm text-black border-r border-[#d4af37]/10 text-center font-black">{{ $inventory->tgl_expired ? \Carbon\Carbon::parse($inventory->tgl_expired)->format('d/m/y') : '-' }}</td>
+                                    <td class="px-4 py-5 text-sm text-gray-700 border-r border-[#d4af37]/10 text-center font-bold">{{ $inventory->tgl_masuk ? \Carbon\Carbon::parse($inventory->tgl_masuk)->format('d/m/Y') : '-' }}</td>
+                                    <td class="px-4 py-5 text-sm text-black border-r border-[#d4af37]/10 text-center font-black">{{ $inventory->tgl_expired ? \Carbon\Carbon::parse($inventory->tgl_expired)->format('d/m/Y') : '-' }}</td>
                                     <td class="px-4 py-5 text-center border-r border-[#d4af37]/10">
                                         @php
                                             $expiredDate = \Carbon\Carbon::parse($inventory->tgl_expired);
@@ -152,24 +153,39 @@
                                             </span>
                                         @endif
                                     </td>
+                                    <td class="px-4 py-5 border-r border-[#d4af37]/10 text-center">
+                                        @if($inventory->status === 'Expired')
+                                            <form method="POST" action="{{ route('inventory-entry.destroy', $inventory) }}" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="px-3 py-1.5 bg-orange-100 text-orange-700 font-bold text-xs uppercase tracking-wider rounded-lg border border-orange-300 hover:bg-orange-200 transition-colors shadow-sm" title="Proses Expired">
+                                                    Proses
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-gray-400 font-bold">-</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-5">
                                         <div class="flex items-center justify-center gap-2">
                                             <a href="{{ route('inventory-entry.edit', $inventory) }}" class="p-2 rounded-xl text-[#b89553] hover:bg-[#d4af37] hover:text-white transition-all transform hover:scale-110" title="Edit">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path></svg>
                                             </a>
-                                            <form method="POST" action="{{ route('inventory-entry.destroy', $inventory) }}" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="p-2 rounded-xl text-[#ff6b6b] hover:bg-[#ff6b6b] hover:text-white transition-all transform hover:scale-110" title="Hapus">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                </button>
-                                            </form>
+                                            @if($inventory->status !== 'Expired')
+                                                <form method="POST" action="{{ route('inventory-entry.destroy', $inventory) }}" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="p-2 rounded-xl text-[#ff6b6b] hover:bg-[#ff6b6b] hover:text-white transition-all transform hover:scale-110" title="Hapus">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="17" class="px-6 py-20 text-center">
+                                    <td colspan="18" class="px-6 py-20 text-center">
                                         <div class="flex flex-col items-center gap-4">
                                             <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                             <p class="text-gray-400 italic font-medium">Data persediaan produk belum tersedia.</p>
@@ -179,6 +195,31 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+        </div>
+
+        <!-- Sales Order Document Feature -->
+        <div class="max-w-[98%] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 mt-8 mb-12">
+            <div class="bg-white/95 backdrop-blur-md rounded-[30px] border-2 border-[#d4af37]/60 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-8">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7a0e14] to-[#4a080c] flex items-center justify-center border-2 border-[#d4af37] shadow-lg flex-shrink-0">
+                            <svg class="w-8 h-8 text-[#d4af37]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-serif font-black text-[#7a0e14] uppercase tracking-wider">Dokumen Sales Order</h2>
+                            <p class="text-sm text-gray-500 font-bold tracking-wide mt-1 uppercase">Formulir Sales Order dari Admin Penjualan</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="$dispatch('open-so-modal')" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#7a0e14] to-[#4a080c] hover:from-[#8b1117] hover:to-[#5c0a0f] text-[#d4af37] font-black uppercase tracking-widest rounded-xl shadow-[0_0_15px_rgba(212,175,55,0.4)] border border-[#d4af37] transition-all transform hover:scale-105 active:scale-95 whitespace-nowrap">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Buka Formulir
+                    </button>
                 </div>
             </div>
         </div>
@@ -368,6 +409,71 @@
                     </template>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Global Sales Order Modal -->
+    <div x-data="{ isOpen: false }" 
+         @open-so-modal.window="isOpen = true"
+         x-show="isOpen" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+         style="display: none;">
+        
+        <div class="bg-white/95 backdrop-blur-md rounded-[30px] border-2 border-[#d4af37] w-full max-w-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-[#7a0e14] to-[#4a080c] p-6 text-white border-b border-[#d4af37] flex-shrink-0">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-serif font-black text-[#d4af37] tracking-wide uppercase">Formulir Sales Order</h3>
+                        <p class="text-xs text-gray-300 mt-1 uppercase tracking-widest font-bold">Admin Penjualan</p>
+                    </div>
+                    <button @click="isOpen = false" class="text-gray-300 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-black text-[#7a0e14] uppercase tracking-widest mb-2">No. Sales Order</label>
+                        <input type="text" value="SO-{{ date('ymd') }}-001" readonly class="w-full rounded-xl border-[#d4af37]/40 bg-[#fdf9eb] shadow-inner font-bold text-gray-600 px-4 py-3">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-[#7a0e14] uppercase tracking-widest mb-2">Tanggal</label>
+                        <input type="date" value="{{ date('Y-m-d') }}" class="w-full rounded-xl border-[#d4af37]/40 focus:border-[#7a0e14] focus:ring-[#7a0e14] shadow-sm font-bold text-gray-700 px-4 py-3">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black text-[#7a0e14] uppercase tracking-widest mb-2">Nama Pelanggan / Toko</label>
+                    <input type="text" placeholder="Masukkan nama pelanggan" class="w-full rounded-xl border-[#d4af37]/40 focus:border-[#7a0e14] focus:ring-[#7a0e14] shadow-sm font-bold text-gray-700 px-4 py-3">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black text-[#7a0e14] uppercase tracking-widest mb-2">Detail Pesanan</label>
+                    <textarea rows="4" placeholder="Masukkan rincian produk yang dipesan..." class="w-full rounded-xl border-[#d4af37]/40 focus:border-[#7a0e14] focus:ring-[#7a0e14] shadow-sm font-bold text-gray-700 px-4 py-3"></textarea>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-[#d4af37]/20 bg-gray-50 flex-shrink-0 flex gap-3">
+                <button type="button" @click="isOpen = false" class="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl text-sm transition-colors uppercase tracking-widest text-center">
+                    Tutup
+                </button>
+                <button type="button" @click="isOpen = false; alert('Fitur akan segera hadir!')" class="flex-1 py-3 px-4 bg-gradient-to-b from-[#7a0e14] to-[#4a080c] hover:from-[#8b1117] hover:to-[#5c0a0f] border border-[#d4af37] text-[#d4af37] font-black rounded-xl text-sm transition-all uppercase tracking-widest text-center shadow-lg">
+                    Simpan Formulir
+                </button>
+            </div>
         </div>
     </div>
 </x-app-layout>

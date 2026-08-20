@@ -12,6 +12,10 @@
     
     <!-- Alpine.js (CDN for reliability) -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 
 <body class="font-sans antialiased">
@@ -100,5 +104,16 @@
             </main>
         </div>
     </div>
+    <!-- Initialize Flatpickr -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            flatpickr("input[type=date]", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                allowInput: true
+            });
+        });
+    </script>
 </body>
 </html>

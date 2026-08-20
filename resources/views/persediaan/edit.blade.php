@@ -60,7 +60,7 @@
                 <!-- HPP - AUTO FILL -->
                 <div>
                     <label for="harga_pokok_produksi" class="block text-sm font-bold text-[#d4af37] mb-1 uppercase tracking-wider">
-                        Harga Pokok Produksi (HPP)
+                        HP Produksi
                         <span class="text-xs text-gray-400 normal-case font-normal ml-1">(otomatis dari Produk ID)</span>
                     </label>
                     <input type="number" name="harga_pokok_produksi" id="harga_pokok_produksi"

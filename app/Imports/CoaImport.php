@@ -10,56 +10,69 @@ class CoaImport implements ToCollection
 {
     public function collection(Collection $rows)
     {
+        if ($rows->isEmpty()) {
+            throw new \Exception("File Excel kosong.");
+        }
+
+        $isValid = false;
+        $checkLimit = min(10, $rows->count());
+        $headerRowIndex = -1;
+        
+        for ($i = 0; $i < $checkLimit; $i++) {
+            $row = $rows[$i];
+            $rowString = strtolower(preg_replace('/[^a-z0-9]/i', '', implode("", $row->toArray())));
+            
+            if (str_contains($rowString, 'kode') && str_contains($rowString, 'nama')) {
+                $isValid = true;
+                $headerRowIndex = $i;
+                break;
+            }
+        }
+
+        if (!$isValid) {
+             throw new \Exception("Format kolom Pada File Excel tidak sesuai. File harus memiliki kolom 'Kode Akun' dan 'Nama Akun'.");
+        }
+
+        // Tentukan index kolom berdasarkan baris header
+        $headerRow = array_values($rows[$headerRowIndex]->toArray());
+        $kodeIndex = -1;
+        $namaIndex = -1;
+        $headerAkunIndex = -1;
+
+        foreach ($headerRow as $colIndex => $val) {
+            $h = strtolower(preg_replace('/[^a-z0-9]/i', '', (string)$val));
+            if (str_contains($h, 'kode') || str_contains($h, 'kodeakun')) {
+                $kodeIndex = $colIndex;
+            } elseif (str_contains($h, 'nama') || str_contains($h, 'namaakun')) {
+                $namaIndex = $colIndex;
+            } elseif (str_contains($h, 'header')) {
+                $headerAkunIndex = $colIndex;
+            }
+        }
+
+        if ($kodeIndex === -1 || $namaIndex === -1) {
+            throw new \Exception("Format kolom Pada File Excel tidak sesuai. File harus memiliki kolom 'Kode Akun' dan 'Nama Akun'.");
+        }
+
+        // Syarat ketat: Tidak boleh ada kolom 'Header Akun'
+        if ($headerAkunIndex !== -1) {
+            throw new \Exception("Format kolom Pada File Excel tidak sesuai. File hanya boleh memiliki kolom 'Kode Akun' dan 'Nama Akun'.");
+        }
+
         $insertedCount = 0;
 
-        foreach ($rows as $row) {
-            $values = array_map(function ($value) {
-                return trim((string)$value);
-            }, array_values($row->toArray()));
-
-            while (count($values) > 0 && $values[0] === '') {
-                array_shift($values);
+        foreach ($rows as $index => $row) {
+            if ($index <= $headerRowIndex) {
+                continue; // Lewati baris header dan baris di atasnya
             }
 
-            $kodeAkun = null;
-            $headerAkun = null;
-            $namaAkun = null;
-
-            if (count($values) >= 3) {
-                $first = strtolower($values[0]);
-                $second = strtolower($values[1]);
-                $third = strtolower($values[2]);
-
-                if ($this->isHeaderRow($first, $second, $third)) {
-                    continue;
-                }
-
-                if (str_contains($first, 'no') || str_contains($first, 'nomor') || (is_numeric($values[0]) && !preg_match('/(header|kode|nama|akun)/i', $values[1]))) {
-                    $kodeAkun = $values[1];
-                    $namaAkun = $values[2];
-                } elseif (str_contains($second, 'header')) {
-                    $kodeAkun = $values[0];
-                    $headerAkun = $values[1];
-                    $namaAkun = $values[2];
-                } else {
-                    $kodeAkun = $values[0];
-                    $headerAkun = $values[1];
-                    $namaAkun = $values[2];
-                }
-            } elseif (count($values) >= 2) {
-                if ($this->isHeaderRow(strtolower($values[0]), strtolower($values[1]), '')) {
-                    continue;
-                }
-
-                $kodeAkun = $values[0];
-                $namaAkun = $values[1];
-            }
+            $cols = array_values($row->toArray());
+            
+            $kodeAkun = isset($cols[$kodeIndex]) ? trim((string)$cols[$kodeIndex]) : null;
+            $namaAkun = isset($cols[$namaIndex]) ? trim((string)$cols[$namaIndex]) : null;
+            $headerAkun = ($headerAkunIndex !== -1 && isset($cols[$headerAkunIndex])) ? trim((string)$cols[$headerAkunIndex]) : null;
 
             if (empty($kodeAkun) || empty($namaAkun)) {
-                continue;
-            }
-
-            if ($this->isHeaderRow(strtolower($kodeAkun), strtolower($headerAkun), strtolower($namaAkun))) {
                 continue;
             }
 
@@ -74,20 +87,8 @@ class CoaImport implements ToCollection
         }
 
         if ($insertedCount === 0) {
-            throw new \Exception("Gagal menemukan data akun. Pastikan urutan kolom sesuai (contoh: kode_akun | header_akun | nama_akun atau kode_akun | nama_akun).");
+            throw new \Exception("Gagal menemukan data akun. Pastikan urutan kolom sesuai (contoh: kode_akun | nama_akun) atau data tidak kosong.");
         }
-    }
-
-    private function isHeaderRow(string $first, string $second, string $third): bool
-    {
-        return str_contains($first, 'kode') ||
-               str_contains($first, 'rek') ||
-               str_contains($first, 'no') ||
-               str_contains($second, 'header') ||
-               str_contains($second, 'kode') ||
-               str_contains($second, 'nama') ||
-               str_contains($third, 'nama') ||
-               str_contains($third, 'akun');
     }
 }
 
