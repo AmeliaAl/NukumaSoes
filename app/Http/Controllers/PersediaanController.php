@@ -223,7 +223,11 @@ class PersediaanController extends Controller
             $entryData['inventory_id'] = $inventory->id;
             $entryData['harga'] = $harga;
             $entryData['total_harga'] = $total_harga;
+<<<<<<< HEAD
             $entryData['stok_awal'] = $stok_awal_untuk_entry;
+=======
+            $entryData['stok_awal'] = $stok_awal ?? ($inventory->stok_awal ?? 0);
+>>>>>>> 732a0018ebd44081ae0772ca4b6e07363a150bce
             $persediaanEntry = PersediaanEntry::create($entryData);
 
             // Create KartuStokEntry (Include stok_awal in the FIRST entry's Masuk column)
